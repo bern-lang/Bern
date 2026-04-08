@@ -9,7 +9,7 @@ $ErrorActionPreference = 'Stop'
 
 $installDir = "C:\Bern"
 $repo = "mirvoxtm/Bern"
- $zipName = "Bern_win_1.1.2.zip"
+ $zipName = "Bern_win_1.1.3.zip"
  $exeName = "Bern.exe"
  $zipPath = Join-Path $installDir $zipName
  $exePath = Join-Path $installDir $exeName
@@ -24,7 +24,7 @@ $banner = @(
     "| |_/ / ___ _ __ _ __       ",
     "| ___ \/ _ \ '__| '_ \      This script will install Bern on",
     "| |_/ /  __/ |  | | | |                 your machine",
-    "\____/ \___|_|  |_| |_|         [ v.1.1.2 24.02.2026 ]"
+    "\____/ \___|_|  |_| |_|         [ v.1.1.3 08.04.2026 ]"
 )
 foreach ($line in $banner) {
     Write-Host $line -ForegroundColor Magenta
