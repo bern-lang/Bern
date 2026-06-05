@@ -17,7 +17,7 @@ readonly INSTALL_DIR="/opt/bern"
 
 # Defaults, overridden by the manifest when reachable (see resolve_manifest).
 REPO="bern-lang/Bern"
-ZIP_NAME="Bern_linux_2.0.0.zip"
+ZIP_NAME="Bern-2.0.0-linux.zip"
 VERSION="2.0.0"
 INSTALLER_LATEST=""
 
@@ -119,12 +119,17 @@ install_bern() {
     log "$CYAN" "[bern] Fetching latest release from GitHub..."
     local release_url="https://api.github.com/repos/$REPO/releases/latest"
     local download_url
-    download_url=$(curl -sL "$release_url" | grep -o "https://.*/$ZIP_NAME" | head -1)
-    
+    # Release zips follow the convention Bern-<version>-linux.zip. Match by the
+    # platform suffix rather than an exact filename so a version drift between
+    # the manifest and the published release does not break the install.
+    download_url=$(curl -sL "$release_url" | grep -o "https://[^\"]*/Bern-[^\"/]*-linux\.zip" | head -1)
+
     if [[ -z "$download_url" ]]; then
-        log "$YELLOW" "[bern] Error: Could not find $ZIP_NAME in latest release" >&2
+        log "$YELLOW" "[bern] Error: Could not find a Bern-*-linux.zip asset in the latest release" >&2
         exit 1
     fi
+    # Use the real asset name (and its version) from here on.
+    ZIP_NAME=$(basename "$download_url")
     
     # Download to temp directory
     local temp_dir

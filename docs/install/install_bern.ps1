@@ -21,7 +21,7 @@ $installDir = "C:\Bern"
 
 # Fallback values, used only if the manifest cannot be fetched/parsed.
 $repo    = "bern-lang/Bern"
-$zipName = "Bern_win_2.0.0.zip"
+$zipName = "Bern-2.0.0-win.zip"
 $exeName = "Bern.exe"
 $version = "2.0.0"
 
@@ -100,12 +100,17 @@ $release = Invoke-RestMethod -Uri $releaseUrl
 
 Write-Host ""
 
-# Find Bern.zip asset download URL
-$asset = $release.assets | Where-Object { $_.name -eq $zipName }
+# Release zips follow the convention Bern-<version>-win.zip. Match by the
+# platform suffix rather than an exact filename so a version drift between the
+# manifest and the actually-published release does not break the install.
+$asset = $release.assets | Where-Object { $_.name -like 'Bern-*-win.zip' } | Select-Object -First 1
 if (-not $asset) {
-    Write-Error "Bern.zip not found in the latest release assets."
+    Write-Error "No Bern-*-win.zip asset found in the latest release ($($release.tag_name))."
     exit 1
 }
+# Use the real asset name (and its version) from here on.
+$zipName     = $asset.name
+$zipPath     = Join-Path $installDir $zipName
 $downloadUrl = $asset.browser_download_url
 
 Write-Host "[bern] Downloading $zipName from $downloadUrl..." -ForegroundColor Cyan
