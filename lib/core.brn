@@ -1,16 +1,20 @@
 -- Bern Standard Library
 
 -- Map: Apply a function to each element of a list
-def map([], f) -> []
-def map([head|tail], f) -> [f(head)] <> map(tail, f)
+-- Tail-recursive: builds the result in reverse with O(1) prepends, then
+-- reverses once at the end. O(n) time and constant Bern-level stack depth.
+def map(xs, f) -> map_acc(xs, f, [])
+def map_acc([], f, acc) -> reverse_list(acc)
+def map_acc([head|tail], f, acc) -> map_acc(tail, f, [f(head)] <> acc)
 
 -- Filter: Keep elements where predicate returns true
-def filter([], f) -> []
-def filter([head|tail], f) do
+def filter(xs, f) -> filter_acc(xs, f, [])
+def filter_acc([], f, acc) -> reverse_list(acc)
+def filter_acc([head|tail], f, acc) do
     if (f(head)) then
-        return [head] <> filter(tail, f)
+        return filter_acc(tail, f, [head] <> acc)
     else
-        return filter(tail, f)
+        return filter_acc(tail, f, acc)
     end
 end
 
@@ -29,8 +33,12 @@ def sum(list) -> foldl(list, 0, \acc, x -> acc + x)
 def product(list) -> foldl(list, 1, \acc, x -> acc * x)
 
 -- Reverse a list
-def reverse_list([]) -> []
-def reverse_list([head|tail]) -> reverse_list(tail) <> [head]
+-- Tail-recursive accumulator: each [head] <> acc is an O(1) prepend, so the
+-- whole reverse is O(n) instead of the previous O(n^2) (which appended to the
+-- growing side on every step).
+def reverse_list(xs) -> reverse_list_acc(xs, [])
+def reverse_list_acc([], acc) -> acc
+def reverse_list_acc([head|tail], acc) -> reverse_list_acc(tail, [head] <> acc)
 
 -- Reverse a set
 def reverse_set({}) -> {}
@@ -47,9 +55,10 @@ def reverse(x) do
     end
 end
 -- Take first n elements
-def take(0, _) -> []
-def take(_, []) -> []
-def take(n, [head|tail]) -> [head] <> take(n - 1, tail)
+def take(n, xs) -> take_acc(n, xs, [])
+def take_acc(0, _, acc) -> reverse_list(acc)
+def take_acc(_, [], acc) -> reverse_list(acc)
+def take_acc(n, [head|tail], acc) -> take_acc(n - 1, tail, [head] <> acc)
 
 -- Drop first n elements
 def drop(0, list) -> list
@@ -58,9 +67,11 @@ def drop(n, [_|tail]) -> drop(n - 1, tail)
 
 -- Get head of list
 def head([h|_]) -> h
+def head([]) -> error("head: empty list")
 
 -- Get tail of list
 def tail([_|t]) -> t
+def tail([]) -> error("tail: empty list")
 
 -- Check if list is empty
 def isEmpty([]) -> true
@@ -97,20 +108,23 @@ def find([head|tail], f) do
 end
 
 -- Zip two lists together
-def zip([], _) -> []
-def zip(_, []) -> []
-def zip([h1|t1], [h2|t2]) -> [[h1, h2]] <> zip(t1, t2)
+def zip(xs, ys) -> zip_acc(xs, ys, [])
+def zip_acc([], _, acc) -> reverse_list(acc)
+def zip_acc(_, [], acc) -> reverse_list(acc)
+def zip_acc([h1|t1], [h2|t2], acc) -> zip_acc(t1, t2, [[h1, h2]] <> acc)
 
 -- ZipWith: Combine two lists with a function
-def zipWith([], _, f) -> []
-def zipWith(_, [], f) -> []
-def zipWith([h1|t1], [h2|t2], f) -> [f(h1, h2)] <> zipWith(t1, t2, f)
+def zipWith(xs, ys, f) -> zipWith_acc(xs, ys, f, [])
+def zipWith_acc([], _, f, acc) -> reverse_list(acc)
+def zipWith_acc(_, [], f, acc) -> reverse_list(acc)
+def zipWith_acc([h1|t1], [h2|t2], f, acc) -> zipWith_acc(t1, t2, f, [f(h1, h2)] <> acc)
 
 -- Range: Create a list from start to end (inclusive)
 -- Abstraction for [x..y]
 def range(start, end) -> [start..end]
 
 -- Minimum of a list
+def min([]) -> error("min: empty list")
 def min([x]) -> x
 def min([head|tail]) do
     tailMin = min(tail)
@@ -122,6 +136,7 @@ def min([head|tail]) do
 end
 
 -- Maximum of a list
+def max([]) -> error("max: empty list")
 def max([x]) -> x
 def max([head|tail]) do
     tailMax = max(tail)
@@ -137,6 +152,9 @@ def compose(f, g, x) -> f(g(x))
 
 -- Identity function
 def id(x) -> x
+
+-- errors-as-values: test whether a value is a recoverable runtime error.
+def is_error(x) -> ::x == "Error"
 -- Although string literals return normally, there is
 -- a print() function in the core library for explicit printing.
 def print(x) -> id(x)
@@ -166,6 +184,7 @@ def char_to_digit('6') -> 6
 def char_to_digit('7') -> 7
 def char_to_digit('8') -> 8
 def char_to_digit('9') -> 9
+def char_to_digit(_) -> error("char_to_digit: not a digit")
 
 def append([], y) -> y
 def append([head|tail], y) -> [head] <> append(tail, y)

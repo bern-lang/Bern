@@ -1,0 +1,334 @@
+{--! impure-lists !--}
+-- Bern JSON library
+--
+-- json_parse(text) -> Bern value
+--
+-- Mapping from JSON to Bern values:
+--   object  -> Object   #{ ... }#
+--   array   -> List     [ ... ]   (order and duplicates preserved)
+--   string  -> string
+--   number  -> Integer (no '.'/'e') or Double
+--   true/false -> Boolean
+--   null    -> Undefined
+--
+-- Array mapping:
+--   A JSON array maps straight to a Bern List, preserving element order and
+--   duplicates. JSON arrays are heterogeneous (e.g. [1, "a", 34.2]); this file
+--   enables the `impure-lists` pragma so its own lists may hold mixed element
+--   types. The pragma is file-scoped -- it applies only to this library's code,
+--   never to the program that imports it.
+--
+--     [1, "a", 34.2, "a", "banana"]  ->  [1, "a", 34.2, "a", "banana"]
+--
+-- Caveat: Bern represents a string as a List of Characters, so an empty list
+-- and an empty string are indistinguishable. An empty JSON array therefore
+-- serializes back as "" (an empty string). This is the only round-trip edge
+-- case; non-empty arrays and strings are always distinguishable by element type.
+
+import core
+import strings
+
+DIGITS = "0123456789"
+
+-- A small result record threaded through the recursive descent:
+-- #{ value: <parsed value>, pos: <index just past what was consumed> }#
+def jres(v, p) do
+    r = #{}#
+    r["value"] = v
+    r["pos"] = p
+    return r
+end
+
+-- null maps to Undefined. Evaluating an unbound name yields Undefined, which is
+-- the cleanest way to obtain that value (Bern has no `undefined` literal).
+def json_null() -> json_undefined_marker
+
+def is_null(v) -> ::v == "Undefined"
+
+-- Safe character access: returns '\0' once past the end of the string so loop
+-- conditions never index out of bounds (Bern's && does not short-circuit).
+def char_at_safe(s, i) do
+    if (i < length(s)) then
+        return s[i]
+    else
+        return '\0'
+    end
+end
+
+def is_ws(c) -> c == ' ' || c == '\n' || c == '\t' || c == '\r'
+def is_digit_ch(c) -> index_of(DIGITS, c) != -1
+
+def skip_ws(s, i) do
+    for is_ws(char_at_safe(s, i)) do
+        i = i + 1
+    end
+    return i
+end
+
+-- Parse a string literal starting at the opening quote.
+def jstring(s, i) do
+    i = i + 1
+    result = ""
+    for (char_at_safe(s, i) != '"' && i < length(s)) do
+        c = char_at_safe(s, i)
+        if (c == '\\') then
+            e = char_at_safe(s, i + 1)
+            if (e == 'n') then
+                result = result + '\n'
+            else if (e == 't') then
+                result = result + '\t'
+            else if (e == 'r') then
+                result = result + '\r'
+            else if (e == '"') then
+                result = result + '"'
+            else if (e == '\\') then
+                result = result + '\\'
+            else if (e == '/') then
+                result = result + '/'
+            else
+                result = result + e
+            end
+            i = i + 2
+        else
+            result = result + c
+            i = i + 1
+        end
+    end
+    return jres(result, i + 1)
+end
+
+-- Parse a number; returns an Integer when there is no fraction/exponent,
+-- otherwise a Double.
+def jnumber(s, i) do
+    neg = false
+    if (char_at_safe(s, i) == '-') then
+        neg = true
+        i = i + 1
+    end
+
+    int_val = 0
+    for is_digit_ch(char_at_safe(s, i)) do
+        int_val = int_val * 10 + char_to_digit(char_at_safe(s, i))
+        i = i + 1
+    end
+
+    is_float = false
+    frac = 0.0
+    if (char_at_safe(s, i) == '.') then
+        is_float = true
+        i = i + 1
+        place = 0.1
+        for is_digit_ch(char_at_safe(s, i)) do
+            frac = frac + (char_to_digit(char_at_safe(s, i)) * place)
+            place = place / 10.0
+            i = i + 1
+        end
+    end
+
+    exp = 0
+    exp_neg = false
+    if (char_at_safe(s, i) == 'e' || char_at_safe(s, i) == 'E') then
+        is_float = true
+        i = i + 1
+        if (char_at_safe(s, i) == '-') then
+            exp_neg = true
+            i = i + 1
+        else if (char_at_safe(s, i) == '+') then
+            i = i + 1
+        end
+        for is_digit_ch(char_at_safe(s, i)) do
+            exp = exp * 10 + char_to_digit(char_at_safe(s, i))
+            i = i + 1
+        end
+    end
+
+    if (is_float) then
+        val = (int_val * 1.0) + frac
+        k = 0
+        for k < exp do
+            if (exp_neg) then
+                val = val / 10.0
+            else
+                val = val * 10.0
+            end
+            k = k + 1
+        end
+        if (neg) then
+            val = -val
+        end
+        return jres(val, i)
+    else
+        v = int_val
+        if (neg) then
+            v = -v
+        end
+        return jres(v, i)
+    end
+end
+
+-- Parse an array starting at '['; returns a List in source order. Because this
+-- file enables `impure-lists`, the accumulator may hold mixed element types.
+def jarray(s, i) do
+    i = skip_ws(s, i + 1)
+    result = []
+    if (char_at_safe(s, i) == ']') then
+        return jres(result, i + 1)
+    end
+    for true do
+        i = skip_ws(s, i)
+        elem = jv(s, i)
+        result = result <> [elem["value"]]
+        i = skip_ws(s, elem["pos"])
+        if (char_at_safe(s, i) == ',') then
+            i = i + 1
+        else
+            return jres(result, i + 1)
+        end
+    end
+end
+
+-- Parse an object starting at '{'; returns an Object.
+def jobject(s, i) do
+    i = skip_ws(s, i + 1)
+    obj = #{}#
+    if (char_at_safe(s, i) == '}') then
+        return jres(obj, i + 1)
+    end
+    for true do
+        i = skip_ws(s, i)
+        key_r = jstring(s, i)
+        key = key_r["value"]
+        i = skip_ws(s, key_r["pos"])
+        val_r = jv(s, i + 1)
+        obj[key] = val_r["value"]
+        i = skip_ws(s, val_r["pos"])
+        if (char_at_safe(s, i) == ',') then
+            i = i + 1
+        else
+            return jres(obj, i + 1)
+        end
+    end
+end
+
+-- Parse any JSON value at position i.
+def jv(s, i) do
+    i = skip_ws(s, i)
+    c = char_at_safe(s, i)
+    if (c == '{') then
+        return jobject(s, i)
+    else if (c == '[') then
+        return jarray(s, i)
+    else if (c == '"') then
+        return jstring(s, i)
+    else if (c == 't') then
+        return jres(true, i + 4)
+    else if (c == 'f') then
+        return jres(false, i + 5)
+    else if (c == 'n') then
+        return jres(json_null(), i + 4)
+    else
+        return jnumber(s, i)
+    end
+end
+
+-- Public entry point: parse a JSON document into a Bern value.
+def json_parse(s) do
+    r = jv(s, 0)
+    return r["value"]
+end
+
+-- ---------------------------------------------------------------------------
+-- Serialization
+-- ---------------------------------------------------------------------------
+
+-- A Bern string is a List of Characters; :: reports it as "List" (the "Text"
+-- type is unreachable in the interpreter), so distinguish a string from a JSON
+-- array by checking its first element. Lists are homogeneous-by-character for
+-- strings, so one element is enough. An empty list is treated as a string (see
+-- the caveat in the header).
+def is_string_val(v) do
+    if (::v != "List") then
+        return false
+    end
+    if ((:> v) == 0) then
+        return true
+    end
+    first = v[0]
+    return ::first == "Character"
+end
+
+-- Escape a single character for inclusion in a JSON string.
+def json_escape_char('"') -> "\\\""
+def json_escape_char('\\') -> "\\\\"
+def json_escape_char('\n') -> "\\n"
+def json_escape_char('\t') -> "\\t"
+def json_escape_char('\r') -> "\\r"
+def json_escape_char(c) -> "" + c
+
+def json_escape_string(s) do
+    result = ""
+    i = 0
+    n = length(s)
+    for i < n do
+        result = result + json_escape_char(s[i])
+        i = i + 1
+    end
+    return result
+end
+
+-- Serialize an ordered collection (List or Set) into a JSON array.
+def json_stringify_array(arr) do
+    parts = []
+    i = 0
+    n = :> arr
+    for i < n do
+        parts = parts <> [json_stringify(arr[i])]
+        i = i + 1
+    end
+    return "[" + join(parts, ",") + "]"
+end
+
+-- Serialize an Object into a JSON object using keys() to enumerate fields.
+def json_stringify_object(obj) do
+    ks = keys(obj)
+    parts = []
+    i = 0
+    n = :> ks
+    for i < n do
+        k = ks[i]
+        entry = "\"" + json_escape_string(k) + "\":" + json_stringify(obj[k])
+        parts = parts <> [entry]
+        i = i + 1
+    end
+    return "{" + join(parts, ",") + "}"
+end
+
+-- Public entry point: serialize a Bern value to a JSON string.
+def json_stringify(v) do
+    t = ::v
+    if (t == "Undefined") then
+        return "null"
+    else if (t == "Boolean") then
+        if (v) then
+            return "true"
+        else
+            return "false"
+        end
+    else if (t == "Integer") then
+        return "" + v
+    else if (t == "Double") then
+        return "" + v
+    else if (t == "Set") then
+        return json_stringify_array(v)
+    else if (t == "Object") then
+        return json_stringify_object(v)
+    else if (t == "List") then
+        if (is_string_val(v)) then
+            return "\"" + json_escape_string(v) + "\""
+        else
+            return json_stringify_array(v)
+        end
+    else
+        return "null"
+    end
+end

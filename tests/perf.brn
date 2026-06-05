@@ -1,0 +1,40 @@
+import core
+import assert
+
+-- Performance / complexity regression test.
+--
+-- Each of these runs over a 10,000-element list. Under the old O(n^2) stdlib
+-- (full type rescan on every <>, plus append-to-growing-side reverse) this
+-- would take many seconds or blow the stack. With the O(n) rewrites it should
+-- finish near-instantly. If this test ever starts hanging, a quadratic
+-- regression has been reintroduced.
+
+"Performance / complexity regression tests (n = 10000)"
+
+nums = [1..10000]
+
+-- map: O(n)
+doubled = map(nums, \x -> x * 2)
+assert_equals("map head", head(doubled), 2)
+assert_equals("map length", length(doubled), 10000)
+
+-- filter: O(n)
+evens = filter(nums, \x -> x % 2 == 0)
+assert_equals("filter length", length(evens), 5000)
+assert_equals("filter head", head(evens), 2)
+
+-- reverse_list: O(n) (was O(n^2))
+rev = reverse(nums)
+assert_equals("reverse head", head(rev), 10000)
+assert_equals("reverse length", length(rev), 10000)
+
+-- take: O(n)
+firstThree = take(3, nums)
+assert_equals("take", firstThree, [1, 2, 3])
+
+-- zip / zipWith: O(n)
+zipped = zipWith(nums, nums, \a, b -> a + b)
+assert_equals("zipWith head", head(zipped), 2)
+assert_equals("zipWith length", length(zipped), 10000)
+
+"All performance regression tests completed"

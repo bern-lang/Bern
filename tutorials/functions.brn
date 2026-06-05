@@ -45,7 +45,7 @@ greet("Bob")
 "Use do ... end and return to produce a value."
 "def sumList(xs) do"
 "    total = 0"
-"    for n : xs do"
+"    loop n : xs do"
 "        total = total + n"
 "    end"
 "    return total"
@@ -55,7 +55,7 @@ greet("Bob")
 "\nResult:"
 def sumList(xs) do
     total = 0
-    for n : xs do
+    loop n : xs do
         total = total + n
     end
     return total

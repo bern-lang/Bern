@@ -1,0 +1,16 @@
+import core
+import assert
+
+"Lazy range tests (must complete instantly on a huge range)"
+
+big = [1..1000000000]
+assert_equals("O(1) length", :> big, 1000000000)
+assert_equals("lazy index", big[5], 6)
+assert_equals("lazy head", head(big), 1)
+assert_equals("lazy take", take(5, big), [1, 2, 3, 4, 5])
+
+-- small ranges still behave exactly like lists
+assert_equals("range equals list", [1..5], [1, 2, 3, 4, 5])
+assert_equals("range map", map([1..4], \x -> x * 2), [2, 4, 6, 8])
+
+"Lazy range tests done"

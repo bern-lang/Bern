@@ -1,0 +1,61 @@
+import assert
+
+"Pattern matching + guards tests"
+
+-- 1. Negative-number literal patterns (previously failed to parse)
+def sign(-1) -> "neg one"
+def sign(0)  -> "zero"
+def sign(n)  -> "other"
+assert_equals("neg int pattern", sign(-1), "neg one")
+assert_equals("zero pattern", sign(0), "zero")
+assert_equals("other pattern", sign(5), "other")
+
+-- negative double literal pattern
+def classifyd(-1.5) -> "found neg double"
+def classifyd(_)    -> "other double"
+assert_equals("neg double pattern", classifyd(-1.5), "found neg double")
+
+-- 2. Cross-type numeric matching: PInt matches Double, PDouble matches Integer
+def isFive(5) -> true
+def isFive(_) -> false
+assert_equals("int pattern matches double", isFive(5.0), true)
+
+def isHalf(0.5) -> true
+def isHalf(_)   -> false
+assert_equals("double pattern vs int (no match)", isHalf(1), false)
+
+-- 3. Nonlinear patterns: repeated variable must bind equal values
+def eq(x, x) -> true
+def eq(_, _) -> false
+assert_equals("nonlinear equal", eq(3, 3), true)
+assert_equals("nonlinear different", eq(3, 4), false)
+
+-- 4a. Guards on function clauses
+def classify(n) when n > 0 -> "positive"
+def classify(0)            -> "zero"
+def classify(n)            -> "negative"
+assert_equals("guard positive", classify(7), "positive")
+assert_equals("guard zero", classify(0), "zero")
+assert_equals("guard falls through to negative", classify(-3), "negative")
+
+-- 4b. Guard with block body
+def grade(n) when n >= 90 do
+    return "A"
+end
+def grade(n) when n >= 80 -> "B"
+def grade(_) -> "C"
+assert_equals("guard block A", grade(95), "A")
+assert_equals("guard B", grade(85), "B")
+assert_equals("guard C", grade(50), "C")
+
+-- 4c. Guards on case branches (single line: case expressions don't span lines)
+def size(n) -> case n is x when x > 100 = "big" | x when x > 10 = "medium" | _ = "small" end
+assert_equals("case guard big", size(500), "big")
+assert_equals("case guard medium", size(50), "medium")
+assert_equals("case guard small", size(5), "small")
+
+-- 4d. Guard on a lambda
+checkPos = \x when x > 0 -> "yes"
+assert_equals("lambda guard pass", checkPos(4), "yes")
+
+"All pattern matching + guard tests completed"

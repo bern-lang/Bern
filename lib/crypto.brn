@@ -35,7 +35,7 @@ def crypto_random_hex(byte_count) do
     return result
 end
 
-def crypto_random_token(length) -> get_random_string(length)
+def crypto_random_token(len) -> get_random_string(len)
 
 def crypto_random_hex_chars(count) do
     out = ""

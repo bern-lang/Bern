@@ -1,0 +1,16 @@
+import core
+import assert
+
+"Auto-curry tests"
+def add(x, y) -> x + y
+def add3(a, b, c) -> a + b + c
+
+add2 = add(2)
+assert_equals("partial via variable", add2(10), 12)
+assert_equals("direct chaining", add(2)(40), 42)
+assert_equals("three-arg fully chained", add3(1)(2)(3), 6)
+assert_equals("partial multi-arg step", add3(1, 2)(3), 6)
+assert_equals("curried into map", map([10, 20, 30], add(1)), [11, 21, 31])
+assert_equals("full application unchanged", add(5, 6), 11)
+
+"Auto-curry tests done"

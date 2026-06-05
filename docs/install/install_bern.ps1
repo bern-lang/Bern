@@ -7,15 +7,46 @@
 
 $ErrorActionPreference = 'Stop'
 
+# Version of THIS installer script. Compared against the manifest below so we
+# can tell the user when a newer installer is available.
+$ScriptVersion = "1.0.0"
+
+# Single source of truth for what to install. Lives in the docs and is served
+# by GitHub Pages, so a new Bern release only needs the manifest bumped - this
+# script does not have to be edited every time.
+$manifestUrl  = "https://bern-lang.github.io/Bern/install/manifest.json"
+$installerUrl = "https://bern-lang.github.io/Bern/install/install_bern.ps1"
+
 $installDir = "C:\Bern"
-$repo = "mirvoxtm/Bern"
- $zipName = "Bern_win_1.1.2.zip"
- $exeName = "Bern.exe"
- $zipPath = Join-Path $installDir $zipName
- $exePath = Join-Path $installDir $exeName
+
+# Fallback values, used only if the manifest cannot be fetched/parsed.
+$repo    = "bern-lang/Bern"
+$zipName = "Bern_win_2.0.0.zip"
+$exeName = "Bern.exe"
+$version = "2.0.0"
 
 
 
+
+# Fetch the manifest. Everything below degrades gracefully to the fallback
+# values above if this fails (offline, Pages down, malformed JSON, ...).
+$installerLatest = $null
+try {
+    $manifest = Invoke-RestMethod -Uri $manifestUrl -TimeoutSec 10
+    if ($manifest.bern) {
+        if ($manifest.bern.version)       { $version = $manifest.bern.version }
+        if ($manifest.bern.repo)          { $repo    = $manifest.bern.repo }
+        if ($manifest.bern.windows.zip)   { $zipName = $manifest.bern.windows.zip }
+        if ($manifest.bern.windows.exe)   { $exeName = $manifest.bern.windows.exe }
+    }
+    if ($manifest.installer.version) { $installerLatest = $manifest.installer.version }
+    if ($manifest.installer.ps1)     { $installerUrl    = $manifest.installer.ps1 }
+} catch {
+    Write-Host "[bern] Could not fetch manifest ($manifestUrl); using built-in defaults." -ForegroundColor DarkGray
+}
+
+$zipPath = Join-Path $installDir $zipName
+$exePath = Join-Path $installDir $exeName
 
 # Bern REPL-style banner
 $banner = @(
@@ -24,15 +55,38 @@ $banner = @(
     "| |_/ / ___ _ __ _ __       ",
     "| ___ \/ _ \ '__| '_ \      This script will install Bern on",
     "| |_/ /  __/ |  | | | |                 your machine",
-    "\____/ \___|_|  |_| |_|         [ v.1.1.2 24.02.2026 ]"
+    "\____/ \___|_|  |_| |_|         [ v.$version ]"
 )
 foreach ($line in $banner) {
     Write-Host $line -ForegroundColor Magenta
 }
 Write-Host ""
 Write-Host "--------------------------------------------------------------" -ForegroundColor DarkGray
-Write-Host "" 
+Write-Host ""
+
+# Tell the user if the installer itself is out of date.
+if ($installerLatest) {
+    try {
+        if ([version]$installerLatest -gt [version]$ScriptVersion) {
+            Write-Host "[bern] A newer installer is available (v$installerLatest, you have v$ScriptVersion)." -ForegroundColor Yellow
+            Write-Host "[bern] Re-run to get the latest: iex (irm $installerUrl)" -ForegroundColor Yellow
+            Write-Host ""
+        }
+    } catch { }
+}
+
 Write-Host "[bern] Installing to $installDir..." -ForegroundColor Cyan
+
+# Detect an existing install and report whether this is an update.
+$versionFile = Join-Path $installDir "version.txt"
+if (Test-Path $versionFile) {
+    $installed = (Get-Content $versionFile -Raw).Trim()
+    if ($installed -eq $version) {
+        Write-Host "[bern] Bern v$version is already installed - reinstalling/repairing." -ForegroundColor DarkGray
+    } else {
+        Write-Host "[bern] Updating Bern v$installed -> v$version." -ForegroundColor Cyan
+    }
+}
 
 # Create install directory if it doesn't exist
 if (!(Test-Path $installDir)) {
@@ -97,6 +151,9 @@ Remove-Item $tempDir -Recurse -Force
 
 Write-Host "[bern] Bern.exe extracted to $installDir." -ForegroundColor Green
 
+# Record the installed version so future runs can detect updates.
+Set-Content -Path $versionFile -Value $version -NoNewline
+
 # Add installDir to user PATH if not already present
 $envPath = [Environment]::GetEnvironmentVariable("Path", "User")
 if ($envPath -notlike "*$installDir*") {
@@ -107,4 +164,4 @@ if ($envPath -notlike "*$installDir*") {
     Write-Host "[bern] $installDir is already in your PATH." -ForegroundColor DarkGray
 }
 
-Write-Host "[bern] Installation complete!" -ForegroundColor Green
+Write-Host "[bern] Installation complete! Bern v$version is installed." -ForegroundColor Green

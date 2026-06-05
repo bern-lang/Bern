@@ -1,8 +1,8 @@
 {
   "name": "bern-syntax",
   "displayName": "Bern Syntax Highlighting + IntelliSense",
-  "description": "Syntax highlighting and IntelliSense for the Bern language (.brn)",
-  "version": "0.0.9",
+  "description": "Syntax highlighting and IntelliSense for the Bern language (.brn): pragmas, written-word operators (English + Brazilian Portuguese), block/line comments, and more.",
+  "version": "2.1.0",
   "publisher": "mirvoxtm",
   "main": "./extension.js",
   "engines": {

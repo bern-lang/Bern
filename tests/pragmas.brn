@@ -1,0 +1,20 @@
+{--! impure-lists !--}
+{--! impure-sets !--}
+import core
+import assert
+
+"Pragma tests (impure-lists, impure-sets)"
+
+-- impure-lists: mixed element types are allowed
+mixed = [1, "two", 3.0]
+assert_equals("mixed list length", length(mixed), 3)
+assert_equals("mixed list head", mixed[0], 1)
+
+joined = [1, 2] <> ["a", "b"]
+assert_equals("mixed concat length", length(joined), 4)
+
+-- impure-sets: set union keeps duplicates
+combined = {1, 2, 3} <| {2, 3, 4}
+assert_equals("set union keeps duplicates", :> combined, 6)
+
+"Pragma tests done"

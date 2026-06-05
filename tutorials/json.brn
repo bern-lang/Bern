@@ -1,0 +1,46 @@
+"_____________________________________________________________"
+"The JSON Library in Bern"
+"Parse JSON text into Bern values, and serialize Bern values back to JSON."
+"_____________________________________________________________\n"
+import json
+
+"[1. Parsing objects]"
+"json_parse builds an Object from a JSON object; index it with [key]."
+
+"\nResult:"
+person = json_parse("{\"name\": \"Bern\", \"version\": 3}")
+person["name"]
+person["version"]
+
+"\n_____________________________________________________________\n"
+"[2. Arrays become Sets, with duplicate grouping]"
+"A JSON array maps to a Set. A value that appears once stays bare; a value"
+"that repeats collapses into a sub-list of its copies. This keeps set theory"
+"intact while preserving multiplicity. Nested arrays stay Sets, so a List"
+"inside the set always means 'grouped duplicates'."
+"Input:  [1, a, 34.2, a, banana]   ->   {1, [a, a], 34.2, banana}"
+
+"\nResult:"
+json_parse("[1, \"a\", 34.2, \"a\", \"banana\"]")
+
+"\n_____________________________________________________________\n"
+"[3. null becomes Undefined]"
+"Use is_null to test for a JSON null."
+
+"\nResult:"
+is_null(json_parse("null"))
+
+"\n_____________________________________________________________\n"
+"[4. Serializing with json_stringify]"
+"json_stringify turns a Bern value back into a JSON string."
+
+"\nResult:"
+json_stringify(json_parse("{\"items\": [1, 2, 3], \"ok\": true}"))
+
+"\n_____________________________________________________________\n"
+"[5. Round-tripping]"
+"Duplicate groups expand back to repeated array elements."
+"json_stringify(json_parse(\"[7, 7, 7]\"))"
+
+"\nResult:"
+json_stringify(json_parse("[7, 7, 7]"))

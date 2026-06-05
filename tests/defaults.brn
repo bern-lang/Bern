@@ -1,0 +1,17 @@
+import core
+import assert
+
+"Default behavior tests (short-circuit, negative-index)"
+
+-- short-circuit: the right side is not evaluated when the left decides
+assert_equals("&& short-circuits", false && (1 / 0 == 0), false)
+assert_equals("|| short-circuits", true || (1 / 0 == 0), true)
+assert_equals("&& both true", true && true, true)
+assert_equals("|| both false", false || false, false)
+
+-- negative indexing counts from the end
+assert_equals("neg index -1", [10, 20, 30][-1], 30)
+assert_equals("neg index -2", [10, 20, 30][-2], 20)
+assert_equals("neg index string", "Bern"[-1], 'n')
+
+"Defaults tests done"

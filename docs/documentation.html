@@ -36,14 +36,10 @@
         header {
             background: white;
             padding: 1rem 0;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-            position: sticky;
-            top: 0;
-            z-index: 100;
         }
 
         .header-content {
-            max-width: 1400px;
+            max-width: 1000px;
             margin: 0 auto;
             padding: 0 2rem;
             display: flex;
@@ -61,17 +57,32 @@
         nav {
             display: flex;
             gap: 2rem;
-            flex-wrap: wrap;
         }
 
         nav a {
             color: var(--text);
             text-decoration: none;
             transition: color 0.2s;
+            position: relative;
+        }
+
+        nav a::after {
+            content: "";
+            position: absolute;
+            left: 0;
+            bottom: -4px;
+            width: 0;
+            height: 2px;
+            background: var(--primary);
+            transition: width 0.2s ease;
         }
 
         nav a:hover {
             color: var(--primary);
+        }
+
+        nav a:hover::after {
+            width: 100%;
         }
 
         .layout {
@@ -227,6 +238,38 @@
             font-size: 0.95rem;
         }
 
+        .lib-table {
+            border-collapse: collapse;
+            margin: 1rem 0;
+            width: 100%;
+            font-size: 0.95rem;
+        }
+
+        .lib-table th,
+        .lib-table td {
+            border: 1px solid var(--border);
+            padding: 0.5rem 0.85rem;
+            text-align: left;
+        }
+
+        .lib-table th {
+            background: #e8eaf6;
+            color: var(--primary);
+        }
+
+        .v2badge {
+            display: inline-block; background: var(--primary); color: #fff;
+            font-size: 0.7rem; font-weight: 600; letter-spacing: 0.05em;
+            text-transform: uppercase; padding: 0.22rem 0.65rem;
+            border-radius: 0; vertical-align: middle; margin-left: 0.5rem;
+        }
+
+        .v2note {
+            background: #ede7f6; border-left: 4px solid #5e35b1;
+            padding: 0.75rem 1rem; margin: 1rem 0; border-radius: 4px;
+            font-size: 0.95rem;
+        }
+
         footer {
             text-align: center;
             padding: 2rem;
@@ -265,13 +308,15 @@
 <body>
     <header>
         <div class="header-content">
-            <a href="#" class="logo"><img src="images/cat.png" alt="Bern Logo" width="20%" style="margin-top: 10px;"></a>
+            <a href="index.html" class="logo"><img src="images/cat.png" alt="Bern Logo" width="20%" style="margin-top: 10px;"></a>
             <nav>
                 <a href="#basics">Basics</a>
-                <a href="#libraries">Libraries</a>
-                <a href="#conditionals">Conditionals</a>
                 <a href="#functions">Functions</a>
-                <a href="#loops">Loops</a>
+                <a href="#libraries">Libraries</a>
+                <a href="#pragmas">Pragmas</a>
+                <a href="examples.html">Learn Bern</a>
+                <a href="changelog.html">Changelog</a>
+                <a href="pt-br/documentation.html" style="font-weight: 600;">🌐 PT-BR</a>
             </nav>
         </div>
     </header>
@@ -281,8 +326,11 @@
             <h3>Language Basics</h3>
             <ul>
                 <li><a href="#basics">Basics</a></li>
+                <li><a href="#scope">Scope</a></li>
                 <li><a href="#conditionals">Conditionals</a></li>
                 <li><a href="#functions">Functions</a></li>
+                <li><a href="#pipe">Pipe Operator</a></li>
+                <li><a href="#words">Word Operators</a></li>
                 <li><a href="#loops">Loops</a></li>
                 <li><a href="#lists">Lists</a></li>
                 <li><a href="#sets">Sets</a></li>
@@ -300,15 +348,20 @@
                 <li><a href="#lib-path">path</a></li>
                 <li><a href="#lib-url">url</a></li>
                 <li><a href="#lib-crypto">crypto</a></li>
+                <li><a href="#lib-json">json</a></li>
                 <li><a href="#lib-csv">vendor/csv</a></li>
                 <li><a href="#lib-http">vendor/http/http</a></li>
             </ul>
 
             <h3>Other Features</h3>
             <ul>
+                <li><a href="#errors-as-values">Errors as Values</a></li>
+                <li><a href="#pragmas">Pragmas</a></li>
                 <li><a href="#imports">Imports</a></li>
                 <li><a href="#input">User Input</a></li>
                 <li><a href="#globals">Global Functions</a></li>
+                <li><a href="#repl">The REPL</a></li>
+                <li><a href="#bundle">Bundling to .exe</a></li>
             </ul>
         </aside>
 
@@ -366,6 +419,64 @@ length_string = :> "hello"
 -- Output: 5</pre>
         </div>
 
+        <!-- SCOPE -->
+        <div class="doc-section" id="scope">
+            <h2>Scope</h2>
+
+            <p>Every name in Bern lives in a <strong>scope</strong> - the region of the program where that binding can be seen. Bern keeps two kinds of scope, and the operator you use to assign a variable decides which one it goes into:</p>
+
+            <ul>
+                <li><code>=</code> (or the word <code>be</code>) - a <strong>local</strong> binding, visible only in the current scope.</li>
+                <li><code>:=</code> - a <strong>global</strong> binding, visible everywhere in the program.</li>
+            </ul>
+
+            <h3>Local Scope (<code>=</code>)</h3>
+            <p>The ordinary <code>name = value</code> assignment creates a binding in the <strong>current scope</strong>. At the top level of a file or in the REPL, that scope is the file itself. Inside a function, loop, or branch body, the body has its own scope: bindings created there with <code>=</code> are <strong>local</strong> and disappear when the body finishes - they do not leak back out to the caller.</p>
+
+            <pre class="simple-code">def f() do
+    local = 10        -- bound only inside f
+    return 0
+end
+
+x = f()
+print local           -- undefined: `local` never escaped f</pre>
+
+            <p>Each call gets a fresh local scope, so locals from one call never bleed into another. This is what makes functions self-contained: a helper can use whatever temporary names it likes without disturbing the names around the call site.</p>
+
+            <h3>Global Scope (<code>:=</code>)</h3>
+            <p>The <code>:=</code> operator writes into a single, program-wide <strong>global</strong> table. A global assigned anywhere - even deep inside a function - becomes visible to every other scope, and survives after the function that created it has returned.</p>
+
+            <pre class="simple-code">def f() do
+    shared := 20      -- written to the global scope
+    return 0
+end
+
+x = f()
+print shared          -- Output: 20  (the global outlived the call)</pre>
+
+            <p>Use <code>:=</code> when you deliberately want state that outlives a single scope - a counter, a configuration value, or a result several functions need to share. For everything else, prefer <code>=</code>: local bindings keep your program easier to follow because their effects stay contained.</p>
+
+            <h3><code>=</code> vs <code>:=</code> at a Glance</h3>
+            <table class="lib-table">
+                <tr><th></th><th><code>=</code> (local)</th><th><code>:=</code> (global)</th></tr>
+                <tr><td>Where it binds</td><td>Current scope only</td><td>Program-wide global table</td></tr>
+                <tr><td>Visible inside other functions</td><td>No</td><td>Yes</td></tr>
+                <tr><td>Survives after the scope ends</td><td>No</td><td>Yes</td></tr>
+                <tr><td>Typical use</td><td>Temporary / working values</td><td>Shared, long-lived state</td></tr>
+            </table>
+
+            <h3>How a Name Is Resolved</h3>
+            <p>When Bern reads a variable, it looks in the <strong>global scope first</strong>, and only falls back to the local scope if the name is not global. This means that <strong>once a name has been bound with <code>:=</code>, a later local <code>=</code> to the same name cannot shadow it</strong> - reads keep returning the global value:</p>
+
+            <pre class="simple-code">g := 1
+g = 2                 -- writes a local `g`, but...
+print g               -- Output: 1  (the global is found first)</pre>
+
+            <div class="note">
+                <strong>Note:</strong> Because globals win during lookup, avoid reusing a global name for an unrelated local value. Pick distinct names, or update the global itself with <code>:=</code> if you really mean to change the shared value.
+            </div>
+        </div>
+
         <!-- CONDITIONALS -->
         <div class="doc-section" id="conditionals">
             <h2>Conditionals</h2>
@@ -402,8 +513,8 @@ end
                 <h4>Example: FizzBuzz</h4>
                 <p>A classic programming challenge demonstrating nested conditionals:</p>
                 <pre class="simple-code">numbers = [1..100]
-for n : numbers do 
-    if n % 15 == 0 then 
+loop n : numbers do
+    if n % 15 == 0 then
         "FizzBuzz"
     else if n % 3 == 0 then
         "Fizz"
@@ -414,6 +525,11 @@ for n : numbers do
     end
 end</pre>
             </div>
+
+            <h3>Short-Circuit Evaluation <span class="v2badge">Bern 2.0</span></h3>
+            <p>The boolean operators <code>&amp;&amp;</code> and <code>||</code> stop at the first operand that decides the result, so the right-hand side is only evaluated when it is needed.</p>
+            <pre class="simple-code">false &amp;&amp; (1 / 0 == 0)
+-- Output: false   (the right side never runs)</pre>
         </div>
 
         <!-- FUNCTIONS -->
@@ -462,7 +578,7 @@ greet("Bob")
             
             <pre class="simple-code">def sumList(xs) do
     total = 0
-    for n : xs do
+    loop n : xs do
         total = total + n
     end
     return total
@@ -490,36 +606,169 @@ pairSwap(1, 2)
 
 applyTwice(\n -> n * 2, 5)
 -- Output: 20 (5 * 2 * 2)</pre>
+
+            <h3>Guards (<code>when</code>)</h3>
+            <p>A clause matches only when its patterns match <em>and</em> its <code>when</code> guard evaluates to <code>true</code>. If the guard is false, evaluation falls through to the next clause. Guards work on function clauses, lambdas, and <code>case</code> branches.</p>
+
+            <pre class="simple-code">def classify(n) when n > 0 -> "positive"
+def classify(0)            -> "zero"
+def classify(n)            -> "negative"
+
+classify(7)
+-- Output: "positive"
+classify(-3)
+-- Output: "negative"
+
+-- Guards in a case expression
+def size(n) -> case n is x when x > 100 = "big" | x when x > 10 = "medium" | _ = "small" end
+size(50)
+-- Output: "medium"
+
+-- Guards on a lambda
+check_pos = \x when x > 0 -> "yes"
+check_pos(4)
+-- Output: "yes"</pre>
+
+            <h3>Negative Literal Patterns</h3>
+            <p>Negative integers and doubles can be matched directly as literal patterns:</p>
+            <pre class="simple-code">def sign(-1) -> "minus one"
+def sign(_)  -> "other"
+
+sign(-1)
+-- Output: "minus one"</pre>
+
+            <h3>Repeated Variables in Patterns</h3>
+            <p>When the same variable name appears more than once in a pattern, the matched values must be equal for the clause to apply:</p>
+            <pre class="simple-code">def same(x, x) -> "equal"
+def same(_, _) -> "different"
+
+same(3, 3)
+-- Output: "equal"
+same(3, 4)
+-- Output: "different"</pre>
+
+            <div class="note">
+                <strong>Note:</strong> Numeric patterns match across the integer/double divide: <code>def isFive(5)</code> also matches <code>5.0</code>.
+            </div>
+
+            <h3>Auto-Currying <span class="v2badge">Bern 2.0</span></h3>
+            <p>Calling a function with fewer arguments than it expects returns a partial application that waits for the rest. Disable it per file with the <code>no-curry</code> pragma.</p>
+            <pre class="simple-code">def add(x, y) -> x + y
+
+add2 = add(2)
+add2(10)
+-- Output: 12
+
+add(2)(40)
+-- Output: 42</pre>
+
+            <h3>Exhaustive Matching <span class="v2badge">Bern 2.0</span></h3>
+            <p>A function whose clauses cannot cover every possible input is reported when the file loads, so partial functions don't fail silently at runtime. Add the missing clause, or opt out per file with the <code>partial</code> pragma.</p>
+            <pre class="simple-code">def head([h|_]) -> h
+-- Error: function 'head' is not exhaustive (no clause for [])
+
+def head([h|_]) -> h
+def head([]) -> error("head: empty list")
+-- OK</pre>
+        </div>
+
+        <!-- PIPE OPERATOR -->
+        <div class="doc-section" id="pipe">
+            <h2>Pipe Operator</h2>
+
+            <p>The <code>)|</code> operator threads a value into a function as its <strong>first</strong> argument, letting you read data transformations left to right. <code>x )| f</code> is the same as <code>f(x)</code>, and <code>x )| f(a, b)</code> is the same as <code>f(x, a, b)</code>.</p>
+
+            <pre class="simple-code">[3, 1, 2] )| reverse
+-- Output: [2, 1, 3]   (same as reverse([3, 1, 2]))
+
+[1, 2, 3, 4] )| filter(\x -> x > 2)
+-- Output: [3, 4]      (same as filter([1, 2, 3, 4], \x -> x > 2))</pre>
+
+            <h3>Chaining</h3>
+            <p>The operator is left-associative, so pipes chain into a pipeline:</p>
+            <pre class="simple-code">[1, 2, 3, 4] )| filter(\x -> x % 2 == 0) )| map(\x -> x * 10)
+-- Output: [20, 40]</pre>
+
+            <h3>Precedence and Lambdas</h3>
+            <p>The pipe binds looser than arithmetic, and you can pipe directly into a lambda:</p>
+            <pre class="simple-code">2 + 3 )| (\n -> n == 5)
+-- Output: true   (2 + 3 is evaluated first)</pre>
+
+            <div class="note">
+                <strong>Tip:</strong> Pipelines work best with collection-first functions such as <code>map</code> and <code>filter</code>, where the piped collection naturally becomes the first argument.
+            </div>
+        </div>
+
+        <!-- WORD OPERATORS -->
+        <div class="doc-section" id="words">
+            <h2>Word Operators</h2>
+
+            <p>Every symbolic operator also has a written-word form, so programs can read like prose. The symbol and the word are interchangeable.</p>
+
+            <table class="lib-table">
+                <tr><th>Symbol</th><th>Word</th><th>Symbol</th><th>Word</th></tr>
+                <tr><td><code>+</code></td><td><code>plus</code></td><td><code>==</code></td><td><code>equals</code> (or <code>is</code>)</td></tr>
+                <tr><td><code>-</code></td><td><code>minus</code></td><td><code>!=</code></td><td><code>not-equals</code></td></tr>
+                <tr><td><code>*</code></td><td><code>times</code></td><td><code>&amp;&amp;</code></td><td><code>and</code></td></tr>
+                <tr><td><code>/</code></td><td><code>divided-by</code></td><td><code>||</code></td><td><code>or</code></td></tr>
+                <tr><td><code>%</code></td><td><code>modulo</code></td><td><code>!</code></td><td><code>not</code></td></tr>
+                <tr><td><code>&gt;</code></td><td><code>is-greater</code></td><td><code>&lt;&gt;</code></td><td><code>concat</code></td></tr>
+                <tr><td><code>&lt;</code></td><td><code>is-less</code></td><td><code>&lt;|</code></td><td><code>union</code></td></tr>
+                <tr><td><code>&gt;=</code></td><td><code>is-greater-or-equal</code></td><td><code>|&gt;</code></td><td><code>intersect</code></td></tr>
+                <tr><td><code>&lt;=</code></td><td><code>is-less-or-equal</code></td><td><code>&lt;/&gt;</code></td><td><code>difference</code></td></tr>
+                <tr><td><code>::</code></td><td><code>typeof</code></td><td><code>)|</code></td><td><code>and-do</code></td></tr>
+                <tr><td><code>:&gt;</code></td><td><code>length</code></td><td><code>=</code></td><td><code>be</code> (assignment)</td></tr>
+            </table>
+
+            <p>Loops also accept <code>in</code> as a synonym for <code>:</code> (and <code>for</code> as an alias for <code>loop</code>), and function and case bodies accept <code>returns</code> as a synonym for <code>-&gt;</code> / <code>=</code>.</p>
+
+            <pre class="simple-code">nums be [<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span>]
+
+<span class="number">3</span> is-greater <span class="number">2</span> and <span class="number">5</span> is-less-or-equal <span class="number">5</span>
+-- Output: true
+
+[<span class="number">1</span>, <span class="number">2</span>] concat [<span class="number">3</span>, <span class="number">4</span>]
+-- Output: [1, 2, 3, 4]
+
+<span class="keyword">def</span> <span class="function">classify</span>(n) <span class="keyword">when</span> n is-greater <span class="number">0</span> returns <span class="string">"positive"</span></pre>
+
+            <div class="note">
+                <strong>Note:</strong> The words use hyphens (<code>is-greater-or-equal</code>), and resolve the same way as their symbols, at the same precedence.
+            </div>
         </div>
 
         <!-- LOOPS -->
         <div class="doc-section" id="loops">
             <h2>Loops</h2>
-            
-            <p>Bern uses Odin-inspired loop syntax where <code>for</code> is the only loop keyword. The behavior changes based on how you use it.</p>
 
-            <h3>Repeat For</h3>
+            <p>Bern uses Odin-inspired loop syntax where <code>loop</code> is the only loop keyword. The behavior changes based on how you use it.</p>
+
+            <div class="note">
+                <strong>Note:</strong> <code>for</code> is accepted everywhere <code>loop</code> is, as a backwards-compatible alias. <code>loop</code> is the preferred spelling.
+            </div>
+
+            <h3>Repeat Loop</h3>
             <p>Execute a block a specific number of times:</p>
-            
-            <pre class="simple-code">for 3 do
+
+            <pre class="simple-code">loop 3 do
     "Hello, Loops!"
 end
 -- Output: "Hello, Loops!" (three times)</pre>
 
-            <h3>Conditional For</h3>
+            <h3>Conditional Loop</h3>
             <p>Repeat while a condition is true (like a while loop):</p>
-            
+
             <pre class="simple-code">counter = 2
-for counter > 0 do
+loop counter > 0 do
     "Hello, Loops!"
     counter = counter - 1
 end
 -- Output: "Hello, Loops!" (twice)</pre>
 
             <h3>Infinite Loop</h3>
-            <p>Create an infinite loop with <code>for true</code>:</p>
-            
-            <pre class="simple-code">for true do
+            <p>Create an infinite loop with <code>loop true</code>:</p>
+
+            <pre class="simple-code">loop true do
     "This runs forever!"
 end</pre>
 
@@ -527,24 +776,24 @@ end</pre>
                 <strong>Note:</strong> Be careful with infinite loops! Make sure you have a way to break out of them in your actual programs.
             </div>
 
-            <h3>For-In Loop</h3>
+            <h3>Loop-In Loop</h3>
             <p>Iterate over elements in lists, sets, or strings:</p>
-            
+
             <pre class="simple-code">text = "Bern"
-for char : text do
+loop char : text do
     "Current char is: " + char
 end
--- Output: 
+-- Output:
 -- "Current char is: B"
 -- "Current char is: e"
 -- "Current char is: r"
 -- "Current char is: n"</pre>
 
-            <h3>For-In with Index</h3>
+            <h3>Loop-In with Index</h3>
             <p>Get both the element and its index during iteration:</p>
-            
+
             <pre class="simple-code">text = "Bern"
-for char, index : text do
+loop char, index : text do
     "Char: " + char + " at index: " + index
 end
 -- Output:
@@ -623,8 +872,89 @@ range_list[3]
             <div class="example-box">
                 <h4>Complex List Operations</h4>
                 <pre class="simple-code">result = ([1,2,3,4] <> [3..5]) <| ([2,3,4] |> [4,5]) </> [1]
--- Combines concatenation, symmetric difference, 
+-- Combines concatenation, symmetric difference,
 -- intersection, and regular difference</pre>
+            </div>
+
+            <h3>Negative Indexing <span class="v2badge">Bern 2.0</span></h3>
+            <p>Negative indices count back from the end of a list or string.</p>
+            <pre class="simple-code">[10, 20, 30][-1]
+-- Output: 30
+"Bern"[-1]
+-- Output: 'n'</pre>
+
+            <h3>Lazy Ranges <span class="v2badge">Bern 2.0</span></h3>
+            <p>Ranges are lazy: their length is computed instantly and only the elements you actually touch are realised, so even an enormous range is cheap to work with.</p>
+            <pre class="simple-code">big = [1..1000000000]
+:> big
+-- Output: 1000000000   (instant, nothing is materialised)
+take(5, big)
+-- Output: [1, 2, 3, 4, 5]</pre>
+
+            <h3>Destructuring Lists (Cons Patterns)</h3>
+            <p>In a <em>pattern</em> - a function clause or a <code>case</code> branch - the syntax <code>[head | tail]</code> splits a list into its first element and the rest. This is called a <strong>cons pattern</strong>. The name before the <code>|</code> binds to the first element; the name after it binds to a list of everything else.</p>
+            <pre class="simple-code">def head([h | t]) -> h
+def tail([h | t]) -> t
+
+head([10, 20, 30])
+-- Output: 10
+tail([10, 20, 30])
+-- Output: [20, 30]</pre>
+            <p>Use <code>_</code> for any part you don't need, and add an empty-list clause <code>[]</code> so the function is exhaustive (a cons pattern never matches an empty list):</p>
+            <pre class="simple-code">def first([h | _]) -> h
+def first([])      -> error("first: empty list")
+
+first([1, 2, 3])
+-- Output: 1
+first([])
+-- Output: an error value</pre>
+            <p>Because the tail is itself a list, cons patterns are the natural way to write recursive functions that walk a list one element at a time:</p>
+            <pre class="simple-code">def sum([])      -> 0
+def sum([h | t]) -> h + sum(t)
+
+sum([1, 2, 3, 4])
+-- Output: 10</pre>
+            <p>To pull off more than one leading element, nest the pattern - <code>[a | [b | rest]]</code> binds the first two elements as <code>a</code> and <code>b</code>. Sets have the same construct with braces, <code>{head | tail}</code>, though since sets are unordered the "first" element is simply whichever one the set yields first.</p>
+            <div class="note">
+                <strong>Note:</strong> the very same <code>[head | tail]</code> syntax also works as an <em>expression</em> - see <a href="#cons-expr">Cons Expressions</a> below.
+            </div>
+
+            <h3>Cons Expressions <span class="v2badge">Bern 2.0</span></h3>
+            <p id="cons-expr">In expression position, <code>[head | tail]</code> <strong>builds</strong> a list by prepending one or more elements onto an existing one - the mirror image of the cons pattern. The values before the <code>|</code> become the new front; the expression after it must evaluate to a list.</p>
+            <pre class="simple-code">[0 | [1, 2, 3]]
+-- Output: [0, 1, 2, 3]
+
+[1, 2 | [3, 4]]
+-- Output: [1, 2, 3, 4]   (multiple heads are allowed)
+
+x = [9 | [10, 11]]
+-- x is [9, 10, 11]       (yes, it's a real expression you can assign)</pre>
+            <p>Prepending is lazy: the tail's spine is never forced, so you can cons onto a huge range and still get an instant result.</p>
+            <pre class="simple-code">big = [0 | [1..1000000000]]
+:> big
+-- Output: 1000000001   (instant)
+big[1]
+-- Output: 1</pre>
+            <p>Sets have the matching <code>{head | tail}</code> form, where the tail must be a set.</p>
+
+            <h3>List Comprehensions <span class="v2badge">Bern 2.0</span></h3>
+            <p>A list comprehension builds a list from one or more <em>generators</em> (<code>pattern &lt;- source</code>) and optional <em>guards</em> (boolean filters), written as <code>[expression | qualifiers]</code>. It reads as "the <em>expression</em>, for each binding produced by the qualifiers".</p>
+            <pre class="simple-code">[x * x | x <- [1..5]]
+-- Output: [1, 4, 9, 16, 25]
+
+[x | x <- [1..10], x % 2 == 0]
+-- Output: [2, 4, 6, 8, 10]   (a guard keeps only even x)</pre>
+            <p>Multiple generators nest like loops, producing every combination (the last generator varies fastest):</p>
+            <pre class="simple-code">[a + b | a <- [1, 2], b <- [10, 20]]
+-- Output: [11, 21, 12, 22]</pre>
+            <p>A generator's left side is a full <strong>pattern</strong>, so it can destructure as it iterates. Elements that don't match the pattern are skipped - a handy way to filter and unwrap at once:</p>
+            <pre class="simple-code">[h | [h | _] <- [[1, 2], [], [3]]]
+-- Output: [1, 3]   (the empty list has no head, so it's dropped)</pre>
+            <p>Because a string is a list of characters, you can iterate one directly:</p>
+            <pre class="simple-code">[c | c <- "abc"]
+-- Output: ['a', 'b', 'c']</pre>
+            <div class="note">
+                <strong>Note:</strong> a comprehension needs at least one generator. Without a <code>&lt;-</code>, <code>[a | b]</code> is read as a cons expression instead. The classic <code>map</code>/<code>filter</code>/pipe style still works too, and is often clearer for a single transformation: <code>[1..10] )| filter(\x -> x % 2 == 0) )| map(\x -> x * x)</code>.
             </div>
         </div>
 
@@ -1251,6 +1581,56 @@ parsed["host"]
                 </div>
 
                 <!-- CSV MODULE -->
+                <div id="lib-json" style="margin-top: 3rem;">
+                    <h3>json - JSON Parsing and Serialization</h3>
+                    <p>Parse JSON text into Bern values and serialize Bern values back to JSON.</p>
+
+                    <pre class="simple-code">import json</pre>
+
+                    <h4>Value Mapping</h4>
+                    <table class="lib-table">
+                        <tr><th>JSON</th><th>Bern value</th></tr>
+                        <tr><td>object</td><td>Object (<code>#{ ... }#</code>)</td></tr>
+                        <tr><td>array</td><td>Set, with duplicate grouping (see below)</td></tr>
+                        <tr><td>string</td><td>string</td></tr>
+                        <tr><td>number</td><td>Integer (no fraction/exponent) or Double</td></tr>
+                        <tr><td>true / false</td><td>Boolean</td></tr>
+                        <tr><td>null</td><td>Undefined</td></tr>
+                    </table>
+
+                    <h4>Parsing</h4>
+                    <div class="function-sig">json_parse(text) → value</div>
+                    <p>Parse a JSON document into a Bern value.</p>
+                    <pre class="simple-code">person = json_parse("{\"name\": \"Bern\", \"version\": 3}")
+person["name"]
+-- Output: "Bern"
+person["version"]
+-- Output: 3</pre>
+
+                    <div class="function-sig">is_null(value) → boolean</div>
+                    <p>Test whether a value is a parsed JSON <code>null</code> (i.e. <code>Undefined</code>).</p>
+                    <pre class="simple-code">is_null(json_parse("null"))
+-- Output: true</pre>
+
+                    <h4>Arrays and Duplicate Grouping</h4>
+                    <p>A JSON array becomes a <strong>Set</strong>. Because sets are made of distinct elements, a value that appears more than once collapses into a homogeneous sub-list of its copies. This keeps set theory intact while preserving multiplicity. Nested arrays stay Sets, so a List inside the set unambiguously means "grouped duplicates".</p>
+                    <pre class="simple-code">json_parse("[1, \"a\", 34.2, \"a\", \"banana\"]")
+-- Output: {1, ["a", "a"], 34.2, "banana"}</pre>
+
+                    <h4>Serialization</h4>
+                    <div class="function-sig">json_stringify(value) → string</div>
+                    <p>Serialize a Bern value to a JSON string. Object fields are enumerated with the built-in <code>keys()</code>, and grouped duplicates expand back into repeated array elements.</p>
+                    <pre class="simple-code">json_stringify(json_parse("{\"items\": [1, 2, 3], \"ok\": true}"))
+-- Output: {"items":[1,2,3],"ok":true}
+
+json_stringify(json_parse("[7, 7, 7]"))
+-- Output: [7,7,7]</pre>
+
+                    <div class="note">
+                        <strong>Note:</strong> Since arrays map to unordered Sets, element order is not guaranteed to survive a round trip.
+                    </div>
+                </div>
+
                 <div id="lib-csv" style="margin-top: 3rem;">
                     <h3>vendor/csv - CSV Parsing and Writing</h3>
                     <p>Bundled module for reading and writing CSV data from strings or files.</p>
@@ -1421,6 +1801,12 @@ write_file("data.txt", content + "\nNew line")</pre>
 fmap(Just(5), \x -> x * 2)
 
 -- Output: Just(10)</pre>
+
+            <h3>keys</h3>
+            <p>Returns the list of an object's keys, in insertion order. Useful for iterating over or serializing objects.</p>
+            <pre class="simple-code">obj = #{ name: "Bern", version: 3 }#
+keys(obj)
+-- Output: ["name", "version"]</pre>
         </div>
 
      <div class="doc-section" id="globals">
@@ -1444,11 +1830,127 @@ fmap(Just(5), \x -> x * 2)
 end</pre>
 
         </div>
+
+        <!-- REPL -->
+        <div class="doc-section" id="repl">
+            <h2>The REPL</h2>
+            <p>Running <code>bern</code> with no arguments starts an interactive read-eval-print loop. The result of each expression is printed automatically, and parse or runtime errors are reported without ending the session.</p>
+
+            <h3>The <code>_</code> Variable</h3>
+            <p>The result of the last expression is bound to <code>_</code>, so you can build on it:</p>
+            <pre class="simple-code">[bern]: 1 + 2
+3
+[bern]: _ * 10
+30</pre>
+
+            <h3>Multi-line Blocks</h3>
+            <p>Block constructs (<code>def ... do ... end</code>, <code>loop ... do ... end</code>, and so on) are read across lines until they are complete, shown with a continuation prompt:</p>
+            <pre class="simple-code">[bern]: def addy(x, y) do
+    ...:     return x + y
+    ...: end
+[bern]: addy(3, 4)
+7</pre>
+
+            <h3>REPL Commands</h3>
+            <table class="lib-table">
+                <tr><th>Command</th><th>Action</th></tr>
+                <tr><td><code>:help</code>, <code>:h</code></td><td>Show the list of commands</td></tr>
+                <tr><td><code>:load &lt;file&gt;</code>, <code>:l</code></td><td>Load and run a <code>.brn</code> file into the current session</td></tr>
+                <tr><td><code>:reset</code></td><td>Clear local definitions</td></tr>
+                <tr><td><code>:quit</code>, <code>:q</code></td><td>Exit (or press Ctrl-D)</td></tr>
+            </table>
+            <p>Command history is available with the up/down arrows and is saved between sessions.</p>
+        </div>
+
+        <!-- BUNDLING -->
+        <div class="doc-section" id="bundle">
+            <h2>Bundling to .exe</h2>
+            <p>The <code>build</code> command packages a script into a single, self-contained executable. It scans the script's <code>import</code> statements (transitively) and embeds those library files alongside the script, so the resulting program runs even where no <code>lib/</code> folder is present.</p>
+
+            <pre class="simple-code">bern build app.brn
+-- Creates app.exe
+
+bern build app.brn -o myprogram.exe
+-- Creates myprogram.exe</pre>
+
+            <p>The bundled executable runs the embedded script directly:</p>
+            <pre class="simple-code">./app.exe
+-- Runs app.brn with its bundled libraries</pre>
+
+            <div class="note">
+                <strong>How it works:</strong> the script and its libraries are appended to a copy of the interpreter as a blob. On startup the interpreter detects the blob, extracts it to a temporary directory, and runs the embedded <code>main.brn</code> from there. Your working directory is left untouched.
+            </div>
+        </div>
+
+        <!-- ERRORS AS VALUES -->
+        <div class="doc-section" id="errors-as-values">
+            <h2>Errors as Values <span class="v2badge">Bern 2.0</span></h2>
+            <p>By default, a runtime error no longer crashes the program. Instead it becomes a first-class <strong>error value</strong> that propagates through expressions and can be inspected. The program keeps running.</p>
+
+            <pre class="simple-code">import core
+
+bad = [1, 2, 3][99]      -- out of bounds
+is_error(bad)
+-- Output: true
+
+"the program keeps running"
+-- Output: "the program keeps running"</pre>
+
+            <p>This was implemented to let Bern be more like other languages, such as Go or Odin. That said I do believe that you should really be using Monads and ADTs for error handling!</p>
+            <h3>Raising and testing errors</h3>
+           
+            <p>You can use the following functions defined in <code>core</code> for better error handling:</p>
+            <div class="function-sig">error(message) → error value</div>
+            <p>Create a recoverable error value.</p>
+            <div class="function-sig">is_error(value) → boolean</div>
+            <p>Test whether a value is an error.</p>
+            <pre class="simple-code">def safe_head([]) -> error("empty list")
+def safe_head([h|_]) -> h
+
+result = safe_head([])
+if is_error(result) then
+    "no head"
+else
+    result
+end</pre>
+
+            <div class="note">
+                <strong>Note:</strong> Use the <code>abort-on-error</code> pragma to restore the classic crash-on-error behaviour.
+            </div>
+        </div>
+
+        <!-- PRAGMAS -->
+        <div class="doc-section" id="pragmas">
+            <h2>Pragmas <span class="v2badge">Bern 2.0</span></h2>
+            <p>Pragmas are file-level directives that tune how Bern behaves. Write them as a magic comment, usually at the top of a file:</p>
+            <pre class="simple-code">{--! strict-types !--}
+{--! immutable !--}</pre>
+
+            <table class="lib-table">
+                <tr><th>Pragma</th><th>Effect</th></tr>
+                <tr><td><code>impure-lists</code></td><td>lists may hold mixed element types</td></tr>
+                <tr><td><code>impure-sets</code></td><td>set operations keep duplicates</td></tr>
+                <tr><td><code>strict-types</code></td><td>forbid implicit string/number coercion</td></tr>
+                <tr><td><code>strict-arithmetic</code></td><td>division by zero is an error, not <code>NaN</code></td></tr>
+                <tr><td><code>immutable</code></td><td>reassigning an existing variable is an error</td></tr>
+                <tr><td><code>no-eval</code></td><td>bare expressions don't auto-print (<code>print()</code> still works)</td></tr>
+                <tr><td><code>show-types</code></td><td>auto-printed values show their type</td></tr>
+                <tr><td><code>safe-index</code></td><td>out-of-bounds indexing returns <code>undefined</code></td></tr>
+                <tr><td><code>no-undefined</code></td><td>reading an unbound variable is an error</td></tr>
+                <tr><td><code>start-on-one</code></td><td>indexing starts at 1</td></tr>
+                <tr><td><code>main</code></td><td>run <code>main()</code> after the file loads</td></tr>
+                <tr><td><code>no-curry</code></td><td>disable auto-currying</td></tr>
+                <tr><td><code>abort-on-error</code></td><td>crash on runtime errors instead of producing error values</td></tr>
+                <tr><td><code>partial</code></td><td>allow non-exhaustive functions</td></tr>
+                <tr><td><code>no-written-operators</code></td><td>switch off the written-word operators, freeing names like <code>length</code> and <code>plus</code> for use as variables</td></tr>
+            </table>
+        </div>
     </div>
     </div>
 
     <footer>
         Copyright © 2026 • All rights reserved • Built with ❤️ by <a href="https://mirvox.xyz/">Miguel Aguiar</a>
     </footer>
+    <script src="examples-toggle.js"></script>
 </body>
 </html>

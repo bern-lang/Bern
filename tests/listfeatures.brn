@@ -1,0 +1,39 @@
+import core
+import assert
+
+"=== Cons expressions ==="
+-- prepend a single element
+assert_equals("cons single", [0 | [1, 2, 3]], [0, 1, 2, 3])
+-- prepend multiple heads
+assert_equals("cons multi", [1, 2 | [3, 4]], [1, 2, 3, 4])
+-- cons onto an empty list
+assert_equals("cons empty tail", [1 | []], [1])
+-- cons onto a range
+assert_equals("cons onto range", [0 | [1..3]], [0, 1, 2, 3])
+-- cons using variables, the classic recursive style
+def prepend(x, xs) -> [x | xs]
+assert_equals("cons via fn", prepend(9, [10, 11]), [9, 10, 11])
+
+"=== Cons stays lazy over a huge range ==="
+big = [0 | [1..1000000000]]
+assert_equals("lazy cons length", :> big, 1000000001)
+assert_equals("lazy cons head", big[0], 0)
+assert_equals("lazy cons second", big[1], 1)
+
+"=== Set cons ==="
+assert_equals("set cons", {0 | {1, 2}}, {0, 1, 2})
+
+"=== List comprehensions ==="
+assert_equals("comp square", [x * x | x <- [1..5]], [1, 4, 9, 16, 25])
+assert_equals("comp filter", [x | x <- [1..10], x % 2 == 0], [2, 4, 6, 8, 10])
+assert_equals("comp two guards", [x | x <- [1..20], x % 2 == 0, x % 3 == 0], [6, 12, 18])
+-- cartesian product with two generators
+assert_equals("comp cartesian", [a + b | a <- [1, 2], b <- [10, 20]], [11, 21, 12, 22])
+-- pattern in a generator skips non-matching elements (here: non-empty sublists)
+assert_equals("comp pattern gen", [h | [h | _] <- [[1, 2], [], [3]]], [1, 3])
+-- comprehension over a string (a list of characters)
+assert_equals("comp over string", [c | c <- "abc"], ['a', 'b', 'c'])
+-- a generator drawn from a comprehension's result, composing both features
+assert_equals("comp + cons", [0 | [x | x <- [1..3]]], [0, 1, 2, 3])
+
+"ALL LIST-FEATURE TESTS DONE"

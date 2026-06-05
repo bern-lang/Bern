@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bern Examples | In-depth, Explained Walkthroughs</title>
+    <link rel="icon" type="image/png" href="images/cat.png">
+    <meta name="description" content="An in-depth, thoroughly explained tour of the Bern programming language: literals, variables, conditionals, loops, functions, pattern matching, guards, lambdas, pipes, collections, ADTs, case expressions, JSON, errors as values and more.">
+    <meta name="keywords" content="Bern examples, Bern tutorial, functional programming examples, pattern matching, algebraic data types, pipe operator, Bern language guide">
+    <link rel="canonical" href="https://bern-lang.github.io/Bern/examples.html">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #5b5f97;
+            --primary-dark: #4a4d7a;
+            --accent: #7b9fc4;
+            --bg: #ffffff;
+            --text: #333;
+            --text-light: #666;
+            --border: #ddd;
+            --code-bg: #f8f8f8;
+            --sidebar-bg: #f9fafb;
+        }
+
+        @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&display=swap');
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            line-height: 1.7;
+            color: var(--text);
+            background: var(--bg);
+        }
+
+        header {
+            background: white;
+            padding: 1rem 0;
+        }
+
+        .header-content {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        nav {
+            display: flex;
+            gap: 2rem;
+        }
+
+        nav a {
+            color: var(--text);
+            text-decoration: none;
+            transition: color 0.2s;
+            position: relative;
+        }
+
+        nav a::after {
+            content: "";
+            position: absolute;
+            left: 0;
+            bottom: -4px;
+            width: 0;
+            height: 2px;
+            background: var(--primary);
+            transition: width 0.2s ease;
+        }
+
+        nav a:hover {
+            color: var(--primary);
+        }
+
+        nav a:hover::after {
+            width: 100%;
+        }
+
+        .layout {
+            display: flex;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .sidebar {
+            width: 280px;
+            padding: 2rem 1.5rem;
+            position: sticky;
+            top: 73px;
+            height: calc(100vh - 73px);
+            overflow-y: auto;
+            border-right: 1px solid var(--border);
+        }
+
+        .sidebar h3 {
+            color: var(--primary-dark);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin: 1.5rem 0 0.75rem;
+        }
+
+        .sidebar h3:first-child {
+            margin-top: 0;
+        }
+
+        .sidebar ul {
+            list-style: none;
+        }
+
+        .sidebar li {
+            margin: 0.4rem 0;
+        }
+
+        .sidebar a {
+            color: var(--text-light);
+            text-decoration: none;
+            font-size: 0.95rem;
+            display: block;
+            padding: 0.3rem 0.5rem;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+
+        .sidebar a:hover {
+            color: var(--primary);
+            background: rgba(91, 95, 151, 0.1);
+        }
+
+        .container {
+            flex: 1;
+            padding: 3rem 2rem;
+            max-width: 1000px;
+        }
+
+        .doc-section {
+            margin: 4rem 0;
+        }
+
+        .doc-section h2 {
+            color: var(--primary);
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .doc-section h3 {
+            color: var(--primary-dark);
+            font-size: 1.3rem;
+            margin: 2rem 0 1rem;
+        }
+
+        .doc-section h4 {
+            color: var(--primary-dark);
+            font-size: 1.1rem;
+            margin: 1.5rem 0 0.75rem;
+        }
+
+        .doc-section p {
+            color: var(--text-light);
+            margin-bottom: 1rem;
+            font-size: 1.05rem;
+        }
+
+        .doc-section ul,
+        .doc-section ol {
+            margin: 1rem 0 1rem 2rem;
+            color: var(--text-light);
+        }
+
+        .doc-section li {
+            margin: 0.5rem 0;
+        }
+
+        code {
+            background: var(--code-bg);
+            padding: 0.15rem 0.4rem;
+            border-radius: 3px;
+            font-family: 'Fira Code', 'Courier New', monospace;
+            font-size: 0.9em;
+            color: var(--primary-dark);
+        }
+
+        .simple-code {
+            background: var(--code-bg);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 1rem;
+            margin: 1rem 0;
+            font-family: 'Fira Code', 'Courier New', monospace;
+            font-size: 0.9rem;
+            overflow-x: auto;
+            white-space: pre;
+        }
+
+        .note {
+            background: #fff8e1;
+            border-left: 4px solid #ffc107;
+            padding: 1rem;
+            margin: 1.5rem 0;
+            border-radius: 4px;
+        }
+
+        .note strong {
+            color: #f57c00;
+        }
+
+        .tip {
+            background: #e8f5e9;
+            border-left: 4px solid #43a047;
+            padding: 1rem;
+            margin: 1.5rem 0;
+            border-radius: 4px;
+        }
+
+        .tip strong {
+            color: #2e7d32;
+        }
+
+        .lib-table {
+            border-collapse: collapse;
+            margin: 1rem 0;
+            width: 100%;
+            font-size: 0.95rem;
+        }
+
+        .lib-table th,
+        .lib-table td {
+            border: 1px solid var(--border);
+            padding: 0.5rem 0.85rem;
+            text-align: left;
+        }
+
+        .lib-table th {
+            background: #e8eaf6;
+            color: var(--primary);
+        }
+
+        .lead {
+            color: var(--text-light);
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+        }
+
+        .pagenav {
+            display: flex;
+            justify-content: space-between;
+            gap: 1rem;
+            margin: 3rem 0 1rem;
+            flex-wrap: wrap;
+        }
+
+        .pagenav a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .pagenav a:hover {
+            text-decoration: underline;
+        }
+
+        /* Syntax highlighting (also injected by examples-toggle.js, kept here so
+           manually-coloured blocks render even before the script runs). */
+        .keyword { color: #d73a49; font-weight: 500; }
+        .function { color: #6f42c1; }
+        .string { color: #22863a; }
+        .number { color: #005cc5; }
+        .comment { color: #6a737d; font-style: italic; }
+        .operator { color: #d73a49; }
+        .type { color: #005cc5; font-weight: 500; }
+
+        footer {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-light);
+            border-top: 1px solid var(--border);
+            margin-top: 4rem;
+            font-size: 0.9rem;
+        }
+
+        footer a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 1024px) {
+            .sidebar {
+                display: none;
+            }
+        }
+
+        @media (max-width: 768px) {
+            nav {
+                gap: 1rem;
+            }
+
+            .container {
+                padding: 2rem 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <a href="index.html" class="logo"><img src="images/cat.png" alt="Bern Logo" width="20%" style="margin-top: 10px;"></a>
+            <nav>
+                <a href="index.html">Home</a>
+                <a href="documentation.html">Documentation</a>
+                <a href="examples.html">Learn Bern</a>
+                <a href="changelog.html">Changelog</a>
+                <a href="pt-br/examples.html" style="font-weight: 600;">🌐 PT-BR</a>
+            </nav>
+        </div>
+    </header>
+
+    <div class="layout">
+        <aside class="sidebar">
+            <h3>Getting Started</h3>
+            <ul>
+                <li><a href="#intro">Introduction</a></li>
+                <li><a href="#literals">Literals &amp; Auto-output</a></li>
+                <li><a href="#variables">Variables &amp; Types</a></li>
+                <li><a href="#introspection">typeof &amp; length</a></li>
+            </ul>
+
+            <h3>Operators</h3>
+            <ul>
+                <li><a href="#operators">Arithmetic &amp; Logic</a></li>
+                <li><a href="#words">Word Operators</a></li>
+            </ul>
+
+            <h3>Control Flow</h3>
+            <ul>
+                <li><a href="#conditionals">Conditionals</a></li>
+                <li><a href="#if-expr">if as an Expression</a></li>
+                <li><a href="#loops">Loops</a></li>
+            </ul>
+
+            <h3>Functions</h3>
+            <ul>
+                <li><a href="#functions">Defining Functions</a></li>
+                <li><a href="#patterns">Pattern Matching</a></li>
+                <li><a href="#guards">Guards</a></li>
+                <li><a href="#lambdas">Lambdas</a></li>
+                <li><a href="#curry">Currying</a></li>
+                <li><a href="#pipe">The Pipe Operator</a></li>
+            </ul>
+
+            <h3>Data</h3>
+            <ul>
+                <li><a href="#lists">Lists &amp; Ranges</a></li>
+                <li><a href="#sets">Sets</a></li>
+                <li><a href="#objects">Objects</a></li>
+                <li><a href="#adt">ADTs</a></li>
+                <li><a href="#case">case Expressions</a></li>
+                <li><a href="#json">JSON</a></li>
+            </ul>
+
+            <h3>Beyond the Basics</h3>
+            <ul>
+                <li><a href="#errors">Errors as Values</a></li>
+                <li><a href="#lazy">Lazy Ranges</a></li>
+                <li><a href="#imports">Imports</a></li>
+                <li><a href="#input">User Input</a></li>
+            </ul>
+        </aside>
+
+        <div class="container">
+            <h1 style="color: var(--primary); font-size: 2.5rem; margin-bottom: 0.5rem;">Bern by Example</h1>
+            <p class="lead">A guided, in-depth tour of the language. Every snippet is runnable - paste it into the REPL or save it as a <code>.brn</code> file. Wherever symbols appear, use the <em>Show written form</em> button to flip the same code into its plain-English equivalent.</p>
+
+            <div class="tip">
+                <strong>How to read this page:</strong> short snippets show one idea at a time, with the expected output written as a comment (<code>-- Output: ...</code>). For a terse reference of every feature and the full standard library, see the <a href="documentation.html">Documentation</a>. For a quick taste, the <a href="index.html#docs">homepage examples</a> are a condensed version of this page.
+            </div>
+
+            <!-- INTRO -->
+            <div class="doc-section" id="intro">
+                <h2>Introduction</h2>
+                <p>Bern is a small, functionally-inspired language built around a single idea: <strong>code should read the way you think about the problem.</strong> Three habits will make the rest of this page click:</p>
+                <ol>
+                    <li><strong>Evaluation implies output.</strong> Any expression you write at the top level is evaluated and printed automatically - there is no <code>print</code> ceremony for quick experiments.</li>
+                    <li><strong>Everything is an expression.</strong> <code>if</code>, <code>case</code>, and function bodies all produce a value, so they can be assigned, returned, or piped.</li>
+                    <li><strong>Symbols and words are interchangeable.</strong> <code>a + b</code> and <code>a plus b</code> are the same program. Beginners can write words; once the symbols feel natural, switch freely.</li>
+                </ol>
+            </div>
+
+            <!-- LITERALS -->
+            <div class="doc-section" id="literals">
+                <h2>Literals &amp; Automatic Output</h2>
+                <p>Write a value on its own line and Bern evaluates and prints it. There is no <code>main</code> function to set up and nothing to import for the basics.</p>
+                <pre class="simple-code">"Hello, World!"
+23
+3.14
+true</pre>
+                <p>Each of these four lines produces output in order. Strings support the usual escape sequences, and you can build new strings with <code>+</code>:</p>
+                <pre class="simple-code">"Bern" + " " + "rocks"
+-- Output: "Bern rocks"
+
+"Line one\nLine two"
+-- Output: two lines, because \n is a newline</pre>
+                <div class="note">
+                    <strong>Note:</strong> A single character in single quotes (<code>'n'</code>) is a <em>character</em>, while double quotes (<code>"n"</code>) make a one-character <em>string</em>. Indexing a string returns characters.
+                </div>
+            </div>
+
+            <!-- VARIABLES -->
+            <div class="doc-section" id="variables">
+                <h2>Variables &amp; Types</h2>
+                <p>Bind a name to a value with <code>name = value</code>. Bern infers the type; you never annotate it. The four core scalar types are integers, doubles, strings, and booleans.</p>
+                <pre class="simple-code">integer = 2
+double = 3.14
+helloworld = "Hello, World!"
+isActive = true</pre>
+                <p>Reading a variable is just writing its name. Because evaluation implies output, the value prints:</p>
+                <pre class="simple-code">helloworld
+-- Output: "Hello, World!"
+
+integer + 40
+-- Output: 42</pre>
+            </div>
+
+            <!-- INTROSPECTION -->
+            <div class="doc-section" id="introspection">
+                <h2>Type Checking &amp; Length</h2>
+                <p>Two prefix operators let you inspect values:</p>
+                <ul>
+                    <li><code>::</code> (also written <code>typeof</code>) returns the type of a value as a string.</li>
+                    <li><code>:&gt;</code> (also written <code>length</code>) returns the length of a list, set, or string.</li>
+                </ul>
+                <pre class="simple-code">:: 2
+-- Output: "Int"
+
+:: "hello"
+-- Output: "String"
+
+:> [1, 2, 3, 4]
+-- Output: 4
+
+:> "hello"
+-- Output: 5</pre>
+            </div>
+
+            <!-- OPERATORS -->
+            <div class="doc-section" id="operators">
+                <h2>Arithmetic, Comparison &amp; Logic</h2>
+                <p>Arithmetic works as you would expect. Comparisons return booleans, and the logical operators <code>&amp;&amp;</code> / <code>||</code> short-circuit - the right-hand side is skipped entirely when the left already decides the result.</p>
+                <pre class="simple-code">17 % 5            -- Output: 2   (modulo / remainder)
+2 + 3 * 4         -- Output: 14  (usual precedence)
+
+3 > 2             -- Output: true
+5 >= 5            -- Output: true
+
+false && (1 / 0)  -- Output: false  (right side never runs, so no error)
+true  || (1 / 0)  -- Output: true</pre>
+                <p>Negative indexing counts from the end of a list or string - <code>-1</code> is the last element:</p>
+                <pre class="simple-code">[10, 20, 30][-1]   -- Output: 30
+[10, 20, 30][-2]   -- Output: 20
+"Bern"[-1]         -- Output: 'n'</pre>
+            </div>
+
+            <!-- WORD OPERATORS -->
+            <div class="doc-section" id="words">
+                <h2>Word Operators</h2>
+                <p>Every symbol has a plain-English synonym, so a program can read like a sentence. The symbol and the word are <em>identical</em> to the parser - pick whichever is clearer, and mix them freely.</p>
+                <table class="lib-table">
+                    <tr><th>Symbol</th><th>Word</th><th>Symbol</th><th>Word</th></tr>
+                    <tr><td><code>+</code></td><td><code>plus</code></td><td><code>==</code></td><td><code>equals</code> / <code>is</code></td></tr>
+                    <tr><td><code>-</code></td><td><code>minus</code></td><td><code>!=</code></td><td><code>not-equals</code></td></tr>
+                    <tr><td><code>*</code></td><td><code>times</code></td><td><code>&amp;&amp;</code></td><td><code>and</code></td></tr>
+                    <tr><td><code>/</code></td><td><code>divided-by</code></td><td><code>||</code></td><td><code>or</code></td></tr>
+                    <tr><td><code>%</code></td><td><code>modulo</code></td><td><code>!</code></td><td><code>not</code></td></tr>
+                    <tr><td><code>&gt;</code></td><td><code>is-greater</code></td><td><code>&lt;&gt;</code></td><td><code>concat</code></td></tr>
+                    <tr><td><code>&gt;=</code></td><td><code>is-greater-or-equal</code></td><td><code>)|</code></td><td><code>and-do</code></td></tr>
+                    <tr><td><code>=</code></td><td><code>be</code></td><td><code>-&gt;</code></td><td><code>returns</code> / <code>such-that</code></td></tr>
+                </table>
+                <p>The same example, twice. Press <em>Show written form</em> on either block to confirm they are interchangeable:</p>
+                <pre class="simple-code">3 > 2 && 5 <= 5
+[1, 2] <> [3, 4]
+total = 10 + 5</pre>
+                <pre class="simple-code">3 is-greater 2 and 5 is-less-or-equal 5
+[1, 2] concat [3, 4]
+total be 10 plus 5</pre>
+                <p>Loops also accept <code>in</code> as a synonym for <code>:</code>, and function bodies accept <code>returns</code> in place of <code>-&gt;</code>.</p>
+            </div>
+
+            <!-- CONDITIONALS -->
+            <div class="doc-section" id="conditionals">
+                <h2>Conditionals</h2>
+                <p>The <code>if / then / else / end</code> form chooses between branches. Chain extra cases with <code>else if</code>.</p>
+                <pre class="simple-code">age = 18
+if age >= 18 then
+    "You are an adult."
+else
+    "You are a minor."
+end
+-- Output: "You are an adult."</pre>
+                <pre class="simple-code">score = 85
+if score >= 90 then
+    "You got an A."
+else if score >= 80 then
+    "You got a B."
+else if score >= 70 then
+    "You got a C."
+else
+    "You need to improve."
+end
+-- Output: "You got a B."</pre>
+                <p>Conditionals nest naturally. A classic FizzBuzz over a range:</p>
+                <pre class="simple-code">loop n : [1..15] do
+    if n % 15 == 0 then
+        "FizzBuzz"
+    else if n % 3 == 0 then
+        "Fizz"
+    else if n % 5 == 0 then
+        "Buzz"
+    else
+        n
+    end
+end</pre>
+            </div>
+
+            <!-- IF EXPR -->
+            <div class="doc-section" id="if-expr">
+                <h2><code>if</code> as an Expression</h2>
+                <p>Because <code>if</code> produces a value, you can use it directly inside a function body or assignment - no temporary variable needed.</p>
+                <pre class="simple-code">def sign(n) -> if n > 0 then "positive" else if n < 0 then "negative" else "zero" end
+
+sign(7)    -- Output: "positive"
+sign(-3)   -- Output: "negative"
+sign(0)    -- Output: "zero"</pre>
+                <p>It even works inline, with no function around it at all:</p>
+                <pre class="simple-code">label = if true then 1 else 2 end
+-- label is 1</pre>
+            </div>
+
+            <!-- LOOPS -->
+            <div class="doc-section" id="loops">
+                <h2>Loops</h2>
+                <p>Inspired by Odin, Bern has a single loop keyword, <code>loop</code>. What you put after it changes how it behaves. (<code>for</code> is accepted everywhere as a backwards-compatible alias.)</p>
+
+                <h3>Repeat loop</h3>
+                <p>Give it a number to repeat a body that many times.</p>
+                <pre class="simple-code">loop 3 do
+    "Hello, Loops!"
+end</pre>
+
+                <h3>Conditional loop</h3>
+                <p>Give it a boolean condition and it repeats while that condition stays true - this is Bern's <code>while</code>.</p>
+                <pre class="simple-code">counter = 2
+loop counter > 0 do
+    "Hello, Loops!"
+    counter = counter - 1
+end</pre>
+
+                <h3>Infinite loop</h3>
+                <p><code>loop true</code> loops forever - useful for servers and REPL-style programs (stop it with <code>break</code> or by exiting).</p>
+                <pre class="simple-code">loop true do
+    "Hello!"
+end</pre>
+
+                <h3>Loop-in loop</h3>
+                <p>Iterate the elements of a list, set, or string with <code>:</code> (or the word <code>in</code>).</p>
+                <pre class="simple-code">text = "Bern"
+loop char : text do
+    "Current char is: " + char
+end</pre>
+
+                <h3>Loop-in with an index</h3>
+                <p>Ask for a second binding and Bern hands you the position alongside each element.</p>
+                <pre class="simple-code">text = "Bern"
+loop char, index : text do
+    "Char " + char + " is at index " + index
+end</pre>
+            </div>
+
+            <!-- FUNCTIONS -->
+            <div class="doc-section" id="functions">
+                <h2>Defining Functions</h2>
+                <p>The simplest functions are one-liners: <code>def name(params) -&gt; expression</code>. The expression after the arrow is the return value.</p>
+                <pre class="simple-code">def add(x, y) -> x + y
+add(2, 3)
+-- Output: 5</pre>
+                <p>For multi-step logic use a <code>do ... end</code> block and an explicit <code>return</code>.</p>
+                <pre class="simple-code">def sumList(xs) do
+    total = 0
+    loop n : xs do
+        total = total + n
+    end
+    return total
+end
+
+sumList([1, 2, 3, 4])
+-- Output: 10</pre>
+            </div>
+
+            <!-- PATTERN MATCHING -->
+            <div class="doc-section" id="patterns">
+                <h2>Pattern Matching</h2>
+                <p>A function can have several <em>clauses</em>. Bern tries them top to bottom and runs the first whose pattern matches the arguments. This replaces most chains of <code>if</code>.</p>
+                <pre class="simple-code">def sign(0) -> "zero"
+def sign(n) -> "positive"
+
+sign(0)    -- Output: "zero"
+sign(42)   -- Output: "positive"</pre>
+                <p>Patterns can be literals (matched exactly), variables (bind anything), or <code>_</code> (the wildcard, which matches and ignores).</p>
+                <pre class="simple-code">def greet("Alice") -> "Hi, Alice!"
+def greet(_)       -> "Hello, someone else!"
+
+greet("Alice")   -- Output: "Hi, Alice!"
+greet("Bob")     -- Output: "Hello, someone else!"</pre>
+                <p>Negative numbers work as literal patterns, and a variable repeated in one pattern forces the matched values to be equal:</p>
+                <pre class="simple-code">def describe(-1) -> "minus one"
+def describe(_)  -> "something else"
+
+def same(x, x) -> "equal"
+def same(_, _) -> "different"
+
+same(3, 3)   -- Output: "equal"
+same(3, 4)   -- Output: "different"</pre>
+                <p>Lists destructure with the <code>[head | tail]</code> pattern - the basis of recursive functions over lists:</p>
+                <pre class="simple-code">def first([])      -> error("first: empty")
+def first([h | _]) -> h
+
+first([10, 20])   -- Output: 10
+first([])         -- Output: an error value (see "Errors as Values")</pre>
+            </div>
+
+            <!-- GUARDS -->
+            <div class="doc-section" id="guards">
+                <h2>Guards</h2>
+                <p>Add <code>when &lt;condition&gt;</code> after the parameters to make a clause apply only when the condition is also true. Guards let one set of patterns split on a value's contents.</p>
+                <pre class="simple-code">def classify(n) when n > 0 -> "positive"
+def classify(0)            -> "zero"
+def classify(n)            -> "negative"
+
+classify(7)    -- Output: "positive"
+classify(0)    -- Output: "zero"
+classify(-3)   -- Output: "negative"</pre>
+                <p>Guards work with block bodies and with lambdas too:</p>
+                <pre class="simple-code">def grade(n) when n >= 90 do return "A" end
+def grade(n) when n >= 80 -> "B"
+def grade(_)              -> "C"
+
+check_pos = \x when x > 0 -> "yes"
+check_pos(4)   -- Output: "yes"</pre>
+            </div>
+
+            <!-- LAMBDAS -->
+            <div class="doc-section" id="lambdas">
+                <h2>Lambdas &amp; Higher-Order Functions</h2>
+                <p>Functions are ordinary values. Write an anonymous one with <code>\params -&gt; expression</code>, store it in a variable, pass it around, or return it.</p>
+                <pre class="simple-code">inc = \x -> x + 1
+pairSwap = \a, b -> [b, a]
+
+inc(10)         -- Output: 11
+pairSwap(1, 2)  -- Output: [2, 1]</pre>
+                <p>A higher-order function takes another function as an argument. <code>map</code> and <code>filter</code> from <code>core</code> are the everyday examples:</p>
+                <pre class="simple-code">import core
+
+map([1, 2, 3, 4, 5], \x -> x * 2)
+-- Output: [2, 4, 6, 8, 10]
+
+def applyTwice(f, x) -> f(f(x))
+applyTwice(\n -> n * 2, 5)
+-- Output: 20</pre>
+            </div>
+
+            <!-- CURRY -->
+            <div class="doc-section" id="curry">
+                <h2>Currying &amp; Partial Application</h2>
+                <p>Call a function with fewer arguments than it expects and Bern returns a new function waiting for the rest. This makes it easy to build specialised helpers on the fly.</p>
+                <pre class="simple-code">import core
+
+def add(x, y) -> x + y
+
+add2 = add(2)     -- a new function: "add 2 to its argument"
+add2(10)          -- Output: 12
+add(2)(40)        -- Output: 42  (chain the calls directly)</pre>
+                <p>Partial application shines when feeding helpers into <code>map</code> and friends:</p>
+                <pre class="simple-code">import core
+
+def add(x, y) -> x + y
+map([10, 20, 30], add(1))
+-- Output: [11, 21, 31]</pre>
+            </div>
+
+            <!-- PIPE -->
+            <div class="doc-section" id="pipe">
+                <h2>The Pipe Operator</h2>
+                <p><code>x )| f</code> passes <code>x</code> as the <strong>first</strong> argument of <code>f</code> - that is, <code>x )| f</code> is exactly <code>f(x)</code>. It lets data transformations read left to right instead of inside-out.</p>
+                <pre class="simple-code">import core
+
+[3, 1, 2] )| reverse
+-- Output: [2, 1, 3]</pre>
+                <p>When the function needs more arguments, the piped value fills the first slot and you supply the rest:</p>
+                <pre class="simple-code">import core
+
+[1, 2, 3, 4] )| filter(\x -> x > 2)
+-- same as filter([1, 2, 3, 4], \x -> x > 2)   ->   [3, 4]</pre>
+                <p>Pipes are left-associative, so chaining builds a readable pipeline:</p>
+                <pre class="simple-code">import core
+
+[1, 2, 3, 4] )| filter(\x -> x % 2 == 0) )| map(\x -> x * 10)
+-- Output: [20, 40]</pre>
+                <div class="note">
+                    <strong>Precedence:</strong> the pipe binds looser than arithmetic, so in <code>2 + 3 )| is_five</code> the <code>2 + 3</code> is evaluated first, then piped. You can also pipe straight into a lambda: <code>5 )| (\x -> x + 1)</code>.
+                </div>
+            </div>
+
+            <!-- LISTS -->
+            <div class="doc-section" id="lists">
+                <h2>Lists &amp; Ranges</h2>
+                <p>Lists are ordered collections written with square brackets. The range syntax <code>[a..b]</code> builds a list from <code>a</code> to <code>b</code> inclusive.</p>
+                <pre class="simple-code">numbers = [1, 2, 3, 4, 5]
+range = [5..10]
+-- range is [5, 6, 7, 8, 9, 10]</pre>
+                <p>Bern overloads arithmetic and set-theory operators for lists:</p>
+                <pre class="simple-code">[1, 2] + 2             -- Output: [3, 4]      (adds to each element)
+[1, 2] <> [3, 4, 5]    -- Output: [1, 2, 3, 4, 5]   (concatenation)
+[1, 2, 3] <| [3, 4, 5] -- Output: [1, 2, 3, 4, 5]   (union, no duplicates)</pre>
+                <table class="lib-table">
+                    <tr><th>Operator</th><th>Word</th><th>Meaning</th></tr>
+                    <tr><td><code>&lt;&gt;</code></td><td><code>concat</code></td><td>Join two collections end to end</td></tr>
+                    <tr><td><code>&lt;|</code></td><td><code>union</code></td><td>All elements of both, deduplicated</td></tr>
+                    <tr><td><code>|&gt;</code></td><td><code>intersect</code></td><td>Only elements in both</td></tr>
+                    <tr><td><code>&lt;/&gt;</code></td><td><code>difference</code></td><td>Elements in the first but not the second</td></tr>
+                </table>
+            </div>
+
+            <!-- SETS -->
+            <div class="doc-section" id="sets">
+                <h2>Sets</h2>
+                <p>Sets use curly braces and automatically keep their elements unique. They support the same set-theory operators as lists.</p>
+                <pre class="simple-code">{1, 2} + 3              -- Output: {1, 2, 3}   (add an element)
+{1, 2, 3} |> {2, 3, 4}  -- Output: {2, 3}      (intersection)
+{1, 2, 3} </> {2, 3, 4} -- Output: {1}         (difference)</pre>
+            </div>
+
+            <!-- OBJECTS -->
+            <div class="doc-section" id="objects">
+                <h2>Objects (Hashmaps)</h2>
+                <p>Objects map keys to values using the <code>#{ ... }#</code> notation.</p>
+                <pre class="simple-code">obj = #{
+  key: "value",
+  hello: "world"
+}#
+obj</pre>
+                <p>Index with brackets to read, reassign, or add new keys:</p>
+                <pre class="simple-code">obj["key"] = "new_value"      -- reassign an existing key
+obj["new_key"] = "added"      -- add a brand-new key</pre>
+                <p>Objects nest, and you can chain indices to reach inside:</p>
+                <pre class="simple-code">obj["inner"] = #{ nested_key: "nested_value" }#
+obj["inner"]["nested_key"]
+-- Output: "nested_value"</pre>
+            </div>
+
+            <!-- ADT -->
+            <div class="doc-section" id="adt">
+                <h2>Algebraic Data Types</h2>
+                <p>An ADT defines a type as a choice between several <em>constructors</em>, each carrying its own fields. Declare one with <code>adt</code>:</p>
+                <pre class="simple-code">adt Shape = Circle Double | Rectangle Double Double</pre>
+                <p>Constructors are called like functions to build values:</p>
+                <pre class="simple-code">c = Circle(5.0)
+r = Rectangle(3.0, 4.0)</pre>
+                <p>Pattern matching destructures them, pulling the fields out by name. This is where ADTs and multi-clause functions combine beautifully:</p>
+                <pre class="simple-code">def area(Circle(r))       -> 3.14159 * r * r
+def area(Rectangle(w, h)) -> w * h
+
+area(c)   -- Output: 78.53975
+area(r)   -- Output: 12.0</pre>
+
+                <h3>The Maybe pattern</h3>
+                <p>A common use of ADTs is modelling "a value, or nothing" safely - no <code>null</code> surprises. Here a division returns <code>None</code> instead of crashing on divide-by-zero:</p>
+                <pre class="simple-code">adt Maybe = Just Int | None
+
+def safeDivide(n, 0) -> None()
+def safeDivide(n, m) -> Just(n / m)
+
+safeDivide(10, 3)   -- Output: Just(3)
+safeDivide(5, 0)    -- Output: None()</pre>
+            </div>
+
+            <!-- CASE -->
+            <div class="doc-section" id="case">
+                <h2><code>case</code> Expressions</h2>
+                <p>When you want pattern matching <em>inside</em> an expression rather than across function clauses, use <code>case value is pattern = result | ... end</code>. Each branch can carry its own guard.</p>
+                <pre class="simple-code">adt Shape = Circle Double | Square Double
+
+def check(v) -> case v is
+      Circle(_) = "It's a Circle!"
+    | Square(_) = "It's a Square!"
+    | _         = "Unknown"
+    end
+
+check(Circle(5.0))   -- Output: "It's a Circle!"
+check(Square(2.0))   -- Output: "It's a Square!"</pre>
+                <p>Branches can bind fields and return them, or match on the result of <code>::</code> (typeof). Guards use the same <code>when</code> keyword as function clauses:</p>
+                <pre class="simple-code">def size(n) -> case n is
+      x when x > 100 = "big"
+    | x when x > 10  = "medium"
+    | _              = "small"
+    end
+
+size(500)   -- Output: "big"
+size(50)    -- Output: "medium"
+size(5)     -- Output: "small"</pre>
+            </div>
+
+            <!-- JSON -->
+            <div class="doc-section" id="json">
+                <h2>JSON</h2>
+                <p>The <code>json</code> library parses JSON text into Bern values and serializes them back.</p>
+                <pre class="simple-code">import json
+
+person = json_parse("{\"name\": \"Bern\", \"version\": 3}")
+person["name"]      -- Output: "Bern"
+person["version"]   -- Output: 3</pre>
+                <p>JSON objects become Bern objects; JSON <code>null</code> becomes <code>Undefined</code> (test it with <code>is_null</code>); and <code>json_stringify</code> turns a value back into a string:</p>
+                <pre class="simple-code">import json
+
+is_null(json_parse("null"))
+-- Output: true
+
+json_stringify(json_parse("{\"items\": [1, 2, 3], \"ok\": true}"))
+-- Output: a JSON string</pre>
+                <div class="note">
+                    <strong>Note:</strong> a JSON array maps to a Bern <em>Set</em>. A value that repeats collapses into a sub-list of its copies, so set theory stays intact while multiplicity is preserved - e.g. <code>[1, "a", 34.2, "a"]</code> parses to <code>{1, ["a", "a"], 34.2}</code>, and round-trips back to the original array.
+                </div>
+            </div>
+
+            <!-- ERRORS -->
+            <div class="doc-section" id="errors">
+                <h2>Errors as Values</h2>
+                <p>Instead of crashing, runtime failures in Bern produce an <em>error value</em> you can inspect with <code>is_error</code>. This keeps a program running and lets you decide what to do.</p>
+                <pre class="simple-code">import core
+
+is_error(undefined_fn(1))   -- Output: true   (no such function)
+is_error([1, 2, 3][99])     -- Output: true   (index out of bounds)
+is_error(head([]))          -- Output: true   (no matching clause)
+is_error(42)                -- Output: false  (an ordinary value)</pre>
+                <p>Errors are "poison": they propagate through operators, so a single check at the end tells you whether the whole computation succeeded. You can also build your own with <code>error(...)</code>.</p>
+                <pre class="simple-code">import core
+
+is_error(undefined_fn(1) + 100)   -- Output: true   (poison spreads through +)
+
+oops = error("boom")
+is_error(oops)                    -- Output: true
+
+-- and normal work continues unaffected afterwards
+7 * 6                             -- Output: 42</pre>
+            </div>
+
+            <!-- LAZY -->
+            <div class="doc-section" id="lazy">
+                <h2>Lazy Ranges</h2>
+                <p>Ranges are lazy: <code>[1..1000000000]</code> is created instantly and only computes elements as you ask for them. Length, indexing, and <code>take</code> are all O(1) or proportional to what you actually use.</p>
+                <pre class="simple-code">import core
+
+big = [1..1000000000]
+:> big          -- Output: 1000000000   (instant, no allocation)
+big[5]          -- Output: 6
+take(5, big)    -- Output: [1, 2, 3, 4, 5]</pre>
+                <p>Small ranges behave exactly like ordinary lists, so you never have to think about which one you have:</p>
+                <pre class="simple-code">import core
+
+[1..5]                      -- Output: [1, 2, 3, 4, 5]
+map([1..4], \x -> x * 2)    -- Output: [2, 4, 6, 8]</pre>
+            </div>
+
+            <!-- IMPORTS -->
+            <div class="doc-section" id="imports">
+                <h2>Imports</h2>
+                <p>Pull in extra functionality with <code>import</code>. The <code>core</code> library holds the everyday higher-order helpers like <code>map</code>, <code>filter</code>, and <code>reverse</code>.</p>
+                <pre class="simple-code">import core
+
+map([1, 2, 3, 4, 5], \x -> x + 2)
+-- Output: [3, 4, 5, 6, 7]
+
+def isEven(x) -> x % 2 == 0
+filter([1, 2, 3, 4, 5, 6], isEven)
+-- Output: [2, 4, 6]</pre>
+                <p>Other libraries include <code>math</code>, <code>strings</code>, <code>random</code>, <code>json</code>, <code>assert</code>, and more - see the <a href="documentation.html#libraries">standard library reference</a> for the full list.</p>
+            </div>
+
+            <!-- INPUT -->
+            <div class="doc-section" id="input">
+                <h2>User Input</h2>
+                <p><code>input()</code> reads a line from the user, much like Python's <code>input</code>. It always returns text; convert it with helpers from <code>core</code> such as <code>to_int</code>.</p>
+                <pre class="simple-code">name = input("Type your name: ")
+name
+-- Output: whatever you typed, as a string</pre>
+                <pre class="simple-code">import core
+
+age_text = input("Type your age: ")
+age = to_int(age_text)
+"In five years you'll be " + (age + 5)</pre>
+            </div>
+
+            <div class="pagenav">
+                <a href="index.html">&larr; Back to Home</a>
+                <a href="documentation.html">Full Documentation &rarr;</a>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        Copyright © 2026 • All rights reserved • Built with ❤️ by <a href="https://mirvox.xyz/">Miguel Aguiar</a>
+    </footer>
+
+    <script src="examples-toggle.js"></script>
+</body>
+</html>

@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bern Changelog | What's new in each release</title>
+    <link rel="icon" type="image/png" href="images/cat.png">
+    <meta name="description" content="Release notes for the Bern programming language, covering every feature added across the 1.x and 2.0 lines.">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .changelog { max-width: 1000px; margin: 0 auto; padding: 3rem 2rem 5rem; }
+
+        .changelog-hero { text-align: center; margin-bottom: 3.5rem; }
+        .changelog-hero h1 { color: var(--primary); font-size: 2.75rem; margin-bottom: 0.75rem; }
+        .changelog-hero .lead { color: var(--text-light); font-size: 1.2rem; max-width: 640px; margin: 0 auto; }
+
+        .release {
+            position: relative;
+            background: #fff;
+            border: 2px solid var(--border);
+            border-left: 8px solid var(--primary);
+            border-radius: 0;
+            padding: 2rem 2.25rem;
+            margin-bottom: 2.5rem;
+        }
+        .release.latest {
+            border-left-color: var(--accent);
+        }
+
+        .release h2 {
+            display: flex; align-items: center; flex-wrap: wrap; gap: 0.75rem;
+            color: var(--primary); font-size: 1.9rem;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 0.6rem; margin-bottom: 0.75rem;
+        }
+        .release h2 .date {
+            font-size: 0.9rem; color: var(--text-light); font-weight: 400;
+            margin-left: auto;
+        }
+        .release > p { color: var(--text-light); font-size: 1.05rem; }
+
+        .release h3 {
+            color: var(--primary-dark); font-size: 1.2rem; margin: 2.2rem 0 0.8rem;
+            display: flex; align-items: center; gap: 0.55rem;
+            border-bottom: 2px solid var(--border); padding-bottom: 0.4rem;
+        }
+        .release h3::before {
+            content: ""; width: 10px; height: 10px; border-radius: 0;
+            background: var(--accent); display: inline-block; flex: none;
+        }
+
+        .feat { color: var(--text); font-size: 1.02rem; margin: 1.4rem 0 0.6rem; }
+        .feat strong { color: var(--primary-dark); }
+        .feat:first-of-type { margin-top: 0.8rem; }
+
+        .badge {
+            display: inline-block;
+            background: var(--primary);
+            color: #fff; font-size: 0.7rem; font-weight: 600; letter-spacing: 0.05em;
+            text-transform: uppercase; padding: 0.22rem 0.65rem; border-radius: 0;
+        }
+
+        /* boxy overrides: square off everything inherited from style.css */
+        .changelog .simple-code { border: 2px solid var(--border); border-radius: 0; }
+        .changelog code { border-radius: 0; }
+
+        .pragma-table { border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: 0.92rem; }
+        .pragma-table th, .pragma-table td { border: 2px solid var(--border); padding: 0.5rem 0.85rem; text-align: left; }
+        .pragma-table th { background: var(--primary); color: #fff; font-weight: 600; }
+        .pragma-table tr:nth-child(even) td { background: #faf9fc; }
+        .pragma-table code { background: var(--code-bg); border: 1px solid var(--border); }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <a href="index.html" class="logo"><img src="images/cat.png" alt="Bern Logo" width="20%" style="margin-top: 10px;"></a>
+            <nav>
+                <a href="index.html">Home</a>
+                <a href="documentation.html">Documentation</a>
+                <a href="examples.html">Learn Bern</a>
+                <a href="changelog.html">Changelog</a>
+                <a href="pt-br/changelog.html" style="font-weight: 600;">🌐 PT-BR</a>
+            </nav>
+        </div>
+    </header>
+
+    <div class="changelog">
+        <div class="changelog-hero">
+            <h1>Changelog</h1>
+            <p class="lead">What's new in each release of the Bern language.</p>
+        </div>
+
+        <div class="release latest">
+            <h2>Bern 2.0 <span class="badge">latest</span> <span class="date">June 2026</span></h2>
+            <p>Bern 2.0 is a major release. It turns the interpreter into a configurable language: a set of pragmas lets you opt into stricter or looser behaviour per file, and several long-standing rough edges are now sensible defaults. It also adds JSON, written-word operators, currying, lazy ranges, and recoverable errors.</p>
+
+            <h3>New default behaviours</h3>
+
+            <p class="feat"><strong>Errors as values.</strong> A runtime error no longer aborts the whole program. Instead it becomes a first-class value that you can store, pass around, and inspect. Out-of-bounds indexing, failed lookups, and similar mistakes all produce an error value that quietly propagates through the rest of an expression, so the program keeps running. Test any value with <code>is_error</code>, and raise your own with <code>error</code>. If you prefer the old crash-on-failure behaviour, the <code>abort-on-error</code> pragma brings it back.</p>
+            <pre class="simple-code"><span class="keyword">import</span> core
+
+bad = [<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>][<span class="number">99</span>]           <span class="comment">-- out of bounds, but no crash</span>
+<span class="function">is_error</span>(bad)                 <span class="comment">-- true</span>
+<span class="string">"the program keeps running"</span>   <span class="comment">-- this line still prints</span>
+
+<span class="keyword">def</span> <span class="function">safe_head</span>([]) <span class="operator">-&gt;</span> <span class="function">error</span>(<span class="string">"empty list"</span>)
+<span class="keyword">def</span> <span class="function">safe_head</span>([h|_]) <span class="operator">-&gt;</span> h
+<span class="function">is_error</span>(<span class="function">safe_head</span>([]))       <span class="comment">-- true</span>
+<span class="function">safe_head</span>([<span class="number">10</span>, <span class="number">20</span>])           <span class="comment">-- 10</span></pre>
+
+            <p class="feat"><strong>Auto-currying.</strong> Calling a function with fewer arguments than it declares no longer fails. Bern returns a new function that remembers the arguments you already supplied and waits for the rest, which makes partial application and point-free pipelines natural. Turn it off per file with the <code>no-curry</code> pragma.</p>
+            <pre class="simple-code"><span class="keyword">def</span> <span class="function">add</span>(x, y) <span class="operator">-&gt;</span> x <span class="operator">+</span> y
+
+add2 = <span class="function">add</span>(<span class="number">2</span>)                 <span class="comment">-- a partial application, waiting for one more argument</span>
+<span class="function">add2</span>(<span class="number">10</span>)                      <span class="comment">-- 12</span>
+<span class="function">add</span>(<span class="number">2</span>)(<span class="number">40</span>)                    <span class="comment">-- 42 (the same call, written in one line)</span></pre>
+
+            <p class="feat"><strong>Lazy ranges.</strong> Ranges are now lazy. Writing a range does not allocate its elements, so even an astronomically large range is created instantly. Its length is known in O(1) time, and elements are only computed when something actually asks for them.</p>
+            <pre class="simple-code">big = [<span class="number">1</span>..<span class="number">1000000000</span>]         <span class="comment">-- created instantly, nothing materialised yet</span>
+<span class="operator">:&gt;</span> big                        <span class="comment">-- 1000000000 (length is O(1))</span>
+<span class="function">take</span>(<span class="number">5</span>, big)                  <span class="comment">-- [1, 2, 3, 4, 5] (only these five are realised)</span></pre>
+
+            <p class="feat"><strong>Exhaustive matching.</strong> When a function is defined by several clauses, Bern now checks at load time that those clauses cover every possible input. A function that could be called with an argument none of its clauses match is reported up front, before it ever runs. The check understands lists, booleans, sets and algebraic data types - a match that covers every constructor of an ADT counts as exhaustive, the same way it does in Haskell. If a partial function is intentional, opt out for the whole file with the <code>partial</code> pragma.</p>
+            <pre class="simple-code"><span class="comment">-- reported at load time: this clause cannot match every input</span>
+<span class="keyword">def</span> <span class="function">describe</span>(<span class="number">0</span>) <span class="operator">-&gt;</span> <span class="string">"zero"</span>
+
+<span class="comment">-- declare the intent explicitly to silence the check</span>
+<span class="comment">{--! partial !--}</span>
+<span class="keyword">def</span> <span class="function">describe</span>(<span class="number">0</span>) <span class="operator">-&gt;</span> <span class="string">"zero"</span></pre>
+
+            <p class="feat"><strong>Short-circuit logic.</strong> The <code>&amp;&amp;</code> and <code>||</code> operators now short-circuit. The right-hand side is only evaluated when it can still change the result, so an inline guard against something like division by zero is safe to write.</p>
+            <pre class="simple-code">false <span class="operator">&amp;&amp;</span> (<span class="number">1</span> <span class="operator">/</span> <span class="number">0</span> <span class="operator">==</span> <span class="number">0</span>)   <span class="comment">-- false, and the risky right-hand side never runs</span>
+true <span class="operator">||</span> (<span class="number">1</span> <span class="operator">/</span> <span class="number">0</span> <span class="operator">==</span> <span class="number">0</span>)   <span class="comment">-- true, evaluated the same lazy way</span></pre>
+
+            <p class="feat"><strong>Negative indexing.</strong> Indexing accepts negative positions that count backwards from the end of a list, so you can reach the last element without first measuring the length.</p>
+            <pre class="simple-code">[<span class="number">10</span>, <span class="number">20</span>, <span class="number">30</span>][<span class="operator">-</span><span class="number">1</span>]        <span class="comment">-- 30 (the last element)</span>
+[<span class="number">10</span>, <span class="number">20</span>, <span class="number">30</span>][<span class="operator">-</span><span class="number">2</span>]        <span class="comment">-- 20 (second from the end)</span></pre>
+
+            <p class="feat"><strong>Reserved names are protected.</strong> Assigning to a keyword or to a written-word operator (<code>length</code>, <code>plus</code>, &hellip;) now fails with a clear message instead of silently creating a variable you could never read back. To use one of the operator names as a variable, switch the word operators off with the <code>no-written-operators</code> pragma.</p>
+            <pre class="simple-code">length = <span class="number">10</span>
+<span class="comment">-- error: cannot assign to 'length': it is a written-word operator</span>
+
+<span class="comment">{--! no-written-operators !--}</span>
+length = <span class="number">10</span>                  <span class="comment">-- now fine: 'length' is an ordinary variable</span></pre>
+
+            <h3>Pragmas</h3>
+            <p class="feat"><strong>File-level directives.</strong> A pragma is a magic comment, usually placed at the top of a file, that opts that file into a stricter or looser behaviour. Several can be combined, and they only affect the file they appear in.</p>
+            <pre class="simple-code"><span class="comment">{--! strict-types !--}</span>
+<span class="comment">{--! immutable !--}</span>
+
+x = <span class="string">"count: "</span> <span class="operator">+</span> <span class="number">5</span>    <span class="comment">-- error: strict-types forbids the implicit coercion</span>
+x = <span class="number">10</span>
+x = <span class="number">11</span>               <span class="comment">-- error: immutable forbids reassignment</span></pre>
+            <table class="pragma-table">
+                <tr><th>Pragma</th><th>Effect</th></tr>
+                <tr><td><code>impure-lists</code></td><td>lists may hold mixed element types</td></tr>
+                <tr><td><code>impure-sets</code></td><td>set operations keep duplicates</td></tr>
+                <tr><td><code>strict-types</code></td><td>forbid implicit string/number coercion</td></tr>
+                <tr><td><code>strict-arithmetic</code></td><td>division by zero is an error, not <code>NaN</code></td></tr>
+                <tr><td><code>immutable</code></td><td>reassigning an existing variable is an error</td></tr>
+                <tr><td><code>no-eval</code></td><td>bare expressions don't auto-print (<code>print()</code> still works)</td></tr>
+                <tr><td><code>show-types</code></td><td>auto-printed values show their type</td></tr>
+                <tr><td><code>safe-index</code></td><td>out-of-bounds indexing returns <code>undefined</code></td></tr>
+                <tr><td><code>no-undefined</code></td><td>reading an unbound variable is an error</td></tr>
+                <tr><td><code>start-on-one</code></td><td>indexing starts at 1</td></tr>
+                <tr><td><code>main</code></td><td>run <code>main()</code> after the file loads</td></tr>
+                <tr><td><code>no-curry</code></td><td>disable auto-currying</td></tr>
+                <tr><td><code>abort-on-error</code></td><td>crash on runtime errors instead of producing error values</td></tr>
+                <tr><td><code>partial</code></td><td>allow non-exhaustive functions</td></tr>
+                <tr><td><code>no-written-operators</code></td><td>switch off the written-word operators, freeing names like <code>length</code> and <code>plus</code> for use as variables</td></tr>
+            </table>
+
+            <h3>Language additions</h3>
+
+            <p class="feat"><strong>Written-word operators.</strong> Every symbol operator now has a plain-English spelling, so you can write code that reads aloud like a sentence: <code>plus</code>, <code>minus</code>, <code>times</code>, <code>divided-by</code>, <code>is-greater-or-equal</code>, <code>and</code>, <code>or</code>, <code>not</code>, <code>concat</code>, <code>and-do</code> (pipe), <code>be</code> (assignment), and more. Symbols and words are interchangeable and can be mixed freely.</p>
+            <pre class="simple-code"><span class="number">3</span> is-greater <span class="number">2</span> and <span class="number">5</span> is-less-or-equal <span class="number">5</span>    <span class="comment">-- true</span>
+[<span class="number">1</span>, <span class="number">2</span>] concat [<span class="number">3</span>, <span class="number">4</span>]                       <span class="comment">-- [1, 2, 3, 4]</span>
+total be <span class="number">10</span> plus <span class="number">5</span>                         <span class="comment">-- assignment: total is now 15</span></pre>
+
+            <p class="feat"><strong>The <code>)|</code> pipe operator.</strong> The pipe threads a value into a function as its first argument, so a chain of transformations reads from left to right in the order it happens, rather than nested inside-out.</p>
+            <pre class="simple-code">[<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>] <span class="operator">)|</span> <span class="function">filter</span>(<span class="operator">\</span>x <span class="operator">-&gt;</span> x <span class="operator">%</span> <span class="number">2</span> <span class="operator">==</span> <span class="number">0</span>)   <span class="comment">-- [2, 4]</span></pre>
+
+            <p class="feat"><strong>Readable function syntax.</strong> Function and lambda bodies can be introduced with the words <code>returns</code> and <code>such-that</code> in place of the <code>-&gt;</code> arrow, and a lambda can be written with the <code>lambda</code> keyword. The symbolic forms still work everywhere.</p>
+            <pre class="simple-code"><span class="keyword">def</span> <span class="function">double</span>(n) returns n <span class="operator">*</span> <span class="number">2</span>                <span class="comment">-- 'returns' reads better than -&gt;</span>
+<span class="function">double</span>(<span class="number">21</span>)                                 <span class="comment">-- 42</span>
+<span class="function">map</span>([<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>], lambda x such-that x <span class="operator">*</span> <span class="number">10</span>)  <span class="comment">-- [10, 20, 30]</span></pre>
+
+            <p class="feat"><strong>Pattern-matching guards.</strong> A function clause can carry a <code>when</code> guard. The clause only matches when its patterns line up and its guard expression is true, letting you branch on a value rather than only on its shape.</p>
+            <pre class="simple-code"><span class="keyword">def</span> <span class="function">grade</span>(n) when n is-greater <span class="number">90</span> <span class="operator">-&gt;</span> <span class="string">"A"</span>
+<span class="keyword">def</span> <span class="function">grade</span>(n) when n is-greater <span class="number">70</span> <span class="operator">-&gt;</span> <span class="string">"B"</span>
+<span class="keyword">def</span> <span class="function">grade</span>(n) <span class="operator">-&gt;</span> <span class="string">"C"</span>
+<span class="function">grade</span>(<span class="number">95</span>)                                  <span class="comment">-- "A"</span></pre>
+
+            <p class="feat"><strong>The for-in keyword.</strong> Loops accept the word <code>in</code> alongside the <code>:</code> separator, so iterating over a collection reads like ordinary English.</p>
+            <pre class="simple-code"><span class="keyword">loop</span> char <span class="keyword">in</span> <span class="string">"Bern"</span> <span class="keyword">do</span>
+    char
+<span class="keyword">end</span></pre>
+
+            <p class="feat"><strong>The <code>loop</code> keyword.</strong> <code>loop</code> is now the preferred spelling for every loop form - repeat, conditional, and iteration. The original <code>for</code> keyword still works everywhere as a backwards-compatible alias.</p>
+            <pre class="simple-code"><span class="keyword">loop</span> <span class="number">3</span> <span class="keyword">do</span> <span class="string">"hi"</span> <span class="keyword">end</span>           <span class="comment">-- repeat</span>
+<span class="keyword">loop</span> n <span class="operator">:</span> [<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>] <span class="keyword">do</span> n <span class="keyword">end</span>   <span class="comment">-- iterate (for ... still works too)</span></pre>
+
+            <p class="feat"><strong>List comprehensions.</strong> A list can be built from one or more generators (<code>pattern &lt;- source</code>) and optional boolean guards, written as <code>[expression | qualifiers]</code>. Generators nest like loops to produce every combination, a generator's pattern destructures as it iterates (elements that don't match are skipped), and guards filter the result.</p>
+            <pre class="simple-code">[x <span class="operator">*</span> x | x <span class="operator">&lt;-</span> [<span class="number">1</span>..<span class="number">5</span>]]                 <span class="comment">-- [1, 4, 9, 16, 25]</span>
+[x | x <span class="operator">&lt;-</span> [<span class="number">1</span>..<span class="number">10</span>], x <span class="operator">%</span> <span class="number">2</span> <span class="operator">==</span> <span class="number">0</span>]      <span class="comment">-- [2, 4, 6, 8, 10]</span>
+[a <span class="operator">+</span> b | a <span class="operator">&lt;-</span> [<span class="number">1</span>, <span class="number">2</span>], b <span class="operator">&lt;-</span> [<span class="number">10</span>, <span class="number">20</span>]]  <span class="comment">-- [11, 21, 12, 22]</span></pre>
+
+            <p class="feat"><strong>Cons expressions.</strong> The <code>[head | tail]</code> syntax now works as an expression too, prepending one or more elements onto an existing list (and <code>{head | tail}</code> onto a set). Prepending is lazy, so you can cons onto a huge range and still get an instant result.</p>
+            <pre class="simple-code">[<span class="number">0</span> | [<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>]]              <span class="comment">-- [0, 1, 2, 3]</span>
+[<span class="number">1</span>, <span class="number">2</span> | [<span class="number">3</span>, <span class="number">4</span>]]             <span class="comment">-- [1, 2, 3, 4]  (multiple heads)</span>
+big = [<span class="number">0</span> | [<span class="number">1</span>..<span class="number">1000000000</span>]]    <span class="comment">-- instant; :&gt; big is 1000000001</span></pre>
+
+            <h3>Standard library &amp; builtins</h3>
+
+            <p class="feat"><strong>JSON parsing and serialising.</strong> The new <code>json</code> library reads and writes JSON text. <code>json_parse</code> turns a JSON string into Bern values you can index into, and <code>json_stringify</code> serialises them back out.</p>
+            <pre class="simple-code"><span class="keyword">import</span> json
+
+person = <span class="function">json_parse</span>(<span class="string">"{\"name\": \"Bern\", \"version\": 2}"</span>)
+person[<span class="string">"name"</span>]              <span class="comment">-- "Bern"</span>
+<span class="function">json_stringify</span>(person)      <span class="comment">-- {"name":"Bern","version":2}</span></pre>
+
+            <p class="feat"><strong>Set-based JSON arrays.</strong> JSON arrays map onto Bern's set-based model in a way that preserves the multiplicity of duplicate elements, grouping repeated values together instead of discarding them.</p>
+            <pre class="simple-code"><span class="keyword">import</span> json
+
+<span class="function">json_parse</span>(<span class="string">"[1, \"a\", 34.2, \"a\"]"</span>)
+<span class="comment">-- {1, ["a", "a"], 34.2}    (duplicates grouped, multiplicity preserved)</span></pre>
+
+            <p class="feat"><strong><code>keys(object)</code>.</strong> The <code>keys</code> builtin returns the list of keys held by an object, which makes it easy to walk a hashmap whose shape you do not know ahead of time.</p>
+            <pre class="simple-code">obj = <span class="operator">#{</span> name: <span class="string">"Bern"</span>, version: <span class="number">2</span> <span class="operator">}#</span>
+<span class="function">keys</span>(obj)                   <span class="comment">-- ["name", "version"]</span></pre>
+
+            <p class="feat"><strong><code>error</code> and <code>is_error</code>.</strong> Two builtins back the new error-value model: <code>error</code> builds an error value that carries a message, and <code>is_error</code> reports whether a given value is one.</p>
+            <pre class="simple-code">boom = <span class="function">error</span>(<span class="string">"something went wrong"</span>)
+<span class="function">is_error</span>(boom)              <span class="comment">-- true</span>
+<span class="function">is_error</span>(<span class="number">42</span>)                <span class="comment">-- false</span></pre>
+
+            <h3>Tooling</h3>
+
+            <p class="feat"><strong>Improved REPL.</strong> The interactive REPL gained persistent history across sessions, multi-line blocks, the last result bound to <code>_</code>, and the meta-commands <code>:help</code>, <code>:load</code>, <code>:reset</code> and <code>:quit</code>. Pragmas can be enabled from the prompt with <code>:pragma &lt;name&gt;</code> (and listed with <code>:pragmas</code>), in addition to inline <code>{--! &hellip; !--}</code> comments. A runtime error now prints and returns you to the prompt instead of ending the session.</p>
+            <pre class="simple-code">&gt; x = <span class="number">21</span>
+&gt; x <span class="operator">*</span> <span class="number">2</span>
+<span class="number">42</span>
+&gt; _ <span class="operator">+</span> <span class="number">8</span>         <span class="comment">-- _ is the previous result</span>
+<span class="number">50</span>
+&gt; :help         <span class="comment">-- list the meta-commands</span></pre>
+
+            <p class="feat"><strong>Standalone executables.</strong> <code>bern build</code> bundles a script together with every library it imports into a single standalone executable that runs without a separate Bern installation.</p>
+            <pre class="simple-code">bern build app.brn -o myprogram.exe
+./myprogram.exe        <span class="comment">-- runs app.brn with its bundled libraries</span></pre>
+        </div>
+
+        <div class="release">
+            <h2>Bern 1.1.3 <span class="date">February 2026</span></h2>
+            <p>The final 1.x line focused on richer pattern matching, a cleaner module system, and editor tooling.</p>
+
+            <h3>Language additions</h3>
+
+            <p class="feat"><strong>Conditionals as expressions.</strong> An if/then/else is now an expression that evaluates to a value, and it can be chained into else-if ladders. Because it returns a value, it can appear anywhere an expression is expected, including directly as a function body.</p>
+            <pre class="simple-code"><span class="keyword">def</span> <span class="function">sign</span>(n) <span class="operator">-&gt;</span> <span class="keyword">if</span> n <span class="operator">&gt;</span> <span class="number">0</span> <span class="keyword">then</span> <span class="string">"positive"</span> <span class="keyword">else</span> <span class="keyword">if</span> n <span class="operator">&lt;</span> <span class="number">0</span> <span class="keyword">then</span> <span class="string">"negative"</span> <span class="keyword">else</span> <span class="string">"zero"</span> <span class="keyword">end</span>
+<span class="function">sign</span>(<span class="operator">-</span><span class="number">3</span>)                     <span class="comment">-- "negative"</span></pre>
+
+            <p class="feat"><strong>The <code>case ... is</code> expression.</strong> This expression matches a value against a series of patterns inline and returns the matching branch. It can match on constructors and bind their fields, and with <code>::v</code> it can match on the value's type name as a string.</p>
+            <pre class="simple-code"><span class="keyword">adt</span> <span class="type">Shape</span> = <span class="type">Circle</span> <span class="type">Double</span> | <span class="type">Square</span> <span class="type">Double</span>
+
+<span class="keyword">def</span> <span class="function">name</span>(v) <span class="operator">-&gt;</span> <span class="keyword">case</span> v <span class="keyword">is</span> <span class="type">Circle</span>(_) = <span class="string">"circle"</span> | <span class="type">Square</span>(_) = <span class="string">"square"</span> | _ = <span class="string">"?"</span> <span class="keyword">end</span>
+<span class="function">name</span>(<span class="type">Circle</span>(<span class="number">5.0</span>))            <span class="comment">-- "circle"</span>
+
+<span class="keyword">def</span> <span class="function">kind</span>(v) <span class="operator">-&gt;</span> <span class="keyword">case</span> <span class="operator">::</span>v <span class="keyword">is</span> <span class="string">"Circle"</span> = <span class="string">"a circle"</span> | _ = <span class="string">"something else"</span> <span class="keyword">end</span></pre>
+
+            <p class="feat"><strong>Iterative ADTs.</strong> An ADT declared with the <code>iterative</code> keyword can be looped over directly, yielding the fields it was constructed with.</p>
+            <pre class="simple-code"><span class="keyword">adt</span> <span class="keyword">iterative</span> <span class="type">Shape</span> = <span class="type">Circle</span> <span class="type">Double</span> | <span class="type">Rectangle</span> <span class="type">Double</span> <span class="type">Double</span>
+
+vals = []
+<span class="keyword">for</span> p <span class="operator">:</span> <span class="type">Circle</span>(<span class="number">5.0</span>) <span class="keyword">do</span>
+    vals = vals <span class="operator">&lt;&gt;</span> [p]
+<span class="keyword">end</span>
+vals                         <span class="comment">-- [5.0]</span></pre>
+
+            <h3>Modules</h3>
+
+            <p class="feat"><strong>Import aliases and qualified access.</strong> An import can be given a short alias with <code>as</code>, and any imported name can be reached through its qualifier using the <code>module:function</code> form.</p>
+            <pre class="simple-code"><span class="keyword">import</span> liba <span class="keyword">as</span> la
+<span class="keyword">import</span> libb <span class="keyword">as</span> lb
+
+la:<span class="function">map</span>([<span class="number">1</span>, <span class="number">2</span>], <span class="operator">\</span>z <span class="operator">-&gt;</span> z <span class="operator">+</span> <span class="number">10</span>)   <span class="comment">-- uses liba's map</span>
+lb:<span class="function">map</span>([<span class="number">1</span>, <span class="number">2</span>], <span class="operator">\</span>z <span class="operator">-&gt;</span> z <span class="operator">+</span> <span class="number">10</span>)   <span class="comment">-- uses libb's map</span></pre>
+
+            <p class="feat"><strong>Import-conflict resolution.</strong> When two libraries export the same name, that name is no longer ambiguous. Each definition stays reachable through its own qualifier, so the conflicting libraries can coexist in one file.</p>
+            <pre class="simple-code"><span class="keyword">import</span> liba
+<span class="keyword">import</span> libb
+
+liba:<span class="function">map</span>([<span class="number">1</span>, <span class="number">2</span>], <span class="operator">\</span>z <span class="operator">-&gt;</span> z <span class="operator">+</span> <span class="number">10</span>)   <span class="comment">-- liba's definition</span>
+libb:<span class="function">map</span>([<span class="number">1</span>, <span class="number">2</span>], <span class="operator">\</span>z <span class="operator">-&gt;</span> z <span class="operator">+</span> <span class="number">10</span>)   <span class="comment">-- libb's definition</span></pre>
+
+            <p class="feat"><strong>The <code>bernparsec</code> library.</strong> A parser-combinator library inspired by Megaparsec joined the vendored libraries. It builds parsers from small, composable pieces such as <code>satisfy</code>, <code>pure</code> and <code>fail_parser</code>.</p>
+            <pre class="simple-code"><span class="keyword">import</span> bernparsec
+
+<span class="comment">-- build parsers from small, composable pieces</span>
+digit = <span class="function">satisfy</span>(<span class="operator">\</span>c <span class="operator">-&gt;</span> c <span class="operator">&gt;=</span> <span class="string">'0'</span> <span class="operator">&amp;&amp;</span> c <span class="operator">&lt;=</span> <span class="string">'9'</span>)</pre>
+
+            <h3>Tooling</h3>
+
+            <p class="feat"><strong>Syntax highlighting and IntelliSense.</strong> The editor extension gained full syntax highlighting, with keyword and type colouring, plus IntelliSense completion as you type.</p>
+
+            <p class="feat"><strong>Nix flake.</strong> A Nix flake was added for reproducible builds and development environments, contributed by <a href="https://github.com/ProggerX">ProggerX</a>.</p>
+            <pre class="simple-code">nix build              <span class="comment"># build Bern from the flake</span>
+nix run . -- app.brn   <span class="comment"># run a script with that build</span></pre>
+        </div>
+
+        <div class="release">
+            <h2>Bern 1.1 <span class="date">January 2026</span></h2>
+            <p>The 1.1 series brought a working C foreign function interface and a much better error-reporting experience.</p>
+
+            <h3>FFI</h3>
+
+            <p class="feat"><strong>Universal C FFI.</strong> Bern gained a real foreign function interface to C that works the same way on Windows and Linux, replacing the earlier placeholder stubs. A <code>foreign</code> declaration names the symbol, the library to load it from, its argument types and its return type, after which it is called like any Bern function.</p>
+            <pre class="simple-code"><span class="keyword">foreign</span> <span class="function">rand</span>(<span class="string">"msvcrt.dll"</span>) <span class="operator">-&gt;</span> <span class="string">"int"</span>
+<span class="keyword">foreign</span> <span class="function">srand</span>(<span class="string">"msvcrt.dll"</span>, <span class="string">"int"</span>) <span class="operator">-&gt;</span> <span class="string">"void"</span>
+
+<span class="function">srand</span>(<span class="number">42</span>)
+<span class="function">rand</span>()                 <span class="comment">-- a C-generated random integer</span></pre>
+
+            <p class="feat"><strong>ADT-aware FFI and Raylib bindings.</strong> Foreign calls can now read and return algebraic data types, not just primitive numbers. That made it possible to ship a near-complete set of Raylib bindings for graphics and input.</p>
+            <pre class="simple-code"><span class="keyword">import</span> raylib
+
+<span class="comment">-- ADTs cross the FFI boundary, so colours, vectors and</span>
+<span class="comment">-- rectangles can be passed straight to the C bindings</span>
+<span class="function">InitWindow</span>(<span class="number">800</span>, <span class="number">450</span>, <span class="string">"Bern + Raylib"</span>)</pre>
+
+            <h3>Language &amp; runtime</h3>
+
+            <p class="feat"><strong>Global variable assignment.</strong> The <code>:=</code> operator assigns into the global scope from anywhere, including inside a function body, so a function can update shared state rather than only its local bindings.</p>
+            <pre class="simple-code">counter <span class="operator">:=</span> <span class="number">0</span>           <span class="comment">-- create or update a global binding</span>
+<span class="keyword">def</span> <span class="function">tick</span>() <span class="operator">-&gt;</span> counter <span class="operator">:=</span> counter <span class="operator">+</span> <span class="number">1</span>
+<span class="function">tick</span>()
+counter                <span class="comment">-- 1</span></pre>
+
+            <p class="feat"><strong>Better tracebacks.</strong> Runtime errors now print a traceback that shows the chain of calls leading to the failure, with a file and line for each frame, making the source of a problem far easier to find.</p>
+            <pre class="simple-code"><span class="function">oops</span>()
+<span class="comment">-- Traceback (most recent call last):</span>
+<span class="comment">--   in oops   (app.brn:3)</span>
+<span class="comment">--   in main   (app.brn:7)</span>
+<span class="comment">-- Error: division by zero</span></pre>
+
+            <p class="feat"><strong>NaN in assignments.</strong> Expressions that evaluate to <code>NaN</code>, such as dividing zero by zero, can now be assigned and carried through later computation instead of stopping evaluation.</p>
+            <pre class="simple-code">x = <span class="number">0</span> <span class="operator">/</span> <span class="number">0</span>              <span class="comment">-- NaN, assigned without halting evaluation</span></pre>
+
+            <h3>Standard library</h3>
+
+            <p class="feat"><strong>CSV reading library.</strong> A CSV library joined the vendored libraries. <code>read_csv</code> loads a file and returns its rows, with optional control over the delimiter, whether the first line is a header, and whether empty lines are skipped.</p>
+            <pre class="simple-code"><span class="keyword">import</span> csv
+
+rows = <span class="function">read_csv</span>(<span class="string">"data.csv"</span>)              <span class="comment">-- comma-delimited, first row is a header</span>
+<span class="function">read_csv</span>(<span class="string">"data.tsv"</span>, <span class="string">"\t"</span>, false, true)  <span class="comment">-- custom delimiter, no header</span></pre>
+
+            <p class="feat"><strong><code>random</code> library.</strong> A random library wraps the C standard library through the new FFI to provide seeded random numbers, including helpers like <code>get_random_int</code> and <code>random_choice</code>.</p>
+            <pre class="simple-code"><span class="keyword">import</span> random
+
+<span class="function">get_random_int</span>()                              <span class="comment">-- a random integer</span>
+<span class="function">random_choice</span>([<span class="string">'apple'</span>, <span class="string">'banana'</span>, <span class="string">'cherry'</span>])  <span class="comment">-- one element at random</span></pre>
+
+            <p class="feat"><strong><code>get_host_machine()</code>.</strong> A new global function reports the host platform, which libraries use to pick the right native library to load at runtime.</p>
+            <pre class="simple-code"><span class="function">get_host_machine</span>()     <span class="comment">-- e.g. "mingw64" on Windows, used to choose a C library</span></pre>
+        </div>
+
+        <div class="release">
+            <h2>Bern 1.0 <span class="date">January 2026</span></h2>
+            <p>The first public Bern: an interpreted, dynamically typed, expression-oriented language with pattern-matching functions.</p>
+
+            <h3>Core language</h3>
+
+            <p class="feat"><strong>Lists and sets.</strong> Bern shipped with first-class lists and sets, including set-theory operators for union, intersection and difference, and concatenation for lists.</p>
+            <pre class="simple-code">[<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>] <span class="operator">&lt;&gt;</span> [<span class="number">4</span>, <span class="number">5</span>]      <span class="comment">-- [1, 2, 3, 4, 5] (concatenation)</span>
+{<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>} <span class="operator">|&gt;</span> {<span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>}   <span class="comment">-- {2, 3} (intersection)</span>
+{<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>} <span class="operator">&lt;/&gt;</span> {<span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>}  <span class="comment">-- {1} (difference)</span></pre>
+
+            <p class="feat"><strong>The for-in loop.</strong> A single <code>for</code> keyword covered iteration, using the <code>:</code> separator to walk the elements of a collection.</p>
+            <pre class="simple-code"><span class="keyword">for</span> n <span class="operator">:</span> [<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>] <span class="keyword">do</span>
+    n <span class="operator">*</span> <span class="number">10</span>
+<span class="keyword">end</span></pre>
+
+            <p class="feat"><strong>Conditionals.</strong> Branching used <code>if</code>/<code>then</code>/<code>else</code> blocks closed with <code>end</code>, with else-if chains for further branches.</p>
+            <pre class="simple-code"><span class="keyword">if</span> age <span class="operator">&gt;=</span> <span class="number">18</span> <span class="keyword">then</span>
+    <span class="string">"adult"</span>
+<span class="keyword">else</span>
+    <span class="string">"minor"</span>
+<span class="keyword">end</span></pre>
+
+            <p class="feat"><strong>Object notation.</strong> Objects, which double as hashmaps, were written with the <code>#{ ... }#</code> notation and indexed by key.</p>
+            <pre class="simple-code">obj = <span class="operator">#{</span> name: <span class="string">"Bern"</span>, version: <span class="number">1</span> <span class="operator">}#</span>
+obj[<span class="string">"name"</span>]              <span class="comment">-- "Bern"</span></pre>
+
+            <p class="feat"><strong>Algebraic data types.</strong> ADTs let you define a type with several constructors and then pattern-match on those constructors directly in function clauses.</p>
+            <pre class="simple-code"><span class="keyword">adt</span> <span class="type">Shape</span> = <span class="type">Circle</span> <span class="type">Double</span> | <span class="type">Rectangle</span> <span class="type">Double</span> <span class="type">Double</span>
+<span class="keyword">def</span> <span class="function">area</span>(<span class="type">Circle</span>(r)) <span class="operator">-&gt;</span> <span class="number">3.14159</span> <span class="operator">*</span> r <span class="operator">*</span> r
+<span class="keyword">def</span> <span class="function">area</span>(<span class="type">Rectangle</span>(w, h)) <span class="operator">-&gt;</span> w <span class="operator">*</span> h
+<span class="function">area</span>(<span class="type">Circle</span>(<span class="number">5.0</span>))        <span class="comment">-- 78.53975</span></pre>
+
+            <p class="feat"><strong>List-of-characters strings.</strong> The dedicated <code>Text</code> type was removed in favour of representing strings as lists of characters, so every list operation works on text and a string indexes to a character.</p>
+            <pre class="simple-code"><span class="string">"Bern"</span>[<span class="number">0</span>]                <span class="comment">-- 'B'</span>
+[<span class="string">'H'</span>, <span class="string">'i'</span>]               <span class="comment">-- "Hi"</span></pre>
+
+            <p class="feat"><strong>Modulo.</strong> The modulo operator <code>%</code> returns the remainder of a division.</p>
+            <pre class="simple-code"><span class="number">17</span> <span class="operator">%</span> <span class="number">5</span>                   <span class="comment">-- 2</span></pre>
+
+            <h3>Standard library &amp; I/O</h3>
+
+            <p class="feat"><strong>The <code>core</code> library.</strong> The core library provided the staple higher-order functions such as <code>map</code> and <code>filter</code>.</p>
+            <pre class="simple-code"><span class="keyword">import</span> core
+
+<span class="function">map</span>([<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span>], <span class="operator">\</span>x <span class="operator">-&gt;</span> x <span class="operator">+</span> <span class="number">2</span>)   <span class="comment">-- [3, 4, 5, 6, 7]</span></pre>
+
+            <p class="feat"><strong>The <code>strings</code> library.</strong> A dedicated string library collected text helpers, including character-case conversions.</p>
+            <pre class="simple-code"><span class="keyword">import</span> strings
+
+<span class="function">char_to_upper</span>(<span class="string">'a'</span>)       <span class="comment">-- 'A'</span></pre>
+
+            <p class="feat"><strong>File reading and writing.</strong> File input and output arrived through <code>read_file</code> and <code>write_file</code>.</p>
+            <pre class="simple-code"><span class="function">write_file</span>(<span class="string">"hello.txt"</span>, <span class="string">"Hi there"</span>)
+<span class="function">read_file</span>(<span class="string">"hello.txt"</span>)               <span class="comment">-- "Hi there"</span></pre>
+
+            <p class="feat"><strong>User input.</strong> The <code>input</code> function reads a line of text typed by the user, optionally showing a prompt first.</p>
+            <pre class="simple-code">name = <span class="function">input</span>(<span class="string">"Type your name: "</span>)</pre>
+
+            <p class="feat"><strong>Conversions.</strong> Helper functions turned characters and strings into integers.</p>
+            <pre class="simple-code"><span class="function">to_int</span>(<span class="string">"42"</span>)             <span class="comment">-- 42</span></pre>
+
+            <p class="feat"><strong>Imports.</strong> Libraries, whether built in or written by you, were brought in with the <code>import</code> keyword.</p>
+            <pre class="simple-code"><span class="keyword">import</span> core            <span class="comment">-- a built-in library</span>
+<span class="keyword">import</span> tutorials/adt   <span class="comment">-- a user-written module, by path</span></pre>
+
+            <h3>Tooling</h3>
+
+            <p class="feat"><strong>Interactive REPL.</strong> A read-eval-print loop let you evaluate expressions one at a time.</p>
+            <pre class="simple-code">&gt; <span class="number">1</span> <span class="operator">+</span> <span class="number">1</span>
+<span class="number">2</span></pre>
+
+            <p class="feat"><strong>Documentation website.</strong> The documentation site launched, published automatically with GitHub Pages, alongside one-line install scripts for PowerShell and Bash.</p>
+            <pre class="simple-code">iex (irm https://bern-lang.github.io/Bern/install/install_bern.ps1)</pre>
+        </div>
+    </div>
+
+    <footer>
+        Copyright © 2026 • All rights reserved • Built with ❤️ by <a href="https://mirvox.xyz/">Miguel Aguiar</a>
+    </footer>
+</body>
+</html>

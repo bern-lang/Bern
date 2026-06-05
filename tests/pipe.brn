@@ -1,0 +1,30 @@
+import core
+import assert
+
+-- Tests for the )| pipe operator (Elixir-style: piped value becomes first arg).
+
+-- Helpers (defined before use: Bern executes top-level commands in order)
+def is_five(n) -> n == 5
+def between(x, lo, hi) -> x >= lo && x <= hi
+
+"Pipe operator tests"
+
+-- Bare function name: x )| f  ==  f(x)
+assert_equals("pipe into bare name", [3,1,2] )| reverse, [2,1,3])
+
+-- Function call with extra args: x )| f(a)  ==  f(x, a)
+assert_equals("pipe first-arg into call", [1,2,3,4] )| filter(\x -> x > 2), [3,4])
+
+-- Chained pipes, left-associative (single line: Bern expressions don't span lines)
+assert_equals("chained pipes", [1,2,3,4] )| filter(\x -> x % 2 == 0) )| map(\x -> x * 10), [20, 40])
+
+-- Precedence: arithmetic binds tighter than the pipe, so 2 + 3 arrives as 5
+assert_equals("arith before pipe", 2 + 3 )| is_five, true)
+
+-- Pipe into a literal lambda (uses the Apply path)
+assert_equals("pipe into lambda", 5 )| (\x -> x + 1), 6)
+
+-- Piped value is the first arg; the call supplies the rest
+assert_equals("pipe into multi-arg", 5 )| between(1, 10), true)
+
+"All pipe tests completed"

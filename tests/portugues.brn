@@ -1,0 +1,41 @@
+// Operadores escritos em portugues brasileiro (sem acentos).
+// Cada linha imprime o resultado; os comentarios mostram o esperado.
+
+import core
+
+x recebe 10            // atribuicao com 'recebe' (= / be)
+y recebe 3
+
+x mais y               // 13
+x menos y              // 7
+x vezes y              // 30
+x dividido-por y       // 3
+x resto y              // 1
+
+x maior-que y          // true
+x menor-que y          // false
+x maior-ou-igual 10    // true
+y menor-ou-igual 3     // true
+x igual 10             // true
+x diferente y          // true
+
+(x maior-que y) e (y menor-que x)   // true
+(x igual 0) ou (y igual 3)          // true
+nao (x igual y)                     // true
+
+negativo x             // -10
+tamanho "bern"         // 4
+tipo-de y              // "Int"
+
+[1, 2] concatenar [3, 4]            // [1, 2, 3, 4]
+{1, 2, 3} uniao {3, 4}              // {1, 2, 3, 4}
+
+// formas de funcao: 'retorna' (-> ) e 'tal-que' (lambda)
+def dobro(n) retorna n vezes 2
+dobro(21)              // 42
+
+inc recebe lambda n tal-que n mais 1
+inc(9)                 // 10
+
+// pipe ')|' como 'e-faca'
+[1, 2, 3, 4] e-faca filter(lambda n tal-que n resto 2 igual 0)   // [2, 4]

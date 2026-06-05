@@ -1,0 +1,46 @@
+"_____________________________________________________________"
+"The )| Pipe Operator in Bern"
+"x )| f passes x as the FIRST argument to f, so data flows left to right."
+"_____________________________________________________________\n"
+import core
+
+"[1. Piping into a function]"
+"x )| f is the same as f(x)."
+"[3, 1, 2] )| reverse"
+
+"\nResult:"
+[3, 1, 2] )| reverse
+
+"\n_____________________________________________________________\n"
+"[2. Extra arguments]"
+"The piped value becomes the first argument; you supply the rest."
+"[1, 2, 3, 4] )| filter(\\x -> x > 2)   is   filter([1, 2, 3, 4], \\x -> x > 2)"
+
+"\nResult:"
+[1, 2, 3, 4] )| filter(\x -> x > 2)
+
+"\n_____________________________________________________________\n"
+"[3. Chaining pipes]"
+"Pipes are left-associative, so you can build a left-to-right pipeline."
+"[1, 2, 3, 4] )| filter(\\x -> x % 2 == 0) )| map(\\x -> x * 10)"
+
+"\nResult:"
+[1, 2, 3, 4] )| filter(\x -> x % 2 == 0) )| map(\x -> x * 10)
+
+"\n_____________________________________________________________\n"
+"[4. Piping into a lambda]"
+"You can pipe directly into an anonymous function."
+"5 )| (\\x -> x + 1)"
+
+"\nResult:"
+5 )| (\x -> x + 1)
+
+"\n_____________________________________________________________\n"
+"[5. Precedence]"
+"The pipe binds looser than arithmetic, so 2 + 3 is computed first."
+"def is_five(n) -> n == 5"
+"2 + 3 )| is_five"
+
+"\nResult:"
+def is_five(n) -> n == 5
+2 + 3 )| is_five

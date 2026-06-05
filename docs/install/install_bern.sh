@@ -4,11 +4,22 @@
 
 set -euo pipefail
 
-# Configuration
+# Version of THIS installer script. Compared against the manifest so we can
+# tell the user when a newer installer is available.
+readonly SCRIPT_VERSION="1.0.0"
+
+# Single source of truth for what to install. Served by GitHub Pages, so a new
+# Bern release only needs the manifest bumped - not this script.
+readonly MANIFEST_URL="https://bern-lang.github.io/Bern/install/manifest.json"
+readonly INSTALLER_URL="https://bern-lang.github.io/Bern/install/install_bern.sh"
+
 readonly INSTALL_DIR="/opt/bern"
-readonly REPO="mirvoxtm/Bern"
-readonly ZIP_NAME="Bern_linux_1.1.3.zip"
-readonly VERSION="1.1.3"
+
+# Defaults, overridden by the manifest when reachable (see resolve_manifest).
+REPO="bern-lang/Bern"
+ZIP_NAME="Bern_linux_2.0.0.zip"
+VERSION="2.0.0"
+INSTALLER_LATEST=""
 
 # Colors
 readonly PURPLE='\033[35m'
@@ -25,6 +36,56 @@ log() {
     echo -e "${color}$*${RESET}"
 }
 
+# Read a value from the cached manifest. Uses jq when available and falls back
+# to a grep/sed scan of the pretty-printed JSON otherwise. $1 is a jq filter,
+# $2 is the raw JSON snippet to scan in the no-jq path.
+manifest_value() {
+    local jq_filter="$1" raw="$2"
+    if command -v jq >/dev/null 2>&1; then
+        printf '%s' "$MANIFEST" | jq -r "$jq_filter // empty" 2>/dev/null
+    else
+        printf '%s' "$raw" | grep -o '"[^"]*"[[:space:]]*$' | head -1 | sed 's/^"\(.*\)"[[:space:]]*$/\1/'
+    fi
+}
+
+# Fetch the manifest and override the defaults. Degrades silently to the
+# built-in defaults if anything fails (offline, Pages down, bad JSON).
+resolve_manifest() {
+    local manifest bern_block installer_block linux_block
+    manifest=$(curl -fsSL --max-time 10 "$MANIFEST_URL" 2>/dev/null) || return 0
+    [[ -n "$manifest" ]] || return 0
+    MANIFEST="$manifest"
+
+    # Flattened single-line blocks for the no-jq fallback.
+    local flat
+    flat=$(printf '%s' "$manifest" | tr '\n' ' ')
+    bern_block=$(printf '%s' "$flat" | grep -o '"bern"[^}]*')
+    installer_block=$(printf '%s' "$flat" | grep -o '"installer"[^}]*')
+    linux_block=$(printf '%s' "$flat" | grep -o '"linux"[^}]*}')
+
+    local v
+    v=$(manifest_value '.bern.version'      "$(printf '%s' "$bern_block"      | grep -o '"version"[^,]*' | head -1)"); [[ -n "$v" ]] && VERSION="$v"
+    v=$(manifest_value '.bern.repo'         "$(printf '%s' "$bern_block"      | grep -o '"repo"[^,]*')");              [[ -n "$v" ]] && REPO="$v"
+    v=$(manifest_value '.bern.linux.zip'    "$(printf '%s' "$linux_block"     | grep -o '"zip"[^,}]*')");             [[ -n "$v" ]] && ZIP_NAME="$v"
+    v=$(manifest_value '.installer.version' "$(printf '%s' "$installer_block" | grep -o '"version"[^,]*' | head -1)"); [[ -n "$v" ]] && INSTALLER_LATEST="$v"
+    return 0
+}
+
+# Return 0 if $1 is strictly newer than $2 (semantic-ish version compare).
+version_gt() {
+    [[ "$1" != "$2" ]] && [[ "$(printf '%s\n%s\n' "$1" "$2" | sort -V | tail -1)" == "$1" ]]
+}
+
+# Warn when the installer script itself is out of date.
+check_installer_update() {
+    [[ -n "$INSTALLER_LATEST" ]] || return 0
+    if version_gt "$INSTALLER_LATEST" "$SCRIPT_VERSION"; then
+        log "$YELLOW" "[bern] A newer installer is available (v$INSTALLER_LATEST, you have v$SCRIPT_VERSION)."
+        log "$YELLOW" "[bern] Re-run to get the latest: curl -fsSL $INSTALLER_URL | bash"
+        echo
+    fi
+}
+
 # Print banner
 print_banner() {
     log "$PURPLE" "______                  "
@@ -32,14 +93,26 @@ print_banner() {
     log "$PURPLE" "| |_/ / ___ _ __ _ __       "
     log "$PURPLE" "| ___ \/ _ \\ '__| '_ \\     This script will install Bern on"
     log "$PURPLE" "| |_/ /  __/ |  | | | |                 your machine"
-    log "$PURPLE" "\\____/ \\___|_|  |_| |_|         [ v.1.1.3 24.02.2026 ]"
+    log "$PURPLE" "\\____/ \\___|_|  |_| |_|         [ v.$VERSION ]"
     log "$GRAY" "--------------------------------------------------------------\n"
 }
 
 # Download and extract Bern
 install_bern() {
     log "$CYAN" "[bern] Installing to $INSTALL_DIR..."
-    
+
+    # Report whether this is a fresh install, a repair, or an update.
+    local version_file="$INSTALL_DIR/version.txt"
+    if [[ -f "$version_file" ]]; then
+        local installed
+        installed=$(tr -d '[:space:]' < "$version_file")
+        if [[ "$installed" == "$VERSION" ]]; then
+            log "$GRAY" "[bern] Bern v$VERSION is already installed - reinstalling/repairing."
+        else
+            log "$CYAN" "[bern] Updating Bern v$installed -> v$VERSION."
+        fi
+    fi
+
     sudo mkdir -p "$INSTALL_DIR"
     
     # Fetch latest release
@@ -88,6 +161,9 @@ EOF
         log "$GREEN" "[bern] lib folder installed"
     fi
     
+    # Record the installed version so future runs can detect updates.
+    printf '%s' "$VERSION" | sudo tee "$INSTALL_DIR/version.txt" > /dev/null
+
     log "$GREEN" "[bern] Bern binary installed successfully"
 }
 
@@ -147,11 +223,13 @@ EOF
 
 # Main installation
 main() {
+    resolve_manifest
     print_banner
+    check_installer_update
     install_bern
     setup_path
     echo
-    log "$GREEN" "[bern] Installation complete!"
+    log "$GREEN" "[bern] Installation complete! Bern v$VERSION is installed."
     log "$CYAN" "[bern] Run 'bern' or 'Bern' to get started"
 }
 

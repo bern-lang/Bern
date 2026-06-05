@@ -1,0 +1,79 @@
+"_____________________________________________________________"
+"Pattern Matching Guards and Patterns in Bern"
+"A clause matches only when its patterns match AND its when-guard is true."
+"_____________________________________________________________\n"
+
+"[1. Guards on function clauses]"
+"Add 'when <condition>' after the parameters. Clauses are tried top to bottom."
+"def classify(n) when n > 0 -> \"positive\""
+"def classify(0) -> \"zero\""
+"def classify(n) -> \"negative\""
+
+"\nResult:"
+def classify(n) when n > 0 -> "positive"
+def classify(0) -> "zero"
+def classify(n) -> "negative"
+classify(7)
+classify(0)
+classify(-3)
+
+"\n_____________________________________________________________\n"
+"[2. Guards with block bodies]"
+"Guards work with do ... end bodies too."
+"def grade(n) when n >= 90 do return \"A\" end"
+"def grade(n) when n >= 80 -> \"B\""
+"def grade(_) -> \"C\""
+
+"\nResult:"
+def grade(n) when n >= 90 do
+    return "A"
+end
+def grade(n) when n >= 80 -> "B"
+def grade(_) -> "C"
+grade(95)
+grade(85)
+grade(50)
+
+"\n_____________________________________________________________\n"
+"[3. Guards in case expressions]"
+"Each branch may carry its own when-guard before the = sign."
+"case n is x when x > 100 = \"big\" | x when x > 10 = \"medium\" | _ = \"small\" end"
+
+"\nResult:"
+def size(n) -> case n is x when x > 100 = "big" | x when x > 10 = "medium" | _ = "small" end
+size(500)
+size(50)
+size(5)
+
+"\n_____________________________________________________________\n"
+"[4. Guards on lambdas]"
+"Lambdas accept a when-guard before the arrow."
+"check_pos = \\x when x > 0 -> \"yes\""
+
+"\nResult:"
+check_pos = \x when x > 0 -> "yes"
+check_pos(4)
+
+"\n_____________________________________________________________\n"
+"[5. Negative literal patterns]"
+"Negative numbers can be matched as literals."
+"def sign(-1) -> \"minus one\""
+"def sign(_) -> \"other\""
+
+"\nResult:"
+def sign(-1) -> "minus one"
+def sign(_) -> "other"
+sign(-1)
+sign(8)
+
+"\n_____________________________________________________________\n"
+"[6. Repeated variables must be equal]"
+"If a variable appears twice in a pattern, the values must match."
+"def same(x, x) -> \"equal\""
+"def same(_, _) -> \"different\""
+
+"\nResult:"
+def same(x, x) -> "equal"
+def same(_, _) -> "different"
+same(3, 3)
+same(3, 4)

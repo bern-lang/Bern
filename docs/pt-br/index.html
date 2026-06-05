@@ -1,62 +1,52 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bern Programming Language | Functional, Expressive, Modern</title>
-    <link rel="icon" type="image/png" href="images/cat.png">
-    <meta name="description" content="Bern is a modern, functionally inspired programming language focused on expressiveness, pattern matching, algebraic data types, and clean syntax. Learn, explore, and download Bern.">
-    <meta name="keywords" content="Bern, Bern language, functional programming, pattern matching, algebraic data types, modern programming, expressive syntax, Odin, Haskell, language tutorial, language documentation, download Bern">
-    <link rel="canonical" href="https://bern-lang.github.io/Bern">
-    <!-- Open Graph / Facebook -->
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://bern-lang.github.io/Bern">
-    <meta property="og:title" content="Bern Programming Language | Functional, Expressive, Modern">
-    <meta property="og:description" content="Bern is a modern, functionally inspired programming language focused on expressiveness, pattern matching, algebraic data types, and clean syntax. Learn, explore, and download Bern.">
-    <meta property="og:image" content="https://bern-lang.github.io/Bern/images/logo.png">
-    <!-- Twitter -->
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:url" content="https://bern-lang.github.io/Bern">
-    <meta name="twitter:title" content="Bern Programming Language | Functional, Expressive, Modern">
-    <meta name="twitter:description" content="Bern is a modern, functionally inspired programming language focused on expressiveness, pattern matching, algebraic data types, and clean syntax. Learn, explore, and download Bern.">
-    <meta name="twitter:image" content="https://bern-lang.github.io/Bern/images/logo.png">
-    <link rel="stylesheet" href="style.css">
+    <title>Linguagem de Programação Bern | Funcional, Expressiva, Moderna</title>
+    <link rel="icon" type="image/png" href="../images/cat.png">
+    <meta name="description" content="Bern é uma linguagem de programação moderna, de inspiração funcional, focada em expressividade, casamento de padrões, tipos de dados algébricos e sintaxe limpa. Aprenda, explore e baixe Bern.">
+    <meta name="keywords" content="Bern, linguagem Bern, programação funcional, casamento de padrões, tipos de dados algébricos, programação moderna, sintaxe expressiva, Odin, Haskell, tutorial de linguagem, documentação de linguagem, baixar Bern">
+    <link rel="canonical" href="https://bern-lang.github.io/Bern/pt-br/index.html">
+    <link rel="alternate" hreflang="en" href="https://bern-lang.github.io/Bern/index.html">
+    <link rel="alternate" hreflang="pt-BR" href="https://bern-lang.github.io/Bern/pt-br/index.html">
+    <link rel="stylesheet" href="../style.css">
 </head>
 <body>
     <header>
         <div class="header-content">
-            <a href="#" class="logo"><img src="images/cat.png" alt="Bern Logo" width="20%" style="margin-top: 10px;"></a>
+            <a href="#" class="logo"><img src="../images/cat.png" alt="Logo do Bern" width="20%" style="margin-top: 10px;"></a>
             <nav>
-                <a href="#home">Home</a>
-                <a href="documentation.html">Documentation</a>
-                <a href="examples.html">Learn Bern</a>
-                <a href="changelog.html">Changelog</a>
-                <a href="pt-br/index.html" style="font-weight: 600;">🌐 PT-BR</a>
+                <a href="#home">Início</a>
+                <a href="documentation.html">Documentação</a>
+                <!-- <a href="examples.html">Aprenda Bern</a> -->
+                <a href="changelog.html">Mudanças</a>
+                <a href="../index.html" style="font-weight: 600;">🌐 EN</a>
             </nav>
         </div>
     </header>
 
     <div class="container">
         <div class="hero">
-            <img src="images/logo.png" alt="Bern Logo" width="60%" />
-            <p class="subtitle">A functionally inspired language focused on <strong>expressiveness</strong>.</p>
+            <img src="../images/logo.png" alt="Logo do Bern" width="60%" />
+            <p class="subtitle">Uma linguagem de inspiração funcional focada em <strong>expressividade</strong>.</p>
             <pre style="background-color: rgb(232, 239, 241); border-radius: 10px; font-family: monospace; padding: 1rem; font-size: 18px; color: grey;">iex (irm https://bern-lang.github.io/Bern/install/install_bern.ps1)</pre>
-            <p class="subtitle" style="font-size: 14px; margin-top: 14px;">Install with <b>PowerShell</b> using the command above.<br>Alternatively, install with <b>Bash</b> using <code>curl -fsSL https://bern-lang.github.io/Bern/install/install_bern.sh | bash</code></p>
+            <p class="subtitle" style="font-size: 14px; margin-top: 14px;">Instale com <b>PowerShell</b> usando o comando acima.<br>Como alternativa, instale com <b>Bash</b> usando <code>curl -fsSL https://bern-lang.github.io/Bern/install/install_bern.sh | bash</code></p>
         </div>
 
-        
+
                 <div class="feature-section">
             <div class="feature-icon">🔋</div>
             <div class="feature-content">
-                <h2>Batteries Included</h2>
-                <p>The standard library offers a rich set of functions for data manipulation, I/O, and more, so you can get started quickly.</p>
+                <h2>Baterias Inclusas</h2>
+                <p>A biblioteca padrão oferece um conjunto rico de funções para manipulação de dados, E/S e muito mais, para você começar rapidamente.</p>
                 <div class="code-example">
                     <div class="line-numbers">1<br>2<br>3<br>4<br>5<br>6<br>7<br>8</div>
                     <div class="code-content"><pre><code><span class="keyword">import</span> core
 <span class="keyword">import</span> random
 <span class="keyword">import</span> strings
 
-<span class="comment">-- This is actually a 'random' function that wraps a C binding!</span>
+<span class="comment">-- Esta é de fato uma função 'random' que envolve um binding em C!</span>
 <span class="function">text = random_choice</span>([<span class="string">'apple'</span>, <span class="string">'banana'</span>, <span class="string">'cherry'</span>])
 
 map(text, <span class="operator">\</span>c <span class="operator">-></span> <span class="function">char_to_upper</span>(c))</code></pre>
@@ -68,8 +58,8 @@ map(text, <span class="operator">\</span>c <span class="operator">-></span> <spa
         <div class="feature-section">
             <div class="feature-icon">🎯</div>
             <div class="feature-content">
-                <h2>Pattern Matching</h2>
-                <p>Define functions with multiple clauses that match on patterns, making your code clear and maintainable.</p>
+                <h2>Casamento de Padrões</h2>
+                <p>Defina funções com várias cláusulas que casam padrões, deixando seu código claro e fácil de manter.</p>
                 <div class="code-example">
                     <div class="line-numbers">1<br>2<br>3<br>4<br>5</div>
                     <div class="code-content"><pre><code><span class="keyword">def</span> <span class="function">sign</span>(<span class="number">0</span>) <span class="operator">-></span> <span class="string">"zero"</span>
@@ -84,8 +74,8 @@ map(text, <span class="operator">\</span>c <span class="operator">-></span> <spa
         <div class="feature-section">
             <div class="feature-icon">📦</div>
             <div class="feature-content">
-                <h2>Algebraic Data Types</h2>
-                <p>Create custom types with multiple constructors for type-safe data modeling. ADTs combine naturally with pattern matching.</p>
+                <h2>Tipos de Dados Algébricos</h2>
+                <p>Crie tipos personalizados com vários construtores para modelar dados com segurança de tipos. ADTs combinam naturalmente com casamento de padrões.</p>
                 <div class="code-example">
                     <div class="line-numbers">1<br>2<br>3<br>4<br>5<br>6<br>7<br>8<br>9</div>
                     <div class="code-content"><pre><code><span class="keyword">adt</span> <span class="type">Shape</span> = <span class="type">Circle</span> <span class="type">Double</span> | <span class="type">Rectangle</span> <span class="type">Double</span> <span class="type">Double</span>
@@ -96,7 +86,7 @@ map(text, <span class="operator">\</span>c <span class="operator">-></span> <spa
 c = <span class="type">Circle</span>(<span class="number">5.0</span>)
 r = <span class="type">Rectangle</span>(<span class="number">3.0</span>, <span class="number">4.0</span>)
 
-<span class="function">area</span>(c)  <span class="comment">// Calculates circle area</span></code></pre>
+<span class="function">area</span>(c)  <span class="comment">// Calcula a área do círculo</span></code></pre>
                     </div>
                 </div>
             </div>
@@ -105,21 +95,21 @@ r = <span class="type">Rectangle</span>(<span class="number">3.0</span>, <span c
         <div class="feature-section">
             <div class="feature-icon">🔄</div>
             <div class="feature-content">
-                <h2>Unified Loop Syntax</h2>
-                <p>Use the <code>loop</code> keyword for all loop types, inspired by Odin. Clean syntax for repeating, conditional, and iteration loops. (<code>for</code> still works as an alias.)</p>
+                <h2>Sintaxe de Laço Unificada</h2>
+                <p>Use a palavra-chave <code>loop</code> para todos os tipos de laço, inspirada em Odin. Sintaxe limpa para laços de repetição, condicionais e de iteração. (<code>for</code> ainda funciona como sinônimo.)</p>
                 <div class="code-example">
                     <div class="line-numbers">1<br>2<br>3<br>4<br>5<br>6<br>7<br>8<br>9<br>10<br>11<br>12<br>13<br>14</div>
-                    <div class="code-content"><pre><code><span class="comment">// Repeat loop</span>
+                    <div class="code-content"><pre><code><span class="comment">// Laço de repetição</span>
 <span class="keyword">loop</span> <span class="number">3</span> <span class="keyword">do</span>
     <span class="string">"Hello!"</span>
 <span class="keyword">end</span>
 
-<span class="comment">// Conditional loop</span>
+<span class="comment">// Laço condicional</span>
 <span class="keyword">loop</span> counter <span class="operator">></span> <span class="number">0</span> <span class="keyword">do</span>
     counter = counter <span class="operator">-</span> <span class="number">1</span>
 <span class="keyword">end</span>
 
-<span class="comment">// Loop-in loop</span>
+<span class="comment">// Laço loop-in</span>
 <span class="keyword">loop</span> char <span class="operator">:</span> <span class="string">"Bern"</span> <span class="keyword">do</span>
     char
 <span class="keyword">end</span></code></pre>
@@ -131,16 +121,16 @@ r = <span class="type">Rectangle</span>(<span class="number">3.0</span>, <span c
         <div class="feature-section">
             <div class="feature-icon">λ</div>
             <div class="feature-content">
-                <h2>First-Class Functions</h2>
-                <p>Functions are values that can be passed around, returned, and composed. Lambda expressions make inline functions natural.</p>
+                <h2>Funções de Primeira Classe</h2>
+                <p>Funções são valores que podem ser passados adiante, retornados e compostos. Expressões lambda tornam funções em linha algo natural.</p>
                 <div class="code-example">
                     <div class="line-numbers">1<br>2<br>3<br>4<br>5<br>6<br>7<br>8</div>
 <div class="code-content"><pre><code><span class="keyword">import</span> core
 
-<span class="comment">// Higher-order function usage</span>
+<span class="comment">// Uso de função de ordem superior</span>
 <span class="function">map</span>([<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span>], <span class="operator">\</span>x <span class="operator">-></span> x <span class="operator">*</span> <span class="number">2</span>)
 
-<span class="comment">// Lambda expressions</span>
+<span class="comment">// Expressões lambda</span>
 inc = <span class="operator">\</span>x <span class="operator">-></span> x <span class="operator">+</span> <span class="number">1</span>
 <span class="function">applyTwice</span>(<span class="operator">\</span>n <span class="operator">-></span> n <span class="operator">*</span> <span class="number">2</span>, <span class="number">5</span>)</code></pre>
 </div>
@@ -151,13 +141,13 @@ inc = <span class="operator">\</span>x <span class="operator">-></span> x <span 
         <div class="feature-section">
             <div class="feature-icon">➡️</div>
             <div class="feature-content">
-                <h2>Pipe Operator</h2>
-                <p>The <code>)|</code> operator threads a value into a function as its first argument, so data transformations read left to right.</p>
+                <h2>Operador Pipe</h2>
+                <p>O operador <code>)|</code> encaminha um valor para uma função como seu primeiro argumento, então as transformações de dados são lidas da esquerda para a direita.</p>
                 <div class="code-example">
                     <div class="line-numbers">1<br>2<br>3<br>4<br>5</div>
                     <div class="code-content"><pre><code><span class="keyword">import</span> core
 
-<span class="comment">// x )| f  is the same as  f(x)</span>
+<span class="comment">// x )| f  é o mesmo que  f(x)</span>
 [<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>] <span class="operator">)|</span> <span class="function">filter</span>(<span class="operator">\</span>x <span class="operator">-></span> x <span class="operator">%</span> <span class="number">2</span> <span class="operator">==</span> <span class="number">0</span>) <span class="operator">)|</span> <span class="function">map</span>(<span class="operator">\</span>x <span class="operator">-></span> x <span class="operator">*</span> <span class="number">10</span>)
 <span class="comment">// [20, 40]</span></code></pre></div>
                 </div>
@@ -167,44 +157,44 @@ inc = <span class="operator">\</span>x <span class="operator">-></span> x <span 
         <div class="feature-section">
             <div class="feature-icon">📝</div>
             <div class="feature-content">
-                <h2>Readable Word Operators</h2>
-                <p>New to programming? You don't have to memorize cryptic symbols. Every operator has a plain-English name, so you can write what you mean and read your code out loud. Once you're comfortable, the symbols work too, and you can mix and match freely.</p>
+                <h2>Operadores em Palavras Legíveis</h2>
+                <p>É novo na programação? Você não precisa decorar símbolos enigmáticos. Todo operador tem um nome em palavras simples, então você escreve o que quer dizer e lê seu código em voz alta. Quando estiver à vontade, os símbolos também funcionam, e você pode misturar os dois livremente.</p>
                 <div class="code-example">
                     <div class="line-numbers">1<br>2<br>3<br>4</div>
                     <div class="code-content"><pre><code><span class="number">3</span> is-greater <span class="number">2</span> and <span class="number">5</span> is-less-or-equal <span class="number">5</span>  <span class="comment">// true</span>
 [<span class="number">1</span>, <span class="number">2</span>] concat [<span class="number">3</span>, <span class="number">4</span>]                 <span class="comment">// [1, 2, 3, 4]</span>
-total be <span class="number">10</span> plus <span class="number">5</span>                      <span class="comment">// assignment with words</span>
+total be <span class="number">10</span> plus <span class="number">5</span>                      <span class="comment">// atribuição com palavras</span>
 <span class="number">17</span> modulo <span class="number">5</span>                           <span class="comment">// 2</span></code></pre></div>
                 </div>
             </div>
         </div>
 
         <div class="also-featuring">
-            <h3>🌟 Also Featuring</h3>
+            <h3>🌟 Também Inclui</h3>
             <ul>
-                <li>Literals and expressions are evaluated and printed automatically (Evaluation implies output)</li>
-                <li>Range syntax <code>[1..10]</code> for lists</li>
-                <li>Set operations <code>&lt;&gt;</code>, <code>&lt;|</code>, <code>|&gt;</code>, <code>&lt;/&gt;</code> for lists and sets</li>
-                <li>Object/hashmap support with <code>#{key: value}#</code> syntax</li>
-                <li>Special operators for convecience such as <code>:&gt;</code>(length) and <code>::</code>(typeof)</li>
-                <li>Global functions for specified development (<code>write_file()</code>, <code>read_file()</code> and <code>get_host_machine()</code>)</li>
-                <li>Clean, expressive syntax inspired by Lua, Haskell and Odin</li>
+                <li>Literais e expressões são avaliados e impressos automaticamente (avaliação implica saída)</li>
+                <li>Sintaxe de intervalo <code>[1..10]</code> para listas</li>
+                <li>Operações de conjunto <code>&lt;&gt;</code>, <code>&lt;|</code>, <code>|&gt;</code>, <code>&lt;/&gt;</code> para listas e conjuntos</li>
+                <li>Suporte a objetos/hashmap com a sintaxe <code>#{key: value}#</code></li>
+                <li>Operadores especiais para conveniência, como <code>:&gt;</code>(length) e <code>::</code>(typeof)</li>
+                <li>Funções globais para desenvolvimento específico (<code>write_file()</code>, <code>read_file()</code> e <code>get_host_machine()</code>)</li>
+                <li>Sintaxe limpa e expressiva inspirada em Lua, Haskell e Odin</li>
             </ul>
         </div>
 
         <div class="doc-section" id="docs">
-            <h2>Examples</h2>
+            <h2>Exemplos</h2>
 
-            <p style="font-size: 1.05rem;">A quick taste below. For a guided, thoroughly explained walkthrough of every feature, head to the <a href="examples.html" style="color: var(--primary); font-weight: 500;">in-depth Examples page &rarr;</a></p>
+            <p style="font-size: 1.05rem;">Uma amostra rápida abaixo. Para um passo a passo guiado e detalhadamente explicado de cada recurso, vá para a <a href="examples.html" style="color: var(--primary); font-weight: 500;">página de Exemplos aprofundada &rarr;</a></p>
 
-            <h3>Basics</h3>
-            <p>In Bern, literals are interpreted and printed automatically. Variables are defined with simple assignment.</p>
+            <h3>Básico</h3>
+            <p>Em Bern, literais são interpretados e impressos automaticamente. Variáveis são definidas com uma atribuição simples.</p>
             <div class="simple-code">integer = <span class="number">2</span>
 double = <span class="number">3.14</span>
 helloworld = <span class="string">"Hello, World!"</span></div>
 
-            <h3>Conditionals</h3>
-            <p>Use if-then-else statements and else-if chains for conditional logic.</p>
+            <h3>Condicionais</h3>
+            <p>Use instruções if-then-else e cadeias else-if para lógica condicional.</p>
             <div class="simple-code">age = <span class="number">18</span>
 <span class="keyword">if</span> age <span class="operator">>=</span> <span class="number">18</span> <span class="keyword">then</span>
     <span class="string">"You are an adult."</span>
@@ -212,23 +202,23 @@ helloworld = <span class="string">"Hello, World!"</span></div>
     <span class="string">"You are a minor."</span>
 <span class="keyword">end</span></div>
 
-            <h3>Lists</h3>
-            <p>Lists are homogeneous collections with range syntax and various operations.</p>
+            <h3>Listas</h3>
+            <p>Listas são coleções homogêneas com sintaxe de intervalo e diversas operações.</p>
             <div class="simple-code">numbers = [<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span>]
 range = [<span class="number">5</span>..<span class="number">10</span>]
 
-[<span class="number">1</span>, <span class="number">2</span>] <span class="operator">+</span> <span class="number">2</span>              <span class="comment">// Maps: [3, 4]</span>
-[<span class="number">1</span>, <span class="number">2</span>] <span class="operator"><></span> [<span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span>]     <span class="comment">// Concatenation</span>
-[<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>] <span class="operator"><|</span> [<span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span>]  <span class="comment">// Union (no duplicates)</span></div>
+[<span class="number">1</span>, <span class="number">2</span>] <span class="operator">+</span> <span class="number">2</span>              <span class="comment">// Mapeia: [3, 4]</span>
+[<span class="number">1</span>, <span class="number">2</span>] <span class="operator"><></span> [<span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span>]     <span class="comment">// Concatenação</span>
+[<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>] <span class="operator"><|</span> [<span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span>]  <span class="comment">// União (sem duplicatas)</span></div>
 
-            <h3>Sets</h3>
-            <p>Sets automatically handle uniqueness and support set theory operations.</p>
-            <div class="simple-code">{<span class="number">1</span>, <span class="number">2</span>} <span class="operator">+</span> <span class="number">3</span>           <span class="comment">// Add element</span>
-{<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>} <span class="operator">|></span> {<span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>}  <span class="comment">// Intersection</span>
-{<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>} <span class="operator"></></span> {<span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>} <span class="comment">// Difference</span></div>
+            <h3>Conjuntos</h3>
+            <p>Conjuntos cuidam da unicidade automaticamente e oferecem operações da teoria dos conjuntos.</p>
+            <div class="simple-code">{<span class="number">1</span>, <span class="number">2</span>} <span class="operator">+</span> <span class="number">3</span>           <span class="comment">// Adiciona elemento</span>
+{<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>} <span class="operator">|></span> {<span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>}  <span class="comment">// Interseção</span>
+{<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>} <span class="operator"></></span> {<span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>} <span class="comment">// Diferença</span></div>
 
-            <h3>Objects (Hashmaps)</h3>
-            <p>Objects use <code>#{...}#</code> notation for key-value pairs.</p>
+            <h3>Objetos (Hashmaps)</h3>
+            <p>Objetos usam a notação <code>#{...}#</code> para pares chave-valor.</p>
             <div class="simple-code">obj = <span class="operator">#{</span>
   key: <span class="string">"value"</span>,
   hello: <span class="string">"world"</span>
@@ -237,8 +227,8 @@ range = [<span class="number">5</span>..<span class="number">10</span>]
 obj[<span class="string">"key"</span>] = <span class="string">"new_value"</span>
 obj[<span class="string">"new_key"</span>] = <span class="string">"added_value"</span></div>
 
-            <h3>Functions with Block Bodies</h3>
-            <p>Use <code>do...end</code> blocks with <code>return</code> for more complex functions.</p>
+            <h3>Funções com Corpo em Bloco</h3>
+            <p>Use blocos <code>do...end</code> com <code>return</code> para funções mais complexas.</p>
             <div class="simple-code"><span class="keyword">def</span> <span class="function">sumList</span>(xs) <span class="keyword">do</span>
     total = <span class="number">0</span>
     <span class="keyword">loop</span> n <span class="operator">:</span> xs <span class="keyword">do</span>
@@ -247,10 +237,10 @@ obj[<span class="string">"new_key"</span>] = <span class="string">"added_value"<
     <span class="keyword">return</span> total
 <span class="keyword">end</span>
 
-<span class="function">sumList</span>([<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>])  <span class="comment">// Returns 10</span></div>
+<span class="function">sumList</span>([<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>])  <span class="comment">// Retorna 10</span></div>
 
-            <h3>Imports</h3>
-            <p>Extend functionality by importing libraries like <code>core</code>.</p>
+            <h3>Importações</h3>
+            <p>Estenda funcionalidades importando bibliotecas como <code>core</code>.</p>
             <div class="simple-code"><span class="keyword">import</span> core
 
 <span class="function">map</span>([<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span>], <span class="operator">\</span>x <span class="operator">-></span> x <span class="operator">+</span> <span class="number">2</span>)
@@ -258,15 +248,15 @@ obj[<span class="string">"new_key"</span>] = <span class="string">"added_value"<
 <span class="keyword">def</span> <span class="function">isEven</span>(x) <span class="operator">-></span> x <span class="operator">%</span> <span class="number">2</span> <span class="operator">==</span> <span class="number">0</span>
 <span class="function">filter</span>([<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span>, <span class="number">6</span>], isEven)</div>
 
-            <h3>Pipe Operator</h3>
-            <p>The <code>)|</code> operator passes a value as the first argument to a function, letting pipelines read left to right.</p>
+            <h3>Operador Pipe</h3>
+            <p>O operador <code>)|</code> passa um valor como primeiro argumento para uma função, deixando os encadeamentos serem lidos da esquerda para a direita.</p>
             <div class="simple-code"><span class="keyword">import</span> core
 
 [<span class="number">3</span>, <span class="number">1</span>, <span class="number">2</span>] <span class="operator">)|</span> <span class="function">reverse</span>              <span class="comment">// [2, 1, 3]</span>
 [<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>] <span class="operator">)|</span> <span class="function">filter</span>(<span class="operator">\</span>x <span class="operator">-></span> x <span class="operator">></span> <span class="number">2</span>)  <span class="comment">// [3, 4]</span></div>
 
-            <h3>User Input</h3>
-            <p>Capture user input with the <code>input()</code> function.</p>
+            <h3>Entrada do Usuário</h3>
+            <p>Capture a entrada do usuário com a função <code>input()</code>.</p>
             <div class="simple-code">name = <span class="function">input</span>(<span class="string">"Type your name: "</span>)
 
 <span class="keyword">import</span> core
@@ -275,9 +265,9 @@ age = <span class="function">to_int</span>(age_text)</div>
         </div>
 
         <footer>
-            Copyright © 2026 • All rights reserved • Built with ❤️ by <a href="https://mirvox.xyz/">Miguel Aguiar</a>
+            Copyright © 2026 • Todos os direitos reservados • Feito com ❤️ por <a href="https://mirvox.xyz/">Miguel Aguiar</a>
         </footer>
     </div>
-    <script src="examples-toggle.js"></script>
+    <script src="../examples-toggle.js"></script>
 </body>
 </html>

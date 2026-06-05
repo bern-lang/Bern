@@ -49,11 +49,11 @@ def get_random_number() do
     end
 end
 
-def get_random_string(length) do
+def get_random_string(len) do
     chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
     result = ""
     i = 0
-    for i < length do
+    for i < len do
         index = get_random_int() % (:> chars)
         result = result + chars[index]
         i = i + 1

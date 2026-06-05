@@ -1,0 +1,68 @@
+{--! impure-lists !--}
+import json
+import assert
+
+"JSON parse tests"
+
+-- Scalars
+assert_equals("int", json_parse("42"), 42)
+assert_equals("negative int", json_parse("-7"), -7)
+assert_equals("true", json_parse("true"), true)
+assert_equals("false", json_parse("false"), false)
+assert_equals("string", json_parse("\"hello\""), "hello")
+assert_equals("null is undefined", is_null(json_parse("null")), true)
+
+-- Double (compared with tolerance: parser arithmetic may differ in last bits)
+d = json_parse("3.14")
+assert_equals("double approx", (d - 3.14 < 0.0001) && (d - 3.14 > -0.0001), true)
+
+-- Array -> List (order and duplicates preserved)
+assert_equals("array of ints", json_parse("[1, 2, 3]"), [1, 2, 3])
+assert_equals("empty array", json_parse("[]"), [])
+
+-- Mixed types keep their order (heterogeneous list)
+assert_equals("mixed order", json_parse("[1, \"a\", 5, \"a\", \"banana\"]"), [1, "a", 5, "a", "banana"])
+
+-- Duplicates are preserved verbatim, not grouped
+assert_equals("duplicates kept", json_parse("[7, 7, 7]"), [7, 7, 7])
+
+-- Object -> Object
+o = json_parse("{\"name\": \"Bern\", \"version\": 1}")
+assert_equals("object string field", o["name"], "Bern")
+assert_equals("object int field", o["version"], 1)
+
+-- Nested structures; nested array stays an ordered List
+n = json_parse("{\"items\": [1, 2], \"meta\": {\"ok\": true}}")
+assert_equals("nested array", n["items"], [1, 2])
+assert_equals("nested object bool", n["meta"]["ok"], true)
+
+-- Whitespace tolerance
+assert_equals("whitespace", json_parse("  {  \"a\" :  [ 1 , 2 ]  }  ")["a"], [1, 2])
+
+-- ---------------------------------------------------------------------------
+-- Stringify (via the keys() builtin)
+-- ---------------------------------------------------------------------------
+
+"JSON stringify tests"
+
+assert_equals("stringify int", json_stringify(42), "42")
+assert_equals("stringify true", json_stringify(true), "true")
+assert_equals("stringify false", json_stringify(false), "false")
+assert_equals("stringify string", json_stringify("hi"), "\"hi\"")
+assert_equals("stringify null", json_stringify(json_null()), "null")
+assert_equals("stringify escaped quote", json_stringify("a\"b"), "\"a\\\"b\"")
+assert_equals("stringify set as array", json_stringify({1, 2, 3}), "[1,2,3]")
+assert_equals("stringify list as array", json_stringify([1, 2, 3]), "[1,2,3]")
+assert_equals("stringify mixed list", json_stringify([1, "a", true]), "[1,\"a\",true]")
+assert_equals("stringify object", json_stringify(json_parse("{\"a\": 1}")), "{\"a\":1}")
+
+-- keys() builtin directly
+o2 = json_parse("{\"x\": 1, \"y\": 2}")
+assert_equals("keys", keys(o2), ["x", "y"])
+
+-- Round trips
+assert_equals("roundtrip array", json_stringify(json_parse("[1,2,3]")), "[1,2,3]")
+assert_equals("roundtrip dupes", json_stringify(json_parse("[7,7,7]")), "[7,7,7]")
+assert_equals("roundtrip object", json_stringify(json_parse("{\"name\":\"Bern\",\"n\":3}")), "{\"name\":\"Bern\",\"n\":3}")
+
+"JSON tests done"

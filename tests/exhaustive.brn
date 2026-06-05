@@ -1,0 +1,21 @@
+import core
+import assert
+
+"exhaustive-match / error() tests"
+
+-- error() builds an inspectable error value
+assert_equals("error() is an error", is_error(error("boom")), true)
+assert_equals("normal value is not", is_error(42), false)
+
+-- patched stdlib partials now return errors instead of crashing
+assert_equals("head of empty is error", is_error(head([])), true)
+assert_equals("head of non-empty ok", is_error(head([5])), false)
+assert_equals("min of empty is error", is_error(min([])), true)
+
+-- a user-defined exhaustive function (covers [] and cons) loads and runs
+def first([]) -> error("first: empty")
+def first([h|_]) -> h
+assert_equals("first of list", first([10, 20]), 10)
+assert_equals("first of empty is error", is_error(first([])), true)
+
+"exhaustive tests done"

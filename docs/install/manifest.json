@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "installer": {
+    "version": "1.0.0",
+    "ps1": "https://bern-lang.github.io/Bern/install/install_bern.ps1",
+    "sh": "https://bern-lang.github.io/Bern/install/install_bern.sh"
+  },
+  "bern": {
+    "version": "2.0.0",
+    "released": "2026-06-05",
+    "repo": "bern-lang/Bern",
+    "windows": { "zip": "Bern_win_2.0.0.zip", "exe": "Bern.exe" },
+    "linux": { "zip": "Bern_linux_2.0.0.zip", "bin": "Bern" }
+  },
+  "changelog": "https://bern-lang.github.io/Bern/changelog.html"
+}

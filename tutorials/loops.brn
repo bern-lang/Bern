@@ -1,73 +1,74 @@
 "_____________________________________________________________"
 "Bern uses a Odin-like syntax for loops."
-"This means that the only word for loops is \"for\""
+"This means that the only word for loops is \"loop\""
 "And the way you type it changes how the loop behaves."
+"(\"for\" is still accepted as an alias for compatibility.)"
 "_____________________________________________________________\n"
 
-"[1. Repeat For]"
-"The \"Repeat For\" loop repeats an action a specified number of times:"
-"for 3 do"
+"[1. Repeat Loop]"
+"The \"Repeat Loop\" repeats an action a specified number of times:"
+"loop 3 do"
 "    \"Hello, Loops!\""
 "end"
 
 "\nResult:"
-for 3 do
+loop 3 do
     "Hello, Loops!"
 end
 
 "\n_____________________________________________________________\n"
 
 
-"[2. Conditional For]"
-"The \"Conditional For\" loop repeats an action until the conditional is false:"
+"[2. Conditional Loop]"
+"The \"Conditional Loop\" repeats an action until the conditional is false:"
 "counter = 2"
-"for counter > 0 do"
+"loop counter > 0 do"
 "    \"Hello, Loops!\""
 "    counter = counter - 1"
 "end"
 
 "\nResult:"
 counter = 2
-for (counter > 0) do
+loop (counter > 0) do
     "Hello, Loops!"
     counter = counter - 1
 end
 
 "\n_____________________________________________________________\n"
-"[3. Infinite For]"
-"To do a Infinite Loop, use for true like this:"
-"for true do"
+"[3. Infinite Loop]"
+"To do a Infinite Loop, use loop true like this:"
+"loop true do"
 "   \"Hello!\""
 "end"
 
 -- Commented to run normally.
--- for true do
+-- loop true do
 --    "Hello!"
 -- end
 
 
 "\n_____________________________________________________________\n"
-"[3. For-In]"
-"A For-In can be used to iterate every object of a List, Set or String."
+"[3. Loop-In]"
+"A Loop-In can be used to iterate every object of a List, Set or String."
 "Consider the example:"
 "text = \"Bern\""
-"for char : text do"
+"loop char : text do"
 "   \"Current char is:\" + char"
 "end"
 
 "\nResult:"
 
 text = "Bern"
-for char : text do
+loop char : text do
    "Current char is: " + char
 end
 
 "\n_____________________________________________________________\n"
-"[3. For-In with Counter]"
+"[3. Loop-In with Counter]"
 "An automatic enumeration is also available with the following syntax:"
 "Consider the example:"
 "text = \"Bern\""
-"for char, index : text do"
+"loop char, index : text do"
 "   \"Current char is:\" + char"
 "   \"Current index is:\" + index"
 "end"
@@ -75,7 +76,7 @@ end
 "\nResult:"
 
 textt = "Bern"
-for char, index : textt do
+loop char, index : textt do
    "Current char is: " + char
     "Current index is: " + index
 end

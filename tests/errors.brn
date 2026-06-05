@@ -1,0 +1,21 @@
+import core
+import assert
+
+"errors-as-values tests"
+
+-- runtime errors become inspectable values instead of crashing
+assert_equals("undefined function", is_error(undefined_fn(1)), true)
+assert_equals("index out of bounds", is_error([1, 2, 3][99]), true)
+assert_equals("no matching clause", is_error(head([])), true)
+assert_equals("normal value not error", is_error(42), false)
+assert_equals("normal computation", is_error(2 + 3), false)
+
+-- poison propagates through operators
+assert_equals("poison through +", is_error(undefined_fn(1) + 100), true)
+
+-- an error can be stored and inspected
+oops = nope_func(1, 2)
+assert_equals("stored error", is_error(oops), true)
+assert_equals("clean value after error runs", 7 * 6, 42)
+
+"errors-as-values done"

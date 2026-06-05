@@ -1,6 +1,6 @@
 cabal-version:      3.0
 name:               Bern
-version:            0.1.3.0
+version:            2.0.0.0
 synopsis:           Interpreted Dynamic Typed Programming Language
 -- description:
 homepage:           mirvox.xyz
@@ -23,6 +23,7 @@ library
                       Language.Eval,
                       Language.Helpers,
                       Language.FFI,
+                      Language.PragmaState,
                       Parsing.Parser,
                       Data.Hashtable.Hashtable
     -- other-modules:
@@ -45,14 +46,20 @@ library
 executable Bern
     import:           warnings
     main-is:          Main.hs
-    -- other-modules:
+    other-modules:    Repl,
+                      Bundle,
+                      Update
     -- other-extensions:
     build-depends:
         base >=4.17 && <5,
         Bern,
         megaparsec,
         directory,
-        filepath
+        filepath,
+        haskeline,
+        bytestring,
+        process,
+        time
 
     hs-source-dirs:   app
     default-language: Haskell2010
