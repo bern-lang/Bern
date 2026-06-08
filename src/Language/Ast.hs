@@ -128,10 +128,15 @@ data ADTConstructor = ADTConstructor String [Type]
     deriving (Show, Eq)
 
 -- The field types that may appear in an ADT declaration. `TCustom` is any
--- user-named type referenced by another ADT.
+-- user-named type referenced by another ADT. `TAuto` is the dynamic "detect the
+-- type automatically" placeholder (spelled `Auto`, or `Any`): it accepts a value
+-- of whatever type is passed -- a natural fit for a dynamically typed language.
 -- Os tipos de campo que podem aparecer numa declaração de ADT. `TCustom` é
--- qualquer tipo de nome do usuário referenciado por outro ADT.
-data Type = TInt | TDouble | TBool | TChar | TString | TList | TSet | TCustom String
+-- qualquer tipo de nome do usuário referenciado por outro ADT. `TAuto` é o
+-- marcador dinâmico "detecte o tipo automaticamente" (escrito `Auto`, ou `Any`):
+-- aceita um valor de qualquer tipo que for passado -- ideal para uma linguagem
+-- de tipagem dinâmica.
+data Type = TInt | TDouble | TBool | TChar | TString | TList | TSet | TCustom String | TAuto
     deriving (Show, Eq)
 
 {-
@@ -445,6 +450,7 @@ data Command = Skip
                 | Print Expression
                 | AutoPrint Expression                         -- a bare top-level expression (suppressed by no-eval)
                 | Assign String Expression                    -- (=)
+                | TypedAssign String String Expression        -- name :: Type = expr  (under the `typed` pragma)
                 | GlobalAssign String Expression              -- (:=) - global assignment
                 | AssignIndex String [Expression] Expression  -- var[idx..] = expr
                 | Conditional Expression Command Command      -- if-then-else

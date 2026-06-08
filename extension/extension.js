@@ -138,14 +138,14 @@ const KEYWORD_DOCS = {
   as: "Gives an imported module a namespace alias: `import x as y`.",
   adt: "Declares an Algebraic Data Type: `adt Maybe = Just Int | None`. Add `iterative` for recursive types.",
   iterative: "Modifier on `adt` for recursive (self-referencing) types: `adt iterative List = Cons Int List | Nil`.",
-  fmap: "`fmap(collection, fn)` — applies `fn` to each element of a list/set, or to the values inside an ADT, preserving structure.",
+  fmap: "`fmap(collection, fn)` - applies `fn` to each element of a list/set, or to the values inside an ADT, preserving structure.",
   foreign: 'Declares a C function through the FFI: `foreign name("lib.so", "int") -> "void"`.',
   input: 'Reads a line from the user: `name = input("prompt: ")`.',
-  keys: "`keys(obj)` — returns an object's keys as a list, in insertion order.",
-  read_file: "`read_file(path)` — reads a file's contents as a string.",
-  write_file: "`write_file(path, content)` — writes a string to a file.",
-  get_host_machine: "`get_host_machine()` — returns the host OS/system string (handy for picking FFI library paths).",
-  get_current_dir: "`get_current_dir()` — returns the current working directory.",
+  keys: "`keys(obj)` - returns an object's keys as a list, in insertion order.",
+  read_file: "`read_file(path)` - reads a file's contents as a string.",
+  write_file: "`write_file(path, content)` - writes a string to a file.",
+  get_host_machine: "`get_host_machine()` - returns the host OS/system string (handy for picking FFI library paths).",
+  get_current_dir: "`get_current_dir()` - returns the current working directory.",
   true: "Boolean literal `true`.",
   false: "Boolean literal `false`.",
 };
@@ -203,44 +203,44 @@ const PRAGMA_DOCS = {
 };
 
 const BUILTIN_DOCS = {
-  map: "`map(xs, fn)` — apply `fn` to every element, returning a new list.",
-  filter: "`filter(xs, pred)` — keep only elements for which `pred` is true.",
-  foldl: "`foldl(fn, acc, xs)` — left fold: combine elements left-to-right into a single value.",
-  foldr: "`foldr(fn, acc, xs)` — right fold: combine elements right-to-left.",
-  sum: "`sum(xs)` — add up the numbers in a list.",
-  product: "`product(xs)` — multiply the numbers in a list.",
-  reverse: "`reverse(xs)` — reverse a list or set.",
-  take: "`take(n, xs)` — the first `n` elements.",
-  drop: "`drop(n, xs)` — all but the first `n` elements.",
-  head: "`head(xs)` — the first element.",
-  tail: "`tail(xs)` — every element except the first.",
-  isEmpty: "`isEmpty(xs)` — true if the collection has no elements.",
-  any: "`any(xs, pred)` — true if `pred` holds for at least one element.",
-  all: "`all(xs, pred)` — true if `pred` holds for every element.",
-  find: "`find(xs, pred)` — the first element matching `pred`.",
-  zip: "`zip(xs, ys)` — pair up elements of two lists.",
-  zipWith: "`zipWith(fn, xs, ys)` — combine two lists element-wise with `fn`.",
-  range: "`range(a, b)` — the list of integers from `a` to `b`.",
-  min: "`min(a, b)` — the smaller of two values.",
-  max: "`max(a, b)` — the larger of two values.",
-  print: "`print(value)` — print a value explicitly (bare expressions also auto-print).",
-  typeOf: "`typeOf(value)` — the value's type name as a string (same as the `::` operator).",
-  length: "`length(value)` — the length/size of a list, set, string, or object (same as the `:>` operator).",
-  to_int: "`to_int(value)` — parse a string/char into an integer.",
-  index_of: "`index_of(xs, item)` — the position of `item`, or -1 if absent.",
-  keys: "`keys(obj)` — an object's keys as a list, in insertion order.",
-  json_parse: "`json_parse(text)` — parse a JSON string into a Bern value.",
-  json_stringify: "`json_stringify(value)` — serialize a Bern value to JSON text.",
-  is_null: "`is_null(value)` — true if the value is `undefined`/null.",
-  error: '`error(message)` — build an error value: `error("boom")`.',
-  is_error: "`is_error(value)` — true if the value is an error (from errors-as-values).",
-  fmap: "`fmap(collection, fn)` — map `fn` over a list/set or the values inside an ADT.",
-  compose: "`compose(f, g)` — function composition: `compose(f, g)(x)` is `f(g(x))`.",
-  id: "`id(x)` — the identity function; returns its argument unchanged.",
-  const: "`const(x)` — returns a function that always yields `x`.",
-  flip: "`flip(f)` — swaps the first two arguments of `f`.",
-  append: "`append(xs, x)` — add `x` to the end of a list.",
-  int_to_double: "`int_to_double(n)` — convert an integer to a double.",
+  map: "`map(xs, fn)` - apply `fn` to every element, returning a new list.",
+  filter: "`filter(xs, pred)` - keep only elements for which `pred` is true.",
+  foldl: "`foldl(fn, acc, xs)` - left fold: combine elements left-to-right into a single value.",
+  foldr: "`foldr(fn, acc, xs)` - right fold: combine elements right-to-left.",
+  sum: "`sum(xs)` - add up the numbers in a list.",
+  product: "`product(xs)` - multiply the numbers in a list.",
+  reverse: "`reverse(xs)` - reverse a list or set.",
+  take: "`take(n, xs)` - the first `n` elements.",
+  drop: "`drop(n, xs)` - all but the first `n` elements.",
+  head: "`head(xs)` - the first element.",
+  tail: "`tail(xs)` - every element except the first.",
+  isEmpty: "`isEmpty(xs)` - true if the collection has no elements.",
+  any: "`any(xs, pred)` - true if `pred` holds for at least one element.",
+  all: "`all(xs, pred)` - true if `pred` holds for every element.",
+  find: "`find(xs, pred)` - the first element matching `pred`.",
+  zip: "`zip(xs, ys)` - pair up elements of two lists.",
+  zipWith: "`zipWith(fn, xs, ys)` - combine two lists element-wise with `fn`.",
+  range: "`range(a, b)` - the list of integers from `a` to `b`.",
+  min: "`min(a, b)` - the smaller of two values.",
+  max: "`max(a, b)` - the larger of two values.",
+  print: "`print(value)` - print a value explicitly (bare expressions also auto-print).",
+  typeOf: "`typeOf(value)` - the value's type name as a string (same as the `::` operator).",
+  length: "`length(value)` - the length/size of a list, set, string, or object (same as the `:>` operator).",
+  to_int: "`to_int(value)` - parse a string/char into an integer.",
+  index_of: "`index_of(xs, item)` - the position of `item`, or -1 if absent.",
+  keys: "`keys(obj)` - an object's keys as a list, in insertion order.",
+  json_parse: "`json_parse(text)` - parse a JSON string into a Bern value.",
+  json_stringify: "`json_stringify(value)` - serialize a Bern value to JSON text.",
+  is_null: "`is_null(value)` - true if the value is `undefined`/null.",
+  error: '`error(message)` - build an error value: `error("boom")`.',
+  is_error: "`is_error(value)` - true if the value is an error (from errors-as-values).",
+  fmap: "`fmap(collection, fn)` - map `fn` over a list/set or the values inside an ADT.",
+  compose: "`compose(f, g)` - function composition: `compose(f, g)(x)` is `f(g(x))`.",
+  id: "`id(x)` - the identity function; returns its argument unchanged.",
+  const: "`const(x)` - returns a function that always yields `x`.",
+  flip: "`flip(f)` - swaps the first two arguments of `f`.",
+  append: "`append(xs, x)` - add `x` to the end of a list.",
+  int_to_double: "`int_to_double(n)` - convert an integer to a double.",
 };
 
 const BUILTIN_FUNCTIONS = [
@@ -456,7 +456,7 @@ function buildHover(word, line) {
 
   const inPragma = /\{--!/.test(line) && /!--\}/.test(line);
   if (inPragma && PRAGMA_DOCS[word]) {
-    return md(`Pragma — \`{--! ${word} !--}\``, PRAGMA_DOCS[word]);
+    return md(`Pragma - \`{--! ${word} !--}\``, PRAGMA_DOCS[word]);
   }
 
   if (KEYWORD_DOCS[word]) {
@@ -465,7 +465,7 @@ function buildHover(word, line) {
 
   if (OPERATOR_DOCS[word]) {
     const op = OPERATOR_DOCS[word];
-    return md(`Operator — written form of \`${op.sym}\``, op.doc);
+    return md(`Operator - written form of \`${op.sym}\``, op.doc);
   }
 
   if (BUILTIN_DOCS[word]) {
@@ -473,7 +473,7 @@ function buildHover(word, line) {
   }
 
   if (PRAGMA_DOCS[word]) {
-    return md(`Pragma — \`{--! ${word} !--}\``, PRAGMA_DOCS[word]);
+    return md(`Pragma - \`{--! ${word} !--}\``, PRAGMA_DOCS[word]);
   }
 
   // Fallbacks so anything still in the lists gets at least a label.
@@ -552,7 +552,7 @@ function provideCompletionItems(document, position) {
     );
     const opDoc = OPERATOR_DOCS[op];
     item.detail = opDoc
-      ? `Operator — written form of ${opDoc.sym}`
+      ? `Operator - written form of ${opDoc.sym}`
       : "Operator (written form)";
     if (opDoc) {
       item.documentation = new vscode.MarkdownString(opDoc.doc);

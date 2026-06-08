@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>vendor/bernparsec - Bern Libraries</title>
+    <link rel="icon" type="image/png" href="../images/cat.png">
+    <link rel="stylesheet" href="../lib.css">
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <a href="../index.html" class="logo"><img src="../images/cat.png" alt="Bern Logo" width="20%" style="margin-top: 10px;"></a>
+            <nav>
+                <a href="../documentation.html">Language</a>
+                <a href="../libraries.html">Libraries</a>
+                <!-- <a href="../examples.html">Learn Bern</a> -->
+                <a href="../changelog.html">Changelog</a>
+                <a href="../pt-br/libs/bernparsec.html" style="font-weight: 600;">🌐 PT-BR</a>
+            </nav>
+        </div>
+    </header>
+
+    <div class="layout">
+        <aside class="sidebar">
+            <h3>vendor/bernparsec</h3>
+            <ul>
+                <li><a href="#idea">The core idea</a></li>
+                <li><a href="#running">Running a parser</a></li>
+                <li><a href="#primitives">Primitive parsers</a></li>
+                <li><a href="#classes">Character classes</a></li>
+                <li><a href="#sequencing">Sequencing &amp; mapping</a></li>
+                <li><a href="#choice">Choice &amp; failure</a></li>
+                <li><a href="#repetition">Repetition</a></li>
+                <li><a href="#lookaround">Look-around</a></li>
+                <li><a href="#recursion">Recursion &amp; operators</a></li>
+                <li><a href="#lexing">Lexing &amp; whitespace</a></li>
+                <li><a href="#numbers">Numbers</a></li>
+                <li><a href="#brackets">Brackets</a></li>
+                <li><a href="#operators">Operators</a></li>
+                <li><a href="#aliases">Friendly aliases</a></li>
+                <li><a href="#adt">Advanced: ADT form</a></li>
+                <li><a href="#together">Putting it together</a></li>
+            </ul>
+            <h3>More</h3>
+            <ul>
+                <li><a href="../libraries.html" class="back-link">← All libraries</a></li>
+            </ul>
+        </aside>
+
+        <div class="container">
+            <p class="breadcrumb"><a href="../documentation.html">Documentation</a> / <a href="../libraries.html">Libraries</a> / vendor/bernparsec</p>
+            <h1 class="page-title">vendor/bernparsec <span class="vendor-badge">Vendor</span></h1>
+            <p class="page-subtitle">A tiny parser-combinator library for Bern. Build big parsers by gluing small ones together - the core names follow Haskell's <code>megaparsec</code>.</p>
+
+            <pre class="simple-code">import vendor/bernparsec</pre>
+
+            <div class="doc-section" id="idea">
+                <h2>The core idea</h2>
+                <p>A <strong>parser</strong> is a small recipe for reading text. You build large parsers out of small ones using <strong>combinators</strong> - functions that take parsers and return a new, bigger parser. A parser is not a function; it is a plain object that <em>describes</em> what to read, and a single interpreter walks that description against the input. That makes parsers cheap to build, easy to print, and composable.</p>
+                <pre class="simple-code">import vendor/bernparsec
+
+greeting = before(string("hello"), eof())   -- "hello" then end-of-input
+parseTest(greeting, "hello")
+-- Output: "hello"</pre>
+                <p>Every combinator on this page comes in two flavours: the terse <strong>core name</strong> (used throughout) and a plain-English <strong>friendly alias</strong> (listed in the <a href="#aliases">aliases table</a>). They are interchangeable - mix whichever reads best.</p>
+            </div>
+
+            <div class="doc-section" id="running">
+                <h2>Running a parser</h2>
+                <p>Running a parser against input produces a <strong>result object</strong>:</p>
+                <table class="lib-table">
+                    <tr><th>Field</th><th>Meaning</th></tr>
+                    <tr><td><code>result["ok"]</code></td><td><code>true</code> if the parser matched</td></tr>
+                    <tr><td><code>result["value"]</code></td><td>the parsed value (when <code>ok</code>)</td></tr>
+                    <tr><td><code>result["state"]</code></td><td>where parsing stopped - <code>index</code>, <code>line</code>, <code>column</code></td></tr>
+                    <tr><td><code>result["expected"]</code></td><td>list of what was expected (when it failed)</td></tr>
+                    <tr><td><code>result["message"]</code></td><td>a human-readable error (when it failed)</td></tr>
+                </table>
+
+                <div class="function-sig">parse(parser, source_name, input) → result</div>
+                <p>Run a parser, labelling the input <code>source_name</code> for error messages. (<code>run</code> is the friendly alias.)</p>
+                <pre class="simple-code">r = parse(string("hi"), "greeting.txt", "hi there")
+r["ok"]
+-- Output: true
+r["value"]
+-- Output: "hi"</pre>
+
+                <div class="function-sig">parseTest(parser, input) → value | string</div>
+                <p>Run a parser and return the parsed value on success, or a pretty error string on failure - perfect for the REPL. (Alias: <code>quickParse</code>.)</p>
+                <pre class="simple-code">parseTest(char('a'), "abc")
+-- Output: 'a'
+parseTest(char('a'), "xyz")
+-- Output: "<interactive>:1:1: unexpected input; expected: 'a'"</pre>
+
+                <div class="function-sig">errorBundlePretty(result) → string</div>
+                <p>Format any result as a one-line <code>source:line:column: message; expected: …</code> string. (Alias: <code>prettyError</code>.)</p>
+                <pre class="simple-code">r = parse(char('a'), "in", "zzz")
+errorBundlePretty(r)
+-- Output: "in:1:1: unexpected input; expected: 'a'"</pre>
+            </div>
+
+            <div class="doc-section" id="primitives">
+                <h2>Primitive parsers</h2>
+
+                <div class="function-sig">char(c) → parser</div>
+                <p>Match exactly the character <code>c</code>.</p>
+                <pre class="simple-code">parseTest(char('a'), "abc")
+-- Output: 'a'</pre>
+
+                <div class="function-sig">string(token) → parser</div>
+                <p>Match the exact text <code>token</code>.</p>
+                <pre class="simple-code">parseTest(string("let"), "let x = 1")
+-- Output: "let"</pre>
+
+                <div class="function-sig">anySingle() → parser</div>
+                <p>Match any single character.</p>
+                <pre class="simple-code">parseTest(anySingle(), "Z!")
+-- Output: 'Z'</pre>
+
+                <div class="function-sig">oneOf(chars) → parser</div>
+                <p>Match any one character that appears in <code>chars</code>.</p>
+                <pre class="simple-code">parseTest(oneOf("+-*/"), "*3")
+-- Output: '*'</pre>
+
+                <div class="function-sig">noneOf(chars) → parser</div>
+                <p>Match any one character that does <em>not</em> appear in <code>chars</code>.</p>
+                <pre class="simple-code">parseTest(noneOf(" \t\n"), "hi")
+-- Output: 'h'</pre>
+
+                <div class="function-sig">satisfy(pred) · satisfy(pred, label) → parser</div>
+                <p>Match a character for which <code>pred(c)</code> is <code>true</code>. The optional <code>label</code> names it in error messages.</p>
+                <pre class="simple-code">vowel = satisfy(\c -> oneOf("aeiou") != -1, "vowel")
+parseTest(satisfy(\c -> c == 'x', "an x"), "xyz")
+-- Output: 'x'</pre>
+
+                <div class="function-sig">eof() → parser</div>
+                <p>Succeed only at the end of the input (consumes nothing).</p>
+                <pre class="simple-code">parseTest(before(string("ok"), eof()), "ok")
+-- Output: "ok"
+parseTest(before(string("ok"), eof()), "okay")
+-- Output: (error: expected end of input)</pre>
+
+                <div class="function-sig">pure(value) → parser</div>
+                <p>Always succeed, yielding <code>value</code> without consuming input. (Alias: <code>succeed</code>.)</p>
+                <pre class="simple-code">parseTest(pure(42), "anything")
+-- Output: 42</pre>
+
+                <div class="function-sig">fail_parser(message) → parser</div>
+                <p>Always fail with <code>message</code>. (Alias: <code>failWith</code>.)</p>
+                <pre class="simple-code">parseTest(fail_parser("nope"), "abc")
+-- Output: "<interactive>:1:1: nope; expected: <unknown>"</pre>
+            </div>
+
+            <div class="doc-section" id="classes">
+                <h2>Character classes</h2>
+                <p>Ready-made <code>satisfy</code> parsers for common classes, each with a sensible error label.</p>
+
+                <div class="function-sig">digitChar() → parser</div>
+                <p>One digit <code>0</code>–<code>9</code>.</p>
+                <pre class="simple-code">parseTest(digitChar(), "7x")
+-- Output: '7'</pre>
+
+                <div class="function-sig">letterChar() → parser</div>
+                <p>One letter <code>a</code>–<code>z</code> / <code>A</code>–<code>Z</code>.</p>
+                <pre class="simple-code">parseTest(letterChar(), "Bern")
+-- Output: 'B'</pre>
+
+                <div class="function-sig">alphaNumChar() → parser</div>
+                <p>One letter or digit.</p>
+                <pre class="simple-code">parseTest(some(alphaNumChar()), "id42 ")
+-- Output: ['i', 'd', '4', '2']</pre>
+
+                <div class="function-sig">spaceChar() · newline() · tab() → parser</div>
+                <p>One whitespace character, a newline, or a tab respectively.</p>
+                <pre class="simple-code">parseTest(spaceChar(), " x")
+-- Output: ' '</pre>
+
+                <div class="function-sig">space() · space1() → parser</div>
+                <p><code>space()</code> matches zero or more whitespace characters; <code>space1()</code> requires at least one.</p>
+                <pre class="simple-code">parseTest(space(), "   hi")
+-- Output: [' ', ' ', ' ']</pre>
+            </div>
+
+            <div class="doc-section" id="sequencing">
+                <h2>Sequencing &amp; mapping</h2>
+
+                <div class="function-sig">mapP(parser, mapper) → parser</div>
+                <p>Run <code>parser</code>, then transform its result with <code>mapper</code>. (Alias: <code>mapResult</code>.)</p>
+                <pre class="simple-code">parseTest(mapP(digitChar(), char_to_digit), "9")
+-- Output: 9   (the integer, not the character)</pre>
+
+                <div class="function-sig">thenP(left, right) → parser</div>
+                <p>Run both in order, keep the <strong>right</strong> value. (Alias: <code>keepRight</code>.)</p>
+                <pre class="simple-code">parseTest(thenP(char('$'), decimal()), "$50")
+-- Output: 50   (the '$' is consumed but discarded)</pre>
+
+                <div class="function-sig">before(left, right) → parser</div>
+                <p>Run both in order, keep the <strong>left</strong> value. (Alias: <code>keepLeft</code>.)</p>
+                <pre class="simple-code">parseTest(before(decimal(), char('%')), "75%")
+-- Output: 75</pre>
+
+                <div class="function-sig">bind(parser, to_parser) → parser</div>
+                <p>Result-dependent sequencing: run <code>parser</code>, then feed its value to <code>to_parser</code>, which returns the next parser to run. (Alias: <code>andThen</code>.)</p>
+                <pre class="simple-code">-- read a digit n, then read exactly that many letters
+repeated = bind(mapP(digitChar(), char_to_digit), \n -> count(n, letterChar()))
+parseTest(repeated, "3abc")
+-- Output: ['a', 'b', 'c']</pre>
+            </div>
+
+            <div class="doc-section" id="choice">
+                <h2>Choice &amp; failure</h2>
+
+                <div class="function-sig">orElse(left, right) → parser</div>
+                <p>Try <code>left</code>; if it fails, try <code>right</code>. (Alias: <code>orTry</code>.)</p>
+                <pre class="simple-code">yesNo = orElse(string("yes"), string("no"))
+parseTest(yesNo, "no")
+-- Output: "no"</pre>
+
+                <div class="function-sig">choice(parsers) → parser</div>
+                <p>Try each parser in the list, returning the first that matches. (Alias: <code>firstOf</code>.)</p>
+                <pre class="simple-code">keyword = choice([string("if"), string("else"), string("end")])
+parseTest(keyword, "else ...")
+-- Output: "else"</pre>
+
+                <div class="function-sig">label(parser, expected_label) → parser</div>
+                <p>Give a parser a friendly name for error messages. (Alias: <code>describe</code>.)</p>
+                <pre class="simple-code">p = label(digitChar(), "a single digit")
+errorBundlePretty(parse(p, "in", "x"))
+-- Output: "in:1:1: unexpected input; expected: a single digit"</pre>
+
+                <div class="function-sig">try(parser) → parser</div>
+                <p>Provided for megaparsec familiarity; in BernParsec it returns the parser unchanged.</p>
+                <pre class="simple-code">parseTest(try(string("ab")), "abc")
+-- Output: "ab"</pre>
+            </div>
+
+            <div class="doc-section" id="repetition">
+                <h2>Repetition</h2>
+
+                <div class="function-sig">many(parser) → parser</div>
+                <p>Match zero or more times, collecting a list. (Alias: <code>zeroOrMore</code>.)</p>
+                <pre class="simple-code">parseTest(many(digitChar()), "123abc")
+-- Output: ['1', '2', '3']
+parseTest(many(digitChar()), "abc")
+-- Output: []</pre>
+
+                <div class="function-sig">some(parser) → parser</div>
+                <p>Match one or more times. (Alias: <code>oneOrMore</code>.)</p>
+                <pre class="simple-code">parseTest(some(letterChar()), "Bern2")
+-- Output: ['B', 'e', 'r', 'n']</pre>
+
+                <div class="function-sig">count(n, parser) → parser</div>
+                <p>Match exactly <code>n</code> times. (Alias: <code>repeatExactly</code>.)</p>
+                <pre class="simple-code">parseTest(count(4, digitChar()), "2026!")
+-- Output: ['2', '0', '2', '6']</pre>
+
+                <div class="function-sig">optional(parser) → parser</div>
+                <p>Match at most once, returning a <code>Maybe</code> (<code>BPJust value</code> or <code>BPNothing</code>). (Alias: <code>optionally</code>.)</p>
+                <pre class="simple-code">parseTest(optional(char('-')), "-5")
+-- Output: BPJust('-')
+parseTest(optional(char('-')), "5")
+-- Output: BPNothing()</pre>
+
+                <div class="function-sig">sepBy(parser, separator) → parser</div>
+                <p>Zero or more items separated by <code>separator</code>. (Alias: <code>separatedBy</code>.)</p>
+                <pre class="simple-code">csv = sepBy(decimal(), char(','))
+parseTest(csv, "1,2,3")
+-- Output: [1, 2, 3]
+parseTest(csv, "")
+-- Output: []</pre>
+
+                <div class="function-sig">sepBy1(parser, separator) → parser</div>
+                <p>One or more items separated by <code>separator</code>. (Alias: <code>separatedBy1</code>.)</p>
+                <pre class="simple-code">parseTest(sepBy1(letterChar(), char('-')), "a-b-c")
+-- Output: ['a', 'b', 'c']</pre>
+
+                <div class="function-sig">manyTill(parser, end_parser) → parser</div>
+                <p>Repeat <code>parser</code> until <code>end_parser</code> matches; the terminator is consumed. (Alias: <code>repeatUntil</code>.)</p>
+                <pre class="simple-code">comment = thenP(string("--"), manyTill(anySingle(), newline()))
+parseTest(comment, "-- a note\nrest")
+-- Output: [' ', 'a', ' ', 'n', 'o', 't', 'e']</pre>
+
+                <div class="function-sig">between(open, close, parser) → parser</div>
+                <p>Match <code>parser</code> wrapped by <code>open</code> and <code>close</code>, keeping only the inner value. (Alias: <code>surroundedBy</code>.)</p>
+                <pre class="simple-code">quoted = between(char('"'), char('"'), many(noneOf("\"")))
+parseTest(quoted, "\"hi\"")
+-- Output: ['h', 'i']</pre>
+            </div>
+
+            <div class="doc-section" id="lookaround">
+                <h2>Look-around</h2>
+
+                <div class="function-sig">lookAhead(parser) → parser</div>
+                <p>Match <code>parser</code> but consume no input - peek at what's next. (Alias: <code>peek</code>.)</p>
+                <pre class="simple-code">parseTest(lookAhead(string("ab")), "abc")
+-- Output: "ab"   (the cursor stays at position 0)</pre>
+
+                <div class="function-sig">notFollowedBy(parser) → parser</div>
+                <p>Succeed only if <code>parser</code> does <em>not</em> match here; consumes nothing. (Alias: <code>notAhead</code>.)</p>
+                <pre class="simple-code">-- "let" not immediately followed by a letter (so not "letter")
+kw = before(string("let"), notFollowedBy(letterChar()))
+parseTest(kw, "let x")
+-- Output: "let"</pre>
+            </div>
+
+            <div class="doc-section" id="recursion">
+                <h2>Recursion &amp; operators</h2>
+
+                <div class="function-sig">lazy(thunk) → parser</div>
+                <p>Defer building a parser until it is needed - the key to <strong>recursive</strong> grammars, where a parser refers to itself. (Alias: <code>deferred</code>.)</p>
+                <pre class="simple-code">def value() -> orElse(decimal(), between(char('('), char(')'), lazy(value)))
+parseTest(value(), "(((7)))")
+-- Output: 7</pre>
+
+                <div class="function-sig">chainl1(term, op, combine) → parser</div>
+                <p>Parse one or more <code>term</code>s separated by <code>op</code>, folding them <strong>left-associatively</strong> with <code>combine(left, op_value, right)</code>. Ideal for arithmetic. (Alias: <code>chainLeft</code>.)</p>
+                <pre class="simple-code">plus = mapP(char('+'), \_ -> "+")
+sum  = chainl1(decimal(), plus, \a, _, b -> a + b)
+parseTest(sum, "1+2+3")
+-- Output: 6</pre>
+            </div>
+
+            <div class="doc-section" id="lexing">
+                <h2>Lexing &amp; whitespace</h2>
+
+                <div class="function-sig">lexeme(parser) → parser</div>
+                <p>Run <code>parser</code>, then skip any trailing whitespace - so tokens don't have to worry about the spaces after them. (Alias: <code>token</code>.)</p>
+                <pre class="simple-code">parseTest(lexeme(decimal()), "42   ")
+-- Output: 42   (trailing spaces consumed)</pre>
+
+                <div class="function-sig">symbol(s) → parser</div>
+                <p>Match the exact text <code>s</code> as a token, skipping trailing whitespace.</p>
+                <pre class="simple-code">parseTest(sepBy1(symbol("ok"), symbol(",")), "ok , ok , ok")
+-- Output: ["ok", "ok", "ok"]</pre>
+            </div>
+
+            <div class="doc-section" id="numbers">
+                <h2>Numbers</h2>
+
+                <div class="function-sig">decimal() → parser</div>
+                <p>An unsigned integer (one or more digits). (Aliases: <code>digits</code>, <code>wholeNumber</code>.)</p>
+                <pre class="simple-code">parseTest(decimal(), "123")
+-- Output: 123</pre>
+
+                <div class="function-sig">float() → parser</div>
+                <p>A number with a fractional part (digits, a dot, digits). (Alias: <code>decimalNumber</code>.)</p>
+                <pre class="simple-code">parseTest(float(), "12.50")
+-- Output: 12.5</pre>
+
+                <div class="function-sig">signed(number_parser) → parser</div>
+                <p>Allow an optional leading <code>+</code> or <code>-</code> in front of a number parser, negating on <code>-</code>. (Alias: <code>withSign</code>.)</p>
+                <pre class="simple-code">parseTest(signed(float()), "-3.5")
+-- Output: -3.5</pre>
+
+                <div class="function-sig">integer() → parser</div>
+                <p>A signed integer - <code>signed(decimal())</code>. (Alias: <code>integerNumber</code>.)</p>
+                <pre class="simple-code">parseTest(integer(), "-42")
+-- Output: -42</pre>
+            </div>
+
+            <div class="doc-section" id="brackets">
+                <h2>Brackets</h2>
+                <p>Wrappers that parse something inside brackets <em>and</em> skip inner whitespace (built on <code>symbol</code>).</p>
+
+                <div class="function-sig">parens(parser) · brackets(parser) · braces(parser) → parser</div>
+                <p>Parse <code>parser</code> inside <code>( )</code>, <code>[ ]</code>, or <code>{ }</code>. (Aliases: <code>inParens</code>, <code>inBrackets</code>, <code>inBraces</code>.)</p>
+                <pre class="simple-code">list = brackets(sepBy(lexeme(decimal()), symbol(",")))
+parseTest(list, "[ 1, 2, 3 ]")
+-- Output: [1, 2, 3]</pre>
+            </div>
+
+            <div class="doc-section" id="operators">
+                <h2>Operators <span class="vendor-badge">Bern 2.1</span></h2>
+                <p>BernParsec ships a set of infix operators, inspired by Haskell's megaparsec and <code>Applicative</code>, so a grammar reads almost like the thing it describes. They are just the combinators above with symbols, so everything you already know still applies.</p>
+                <table class="lib-table">
+                    <tr><th>Operator</th><th>Same as</th><th>Meaning</th></tr>
+                    <tr><td><code>f &lt;$&gt; p</code></td><td><code>mapP(p, f)</code></td><td>apply <code>f</code> to whatever <code>p</code> parses</td></tr>
+                    <tr><td><code>pf &lt;*&gt; px</code></td><td>applicative</td><td>sequence two parsers; apply <code>pf</code>'s result to <code>px</code>'s</td></tr>
+                    <tr><td><code>p &lt;* q</code></td><td><code>before(p, q)</code></td><td>run both in order, keep the <strong>left</strong> result</td></tr>
+                    <tr><td><code>p *&gt; q</code></td><td><code>thenP(p, q)</code></td><td>run both in order, keep the <strong>right</strong> result</td></tr>
+                    <tr><td><code>p &lt;|&gt; q</code></td><td><code>orElse(p, q)</code></td><td>try <code>p</code>; if it fails, try <code>q</code></td></tr>
+                    <tr><td><code>p &gt;&gt;= f</code></td><td><code>bind(p, f)</code></td><td>run <code>p</code>, then build the next parser from its value</td></tr>
+                    <tr><td><code>p &lt;?&gt; "lbl"</code></td><td><code>label(p, "lbl")</code></td><td>rename <code>p</code> for nicer error messages</td></tr>
+                </table>
+                <p>Precedence mirrors Haskell: <code>&lt;$&gt; &lt;*&gt; &lt;* *&gt;</code> bind tightest, then <code>&lt;|&gt;</code>, then <code>&gt;&gt;=</code>, then <code>&lt;?&gt;</code> (the loosest, so it labels a whole parser). All are left-associative.</p>
+
+                <div class="example-box">
+                    <h4>A grammar that reads like its shape</h4>
+                    <pre class="simple-code">import core
+import vendor/bernparsec
+
+-- a token: a signed number, trailing spaces eaten
+num = lexeme(signed(decimal()))
+
+-- "a price tag like $12, keep the number"
+price = char('$') *> num
+
+parseTest(price, "$12")
+-- Output: 12
+
+-- "two numbers separated by a comma, in brackets"
+pair = (\x, y -> [x, y]) <$> (num <* symbol(",")) <*> num
+parseTest(inBrackets(pair), "[ 3, 4 ]")
+-- Output: [3, 4]
+
+-- choice + label
+keyword = string("if") <|> string("else") <|> string("end") <?> "a keyword"
+parseTest(keyword, "else")
+-- Output: "else"</pre>
+                </div>
+                <div class="note">
+                    <strong>Note:</strong> these operators are defined inside <code>vendor/bernparsec</code> with Bern's <a href="../documentation.html#custom-operators">custom-operator</a> feature, and they reach your file through <code>import</code> like any other definition.
+                </div>
+            </div>
+
+            <div class="doc-section" id="aliases">
+                <h2>Friendly aliases</h2>
+                <p>Every core combinator has a plain-English alias that forwards to it. Use whichever reads better - or mix both in the same grammar.</p>
+                <table class="lib-table">
+                    <tr><th>Friendly alias</th><th>Core name</th></tr>
+                    <tr><td><code>literalChar</code></td><td><code>char</code></td></tr>
+                    <tr><td><code>anyChar</code></td><td><code>anySingle</code></td></tr>
+                    <tr><td><code>charIn</code></td><td><code>oneOf</code></td></tr>
+                    <tr><td><code>charNotIn</code></td><td><code>noneOf</code></td></tr>
+                    <tr><td><code>charWhere</code></td><td><code>satisfy</code></td></tr>
+                    <tr><td><code>text</code></td><td><code>string</code></td></tr>
+                    <tr><td><code>endOfInput</code></td><td><code>eof</code></td></tr>
+                    <tr><td><code>succeed</code></td><td><code>pure</code></td></tr>
+                    <tr><td><code>failWith</code></td><td><code>fail_parser</code></td></tr>
+                    <tr><td><code>digit</code> / <code>letter</code></td><td><code>digitChar</code> / <code>letterChar</code></td></tr>
+                    <tr><td><code>letterOrDigit</code></td><td><code>alphaNumChar</code></td></tr>
+                    <tr><td><code>whitespaceChar</code></td><td><code>spaceChar</code></td></tr>
+                    <tr><td><code>mapResult</code></td><td><code>mapP</code></td></tr>
+                    <tr><td><code>andThen</code></td><td><code>bind</code></td></tr>
+                    <tr><td><code>keepRight</code> / <code>keepLeft</code></td><td><code>thenP</code> / <code>before</code></td></tr>
+                    <tr><td><code>orTry</code></td><td><code>orElse</code></td></tr>
+                    <tr><td><code>firstOf</code></td><td><code>choice</code></td></tr>
+                    <tr><td><code>zeroOrMore</code> / <code>oneOrMore</code></td><td><code>many</code> / <code>some</code></td></tr>
+                    <tr><td><code>repeatExactly</code></td><td><code>count</code></td></tr>
+                    <tr><td><code>optionally</code></td><td><code>optional</code></td></tr>
+                    <tr><td><code>separatedBy</code> / <code>separatedBy1</code></td><td><code>sepBy</code> / <code>sepBy1</code></td></tr>
+                    <tr><td><code>repeatUntil</code></td><td><code>manyTill</code></td></tr>
+                    <tr><td><code>peek</code> / <code>notAhead</code></td><td><code>lookAhead</code> / <code>notFollowedBy</code></td></tr>
+                    <tr><td><code>describe</code></td><td><code>label</code></td></tr>
+                    <tr><td><code>deferred</code></td><td><code>lazy</code></td></tr>
+                    <tr><td><code>surroundedBy</code></td><td><code>between</code></td></tr>
+                    <tr><td><code>chainLeft</code></td><td><code>chainl1</code></td></tr>
+                    <tr><td><code>token</code></td><td><code>lexeme</code></td></tr>
+                    <tr><td><code>digits</code> / <code>wholeNumber</code></td><td><code>decimal</code></td></tr>
+                    <tr><td><code>integerNumber</code></td><td><code>integer</code></td></tr>
+                    <tr><td><code>decimalNumber</code></td><td><code>float</code></td></tr>
+                    <tr><td><code>withSign</code></td><td><code>signed</code></td></tr>
+                    <tr><td><code>inParens</code> / <code>inBrackets</code> / <code>inBraces</code></td><td><code>parens</code> / <code>brackets</code> / <code>braces</code></td></tr>
+                    <tr><td><code>run</code> / <code>quickParse</code> / <code>prettyError</code></td><td><code>parse</code> / <code>parseTest</code> / <code>errorBundlePretty</code></td></tr>
+                </table>
+            </div>
+
+            <div class="doc-section" id="adt">
+                <h2>Advanced: ADT form</h2>
+                <p>Every parser can also be expressed as the <code>BPParser</code> <a href="../documentation.html#adt">ADT</a> (the <code>BP*</code> constructors), which is handy when you want a parser you can pattern-match on or pass around as plain data. <code>parser_from_adt</code> / <code>normalize_parser</code> translate the ADT form into the dictionary form the interpreter runs.</p>
+                <pre class="simple-code">-- a parser described as data, then run
+p = parser_from_adt(BPString("hi"))
+parseTest(p, "hi there")
+-- Output: "hi"</pre>
+                <p>The result, state, and Maybe values have ADT forms too - <code>BPOk value state</code> / <code>BPErr expected message state</code>, <code>BPState input source index line column</code>, and <code>BPJust value</code> / <code>BPNothing</code>. The <code>parseADT</code>, <code>runParserADT</code>, and <code>parseTestADT</code> functions run a parser and hand back the ADT result instead of the dictionary.</p>
+                <pre class="simple-code">parseADT(string("hi"), "src", "hi")
+-- Output: BPOk("hi", BPState("hi", "src", 2, 1, 3))</pre>
+            </div>
+
+            <div class="doc-section" id="together">
+                <h2>Putting it together</h2>
+                <p>The combinators shine when composed into a real grammar. Here is a small arithmetic evaluator that combines <code>lexeme</code>, <code>parens</code>, <code>lazy</code>, <code>chainl1</code>, and <code>choice</code> to parse and evaluate expressions with correct precedence:</p>
+                <div class="example-box">
+                    <h4>A four-function calculator</h4>
+                    <pre class="simple-code">import vendor/bernparsec
+
+-- a number, or a parenthesised expression (recursion via lazy)
+def factor() -> choice([
+    lexeme(signed(float())),
+    lexeme(signed(decimal())),
+    parens(lazy(expr))
+])
+
+-- '*' and '/' bind tighter than '+' and '-'
+def mulOp() -> choice([
+    mapP(symbol("*"), \_ -> '*'),
+    mapP(symbol("/"), \_ -> '/')
+])
+def term() -> chainl1(factor(), mulOp(), \a, op, b ->
+    if op == '*' then a * b else a / b end)
+
+def addOp() -> choice([
+    mapP(symbol("+"), \_ -> '+'),
+    mapP(symbol("-"), \_ -> '-')
+])
+def expr() -> chainl1(term(), addOp(), \a, op, b ->
+    if op == '+' then a + b else a - b end)
+
+parseTest(expr(), "2 + 3 * 4")
+-- Output: 14
+parseTest(expr(), "(2 + 3) * 4")
+-- Output: 20</pre>
+                </div>
+                <p>And a key–value config line parser that brings together <code>some</code>, <code>between</code>, <code>sepBy</code>, and <code>before</code>:</p>
+                <div class="example-box">
+                    <h4>Parsing "key=value" pairs</h4>
+                    <pre class="simple-code">import vendor/bernparsec
+
+ident = mapP(some(letterChar()), \cs -> "" <> cs)
+val   = mapP(some(noneOf(";")), \cs -> "" <> cs)
+pair  = bind(before(ident, symbol("=")), \k ->
+            mapP(val, \v -> [k, v]))
+
+config = sepBy(lexeme(pair), symbol(";"))
+
+parseTest(config, "host=localhost; port=8080")
+-- Output: [["host", "localhost"], ["port", "8080"]]</pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        Copyright © 2026 • All rights reserved • Built with ❤️ by <a href="https://mirvox.xyz/">Miguel Aguiar</a>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>math - Bibliotecas Bern</title>
+    <link rel="icon" type="image/png" href="../../images/cat.png">
+    <link rel="stylesheet" href="../../lib.css">
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <a href="../index.html" class="logo"><img src="../../images/cat.png" alt="Bern Logo" width="20%" style="margin-top: 10px;"></a>
+            <nav>
+                <a href="../documentation.html">Linguagem</a>
+                <a href="../libraries.html">Bibliotecas</a>
+                <a href="../changelog.html">Mudanças</a>
+                <a href="../../libs/math.html" style="font-weight: 600;">🌐 EN</a>
+            </nav>
+        </div>
+    </header>
+
+    <div class="layout">
+        <aside class="sidebar">
+            <h3>math</h3>
+            <ul>
+                <li><a href="#constants">Constantes</a></li>
+                <li><a href="#basic">Operações básicas</a></li>
+                <li><a href="#power">Potências &amp; raízes</a></li>
+                <li><a href="#explog">Exponencial &amp; log</a></li>
+                <li><a href="#trig">Trigonometria</a></li>
+                <li><a href="#angles">Conversão de ângulos</a></li>
+                <li><a href="#together">Juntando tudo</a></li>
+            </ul>
+            <h3>Mais</h3>
+            <ul>
+                <li><a href="../libraries.html" class="back-link">← Todas as bibliotecas</a></li>
+            </ul>
+        </aside>
+
+        <div class="container">
+            <p class="breadcrumb"><a href="../documentation.html">Documentação</a> / <a href="../libraries.html">Bibliotecas</a> / math</p>
+            <h1 class="page-title">math</h1>
+            <p class="page-subtitle">Constantes e auxiliares matemáticos inspirados no <code>math.h</code> do C, implementados em Bern puro.</p>
+
+            <pre class="simple-code">import math</pre>
+            <div class="note">
+                <strong>Nota:</strong> As funções transcendentais (<code>exp</code>, <code>log</code>, <code>sin</code>, …) são calculadas com séries truncadas e métodos iterativos, então são aproximações precisas - não resultados exatos de hardware.
+            </div>
+
+            <div class="doc-section" id="constants">
+                <h2>Constantes</h2>
+                <ul>
+                    <li><code>pi</code> = 3.141592653589793</li>
+                    <li><code>tau</code> = 6.283185307179586 (2π)</li>
+                    <li><code>e</code> = 2.718281828459045</li>
+                </ul>
+                <pre class="simple-code">2 * pi
+-- Saída: 6.283185307179586</pre>
+            </div>
+
+            <div class="doc-section" id="basic">
+                <h2>Operações básicas</h2>
+
+                <div class="function-sig">abs(x) → número</div>
+                <p>Valor absoluto; preserva o tipo numérico da entrada.</p>
+                <pre class="simple-code">abs(-7)
+-- Saída: 7</pre>
+
+                <div class="function-sig">fabs(x) → número</div>
+                <p>Alias de <code>abs</code> que espelha o <code>fabs</code> do C.</p>
+                <pre class="simple-code">fabs(-3.5)
+-- Saída: 3.5</pre>
+
+                <div class="function-sig">fmin(a, b) → double</div>
+                <p>O menor de dois números, calculado em espaço de double.</p>
+                <pre class="simple-code">fmin(3, 8)
+-- Saída: 3.0</pre>
+
+                <div class="function-sig">fmax(a, b) → double</div>
+                <p>O maior de dois números.</p>
+                <pre class="simple-code">fmax(3, 8)
+-- Saída: 8.0</pre>
+
+                <div class="function-sig">clamp(x, lo, hi) → número</div>
+                <p>Restringe <code>x</code> ao intervalo <code>[lo, hi]</code>.</p>
+                <pre class="simple-code">clamp(15, 0, 10)
+-- Saída: 10.0
+clamp(-2, 0, 10)
+-- Saída: 0.0</pre>
+
+                <div class="function-sig">fmod(x, y) → número</div>
+                <p>Resto de ponto flutuante (o <code>fmod</code> do C).</p>
+                <pre class="simple-code">fmod(10, 3)
+-- Saída: 1</pre>
+            </div>
+
+            <div class="doc-section" id="power">
+                <h2>Potências &amp; raízes</h2>
+
+                <div class="function-sig">pow(base, expoente) → número</div>
+                <p>Eleva <code>base</code> a um <code>expoente</code> inteiro por exponenciação rápida. Expoentes negativos dão recíprocos.</p>
+                <pre class="simple-code">pow(2, 8)
+-- Saída: 256
+pow(2, -1)
+-- Saída: 0.5</pre>
+
+                <div class="function-sig">sqrt(x) → double</div>
+                <p>Raiz quadrada via iteração de Newton–Raphson. Entradas negativas retornam <code>NaN</code>.</p>
+                <pre class="simple-code">sqrt(16)
+-- Saída: 4.0</pre>
+
+                <div class="function-sig">hypot(a, b) → double</div>
+                <p>O comprimento da hipotenusa √(a² + b²).</p>
+                <pre class="simple-code">hypot(3, 4)
+-- Saída: 5.0</pre>
+            </div>
+
+            <div class="doc-section" id="explog">
+                <h2>Exponencial &amp; logarítmica</h2>
+
+                <div class="function-sig">exp(x) → double</div>
+                <p>e elevado a <code>x</code> (série de Taylor).</p>
+                <pre class="simple-code">exp(1)
+-- Saída: ~2.718281828</pre>
+
+                <div class="function-sig">log(x) → double</div>
+                <p>Logaritmo natural (base e). Entradas não positivas retornam <code>NaN</code>.</p>
+                <pre class="simple-code">log(e)
+-- Saída: ~1.0</pre>
+
+                <div class="function-sig">log10(x) → double</div>
+                <p>Logaritmo base 10.</p>
+                <pre class="simple-code">log10(1000)
+-- Saída: ~3.0</pre>
+            </div>
+
+            <div class="doc-section" id="trig">
+                <h2>Trigonometria</h2>
+                <p>Todas as funções trigonométricas recebem e devolvem radianos.</p>
+
+                <div class="function-sig">sin(radianos) → double</div>
+                <p>Seno de um ângulo.</p>
+                <pre class="simple-code">sin(pi / 2)
+-- Saída: ~1.0</pre>
+
+                <div class="function-sig">cos(radianos) → double</div>
+                <p>Cosseno de um ângulo.</p>
+                <pre class="simple-code">cos(0)
+-- Saída: 1.0</pre>
+
+                <div class="function-sig">tan(radianos) → double</div>
+                <p>Tangente; <code>NaN</code> em múltiplos ímpares de π/2.</p>
+                <pre class="simple-code">tan(pi / 4)
+-- Saída: ~1.0</pre>
+
+                <div class="function-sig">atan(z) → double</div>
+                <p>Tangente inversa.</p>
+                <pre class="simple-code">atan(1)
+-- Saída: ~0.785   (π/4)</pre>
+
+                <div class="function-sig">atan2(y, x) → double</div>
+                <p>Arco-tangente de dois argumentos que respeita o quadrante de <code>(x, y)</code>.</p>
+                <pre class="simple-code">atan2(1, 1)
+-- Saída: ~0.785   (π/4)</pre>
+            </div>
+
+            <div class="doc-section" id="angles">
+                <h2>Conversão de ângulos</h2>
+
+                <div class="function-sig">toRadians(graus) → double</div>
+                <p>Converte graus em radianos.</p>
+                <pre class="simple-code">toRadians(180)
+-- Saída: ~3.14159</pre>
+
+                <div class="function-sig">toDegrees(radianos) → double</div>
+                <p>Converte radianos em graus.</p>
+                <pre class="simple-code">toDegrees(pi)
+-- Saída: ~180.0</pre>
+            </div>
+
+            <div class="doc-section" id="together">
+                <h2>Juntando tudo</h2>
+                <p>Várias funções cooperam ao calcular geometria. Aqui está a distância entre dois pontos e o ângulo da reta entre eles em graus:</p>
+                <div class="example-box">
+                    <h4>Distância e direção entre dois pontos</h4>
+                    <pre class="simple-code">import math
+
+x1 = 0.0
+y1 = 0.0
+x2 = 3.0
+y2 = 3.0
+
+dx = x2 - x1
+dy = y2 - y1
+
+distance = hypot(dx, dy)
+-- Saída: ~4.2426
+
+angle = toDegrees(atan2(dy, dx))
+-- Saída: ~45.0</pre>
+                </div>
+                <p>E usar <code>clamp</code> com <code>pow</code> para uma curva simples de "crescer e limitar":</p>
+                <div class="example-box">
+                    <h4>Crescimento quadrático com teto</h4>
+                    <pre class="simple-code">import math
+
+def grow(level) -> clamp(pow(level, 2), 0, 100)
+
+grow(5)
+-- Saída: 25.0
+grow(12)
+-- Saída: 100.0   (144 limitado)</pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        Copyright © 2026 • Todos os direitos reservados • Feito com ❤️ por <a href="https://mirvox.xyz/">Miguel Aguiar</a>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>path - Bern Libraries</title>
+    <link rel="icon" type="image/png" href="../images/cat.png">
+    <link rel="stylesheet" href="../lib.css">
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <a href="../index.html" class="logo"><img src="../images/cat.png" alt="Bern Logo" width="20%" style="margin-top: 10px;"></a>
+            <nav>
+                <a href="../documentation.html">Language</a>
+                <a href="../libraries.html">Libraries</a>
+                <!-- <a href="../examples.html">Learn Bern</a> -->
+                <a href="../changelog.html">Changelog</a>
+                <a href="../pt-br/libs/path.html" style="font-weight: 600;">🌐 PT-BR</a>
+            </nav>
+        </div>
+    </header>
+
+    <div class="layout">
+        <aside class="sidebar">
+            <h3>path</h3>
+            <ul>
+                <li><a href="#build">Building paths</a></li>
+                <li><a href="#inspect">Inspection</a></li>
+                <li><a href="#normalize">Normalization</a></li>
+                <li><a href="#together">Putting it together</a></li>
+            </ul>
+            <h3>More</h3>
+            <ul>
+                <li><a href="../libraries.html" class="back-link">← All libraries</a></li>
+            </ul>
+        </aside>
+
+        <div class="container">
+            <p class="breadcrumb"><a href="../documentation.html">Documentation</a> / <a href="../libraries.html">Libraries</a> / path</p>
+            <h1 class="page-title">path</h1>
+            <p class="page-subtitle">Join, normalize, and inspect filesystem paths.</p>
+
+            <pre class="simple-code">import path</pre>
+            <p>Paths use <code>/</code> as the separator and understand both Unix-style absolute paths (<code>/usr/bin</code>) and Windows drive prefixes (<code>C:</code>).</p>
+
+            <div class="doc-section" id="build">
+                <h2>Building paths</h2>
+
+                <div class="function-sig">path_join(left, right) → string</div>
+                <p>Join two segments with exactly one separator, collapsing any extras.</p>
+                <pre class="simple-code">path_join("a/", "/b")
+-- Output: "a/b"</pre>
+
+                <div class="function-sig">path_join_many(parts) → string</div>
+                <p>Join a list of segments left to right.</p>
+                <pre class="simple-code">path_join_many(["a", "b", "c"])
+-- Output: "a/b/c"</pre>
+
+                <div class="function-sig">path_split(path) → list</div>
+                <p>Split a path into its non-empty segments.</p>
+                <pre class="simple-code">path_split("/usr/local/bin")
+-- Output: ["usr", "local", "bin"]</pre>
+
+                <div class="function-sig">path_sep() → string</div>
+                <p>The path separator used by the library.</p>
+                <pre class="simple-code">path_sep()
+-- Output: "/"</pre>
+            </div>
+
+            <div class="doc-section" id="inspect">
+                <h2>Inspection</h2>
+
+                <div class="function-sig">path_is_absolute(path) → boolean</div>
+                <p>Whether the path is absolute (leading <code>/</code> or a drive prefix).</p>
+                <pre class="simple-code">path_is_absolute("/etc/hosts")
+-- Output: true
+path_is_absolute("docs/api")
+-- Output: false</pre>
+
+                <div class="function-sig">path_basename(path) → string</div>
+                <p>The final segment of the path.</p>
+                <pre class="simple-code">path_basename("/usr/local/bin/bern")
+-- Output: "bern"</pre>
+
+                <div class="function-sig">path_dirname(path) → string</div>
+                <p>The parent directory.</p>
+                <pre class="simple-code">path_dirname("/usr/local/bin/bern")
+-- Output: "/usr/local/bin"</pre>
+
+                <div class="function-sig">path_extname(path) → string</div>
+                <p>The extension including the leading dot, or <code>""</code> when there is none.</p>
+                <pre class="simple-code">path_extname("archive.tar.gz")
+-- Output: ".gz"</pre>
+
+                <div class="function-sig">path_stem(path) → string</div>
+                <p>The basename without its extension.</p>
+                <pre class="simple-code">path_stem("report.pdf")
+-- Output: "report"</pre>
+            </div>
+
+            <div class="doc-section" id="normalize">
+                <h2>Normalization</h2>
+
+                <div class="function-sig">path_normalize(path) → string</div>
+                <p>Resolve redundant separators and the <code>.</code> / <code>..</code> segments.</p>
+                <pre class="simple-code">path_normalize("a/./b/../c")
+-- Output: "a/c"
+
+path_normalize("/a//b/../c")
+-- Output: "/a/c"</pre>
+            </div>
+
+            <div class="doc-section" id="together">
+                <h2>Putting it together</h2>
+                <p>The functions combine to rewrite a path safely - here we move a file into a sibling directory while keeping its name:</p>
+                <div class="example-box">
+                    <h4>Relocating a file next to its source</h4>
+                    <pre class="simple-code">import path
+
+source = "/projects/bern/src/main.brn"
+
+dir  = path_dirname(source)
+-- "/projects/bern/src"
+name = path_basename(source)
+-- "main.brn"
+
+dest = path_normalize(path_join_many([dir, "..", "build", name]))
+-- Output: "/projects/bern/build/main.brn"</pre>
+                </div>
+                <p>And deriving an output filename by swapping the extension via <code>path_stem</code>:</p>
+                <div class="example-box">
+                    <h4>Choosing an output name</h4>
+                    <pre class="simple-code">import path
+
+def with_ext(file, ext) -> path_join(path_dirname(file), path_stem(file) + ext)
+
+with_ext("docs/notes.md", ".html")
+-- Output: "docs/notes.html"</pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        Copyright © 2026 • All rights reserved • Built with ❤️ by <a href="https://mirvox.xyz/">Miguel Aguiar</a>
+    </footer>
+</body>
+</html>

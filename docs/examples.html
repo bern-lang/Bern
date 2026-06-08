@@ -154,7 +154,7 @@
             font-size: 2rem;
             margin-bottom: 1rem;
             padding-bottom: 0.5rem;
-            border-bottom: 2px solid var(--border);
+            border-bottom: 1px solid var(--border);
         }
 
         .doc-section h3 {
@@ -183,6 +183,15 @@
 
         .doc-section li {
             margin: 0.5rem 0;
+        }
+
+        .doc-section a {
+            color: var(--primary);
+            font-weight: 700;
+        }
+
+        .doc-section a:hover {
+            text-decoration: underline;
         }
 
         code {
@@ -245,7 +254,7 @@
         }
 
         .lib-table th {
-            background: #e8eaf6;
+            background: #f4f4f7;
             color: var(--primary);
         }
 
@@ -308,13 +317,51 @@
         }
 
         @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 0.85rem;
+                padding: 0 1rem;
+            }
+
+            .logo img {
+                width: 64px !important;
+                margin-top: 0 !important;
+            }
+
             nav {
-                gap: 1rem;
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 0.5rem 1.1rem;
+            }
+
+            .doc-section h2 {
+                font-size: 1.6rem;
+            }
+
+            .lib-table {
+                display: block;
+                overflow-x: auto;
+                white-space: nowrap;
             }
 
             .container {
                 padding: 2rem 1rem;
             }
+        }
+
+        .breadcrumb {
+            font-size: 0.9rem;
+            color: var(--text-light);
+            margin-bottom: 1.5rem;
+        }
+
+        .breadcrumb a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        .breadcrumb a:hover {
+            text-decoration: underline;
         }
     </style>
 </head>
@@ -325,7 +372,7 @@
             <nav>
                 <a href="index.html">Home</a>
                 <a href="documentation.html">Documentation</a>
-                <a href="examples.html">Learn Bern</a>
+                <!-- <a href="examples.html">Learn Bern</a> -->
                 <a href="changelog.html">Changelog</a>
                 <a href="pt-br/examples.html" style="font-weight: 600;">🌐 PT-BR</a>
             </nav>
@@ -385,6 +432,7 @@
         </aside>
 
         <div class="container">
+            <p class="breadcrumb"><a href="index.html">Home</a> / Examples</p>
             <h1 style="color: var(--primary); font-size: 2.5rem; margin-bottom: 0.5rem;">Bern by Example</h1>
             <p class="lead">A guided, in-depth tour of the language. Every snippet is runnable - paste it into the REPL or save it as a <code>.brn</code> file. Wherever symbols appear, use the <em>Show written form</em> button to flip the same code into its plain-English equivalent.</p>
 

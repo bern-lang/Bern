@@ -156,7 +156,7 @@
             font-size: 2rem;
             margin-bottom: 1rem;
             padding-bottom: 0.5rem;
-            border-bottom: 2px solid var(--border);
+            border-bottom: 1px solid var(--border);
         }
 
         .doc-section h3 {
@@ -185,6 +185,15 @@
 
         .doc-section li {
             margin: 0.5rem 0;
+        }
+
+        .doc-section a {
+            color: var(--primary);
+            font-weight: 700;
+        }
+
+        .doc-section a:hover {
+            text-decoration: underline;
         }
 
         code {
@@ -247,7 +256,7 @@
         }
 
         .lib-table th {
-            background: #e8eaf6;
+            background: #f4f4f7;
             color: var(--primary);
         }
 
@@ -310,13 +319,51 @@
         }
 
         @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 0.85rem;
+                padding: 0 1rem;
+            }
+
+            .logo img {
+                width: 64px !important;
+                margin-top: 0 !important;
+            }
+
             nav {
-                gap: 1rem;
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 0.5rem 1.1rem;
+            }
+
+            .doc-section h2 {
+                font-size: 1.6rem;
+            }
+
+            .lib-table {
+                display: block;
+                overflow-x: auto;
+                white-space: nowrap;
             }
 
             .container {
                 padding: 2rem 1rem;
             }
+        }
+
+        .breadcrumb {
+            font-size: 0.9rem;
+            color: var(--text-light);
+            margin-bottom: 1.5rem;
+        }
+
+        .breadcrumb a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        .breadcrumb a:hover {
+            text-decoration: underline;
         }
     </style>
 </head>
@@ -387,6 +434,7 @@
         </aside>
 
         <div class="container">
+            <p class="breadcrumb"><a href="index.html">Início</a> / Exemplos</p>
             <h1 style="color: var(--primary); font-size: 2.5rem; margin-bottom: 0.5rem;">Bern por Exemplos</h1>
             <p class="lead">Um tour guiado e aprofundado pela linguagem. Todo trecho é executável - cole no REPL ou salve como um arquivo <code>.brn</code>. Onde aparecerem símbolos, use o botão <em>Show written form</em> para alternar o mesmo código para o seu equivalente em palavras.</p>
 

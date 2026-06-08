@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>vendor/raylib - Bern Libraries</title>
+    <link rel="icon" type="image/png" href="../images/cat.png">
+    <link rel="stylesheet" href="../lib.css">
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <a href="../index.html" class="logo"><img src="../images/cat.png" alt="Bern Logo" width="20%" style="margin-top: 10px;"></a>
+            <nav>
+                <a href="../documentation.html">Language</a>
+                <a href="../libraries.html">Libraries</a>
+                <!-- <a href="../examples.html">Learn Bern</a> -->
+                <a href="../changelog.html">Changelog</a>
+                <a href="../pt-br/libs/raylib.html" style="font-weight: 600;">🌐 PT-BR</a>
+            </nav>
+        </div>
+    </header>
+
+    <div class="layout">
+        <aside class="sidebar">
+            <h3>vendor/raylib</h3>
+            <ul>
+                <li><a href="#types">Types &amp; colors</a></li>
+                <li><a href="#window">Window</a></li>
+                <li><a href="#frame">The frame loop</a></li>
+                <li><a href="#input">Input</a></li>
+                <li><a href="#shapes">Shapes &amp; text</a></li>
+                <li><a href="#audio">Audio</a></li>
+                <li><a href="#together">Putting it together</a></li>
+            </ul>
+            <h3>More</h3>
+            <ul>
+                <li><a href="../libraries.html" class="back-link">← All libraries</a></li>
+            </ul>
+        </aside>
+
+        <div class="container">
+            <p class="breadcrumb"><a href="../documentation.html">Documentation</a> / <a href="../libraries.html">Libraries</a> / vendor/raylib</p>
+            <h1 class="page-title">vendor/raylib <span class="vendor-badge">Vendor</span></h1>
+            <p class="page-subtitle">Bindings for <a href="https://www.raylib.com">raylib 5.5</a> — windowing, 2D/3D drawing, input and audio, straight over Bern's FFI.</p>
+
+            <pre class="simple-code">import vendor/raylib/raylib</pre>
+            <p>The module loads the bundled raylib shared library for your platform (Windows <code>.dll</code>, Linux <code>.so</code>, macOS <code>.dylib</code>) and exposes the raylib C functions under their original names. If you know the <a href="https://www.raylib.com/cheatsheet/cheatsheet.html">raylib cheatsheet</a>, you already know the API: <code>InitWindow</code>, <code>BeginDrawing</code>, <code>DrawText</code>, and the rest are called exactly as you would expect, with the library handle wired up for you.</p>
+            <p>Only the functions listed here are bound today; the set covers windowing, the frame loop, input, basic shapes, text and audio. Constructors and enums are provided as Bern values, so you rarely touch raw integers.</p>
+
+            <div class="doc-section" id="types">
+                <h2>Types &amp; colors</h2>
+                <p>The core raylib structs are modelled as Bern ADTs. Build them with their constructors and pass them straight into drawing calls.</p>
+
+                <div class="function-sig">Color(r, g, b, a) → Color</div>
+                <p>An RGBA color, each channel a byte (0–255). A full set of named colors ships as constants.</p>
+                <pre class="simple-code">sky   = Color(102, 191, 255, 255)
+faded = Color(0, 0, 0, 128)        -- 50% transparent black
+
+-- or use the built-ins
+RL_RAYWHITE   RL_BLACK   RL_RED   RL_GREEN   RL_BLUE
+RL_GOLD       RL_LIME    RL_SKYBLUE   RL_VIOLET   RL_MAGENTA</pre>
+
+                <div class="function-sig">Vector2(x, y) → Vector &nbsp;·&nbsp; Vector3(x, y, z) → Vector</div>
+                <p>2D and 3D vectors (32-bit floats, for C compatibility). <code>Rectangle(x, y, width, height)</code> describes an axis-aligned box.</p>
+                <pre class="simple-code">pos  = Vector2(400.0, 225.0)
+size = Rectangle(0.0, 0.0, 120.0, 40.0)</pre>
+
+                <div class="function-sig">enums: KeyboardKey, MouseButton, ConfigFlag, …</div>
+                <p>Named constants are grouped into objects, so you read a key or flag by name instead of memorising numbers. Index them with a dot or a key.</p>
+                <pre class="simple-code">KeyboardKey.SPACE        -- 32
+MouseButton.LEFT         -- 0
+ConfigFlag.MSAA_4X_HINT  -- 32
+
+-- also: CameraProjection, BlendMode, Gesture, TraceLogLevel,
+-- PixelFormat, GamepadButton, MouseCursor, and more.</pre>
+                <p class="feat">Useful constants: <code>RL_VERSION</code> (<code>"5.5"</code>), <code>RL_PI</code>, <code>RL_DEG2RAD</code>, <code>RL_RAD2DEG</code>.</p>
+            </div>
+
+            <div class="doc-section" id="window">
+                <h2>Window</h2>
+
+                <div class="function-sig">InitWindow(width, height, title) → void</div>
+                <p>Create the window and OpenGL context. Call this once before anything else draws.</p>
+                <pre class="simple-code">InitWindow(800, 450, "Bern + raylib")</pre>
+
+                <div class="function-sig">WindowShouldClose() → bool</div>
+                <p>True once the user closes the window or presses the exit key — the natural condition for the main loop.</p>
+
+                <div class="function-sig">CloseWindow() → void</div>
+                <p>Tear down the window and release resources. Call it last.</p>
+
+                <p>Other window helpers follow the C names directly:</p>
+                <pre class="simple-code">SetConfigFlags(ConfigFlag.MSAA_4X_HINT)   -- before InitWindow
+SetWindowTitle("New title")
+SetWindowSize(1024, 600)
+SetWindowPosition(100, 100)
+GetScreenWidth()      GetScreenHeight()
+IsWindowReady()       IsWindowResized()
+ToggleFullscreen()    MaximizeWindow()    MinimizeWindow()</pre>
+            </div>
+
+            <div class="doc-section" id="frame">
+                <h2>The frame loop</h2>
+                <p>Every frame is bracketed by <code>BeginDrawing()</code> / <code>EndDrawing()</code>. Clear the background, issue draw calls, then end the frame to present it.</p>
+
+                <div class="function-sig">BeginDrawing() → void &nbsp;·&nbsp; EndDrawing() → void</div>
+                <div class="function-sig">ClearBackground(color) → void</div>
+                <p>Fill the whole framebuffer with a single color, usually the first thing inside <code>BeginDrawing</code>.</p>
+
+                <div class="function-sig">SetTargetFPS(fps) → void</div>
+                <p>Cap the loop at a target frame rate. Companions: <code>GetFPS()</code>, <code>GetFrameTime()</code> (seconds since last frame), <code>GetTime()</code> (seconds since start).</p>
+                <pre class="simple-code">BeginDrawing()
+ClearBackground(RL_RAYWHITE)
+DrawText("hello", 20, 20, 20, RL_DARKGRAY)
+EndDrawing()</pre>
+            </div>
+
+            <div class="doc-section" id="input">
+                <h2>Input</h2>
+                <p>Polling functions read the current input state once per frame. Keys and buttons take the named enum values.</p>
+
+                <div class="function-sig">IsKeyDown(key) → bool &nbsp;·&nbsp; IsKeyPressed(key) → bool</div>
+                <p><code>Down</code> is held this frame; <code>Pressed</code> fired only on the frame it went down. Also <code>IsKeyReleased</code>, <code>IsKeyUp</code>, and <code>GetKeyPressed()</code> for text-style input.</p>
+                <pre class="simple-code">if IsKeyDown(KeyboardKey.RIGHT) then
+    x = x + 4
+end</pre>
+
+                <div class="function-sig">GetMouseX() → int &nbsp;·&nbsp; GetMouseY() → int</div>
+                <div class="function-sig">IsMouseButtonPressed(button) → bool</div>
+                <p>Plus <code>IsMouseButtonDown</code>, <code>GetMouseWheelMove()</code>, <code>SetMouseCursor(MouseCursor.POINTING_HAND)</code>.</p>
+                <pre class="simple-code">if IsMouseButtonPressed(MouseButton.LEFT) then
+    click_at(GetMouseX(), GetMouseY())
+end</pre>
+
+                <div class="function-sig">gamepad &amp; touch</div>
+                <p><code>IsGamepadAvailable(0)</code>, <code>IsGamepadButtonDown(0, GamepadButton.RIGHT_FACE_DOWN)</code>, <code>GetGamepadAxisMovement(0, GamepadAxis.LEFT_X)</code>; <code>GetTouchX()</code> / <code>GetTouchY()</code> / <code>GetTouchPointCount()</code> for touch.</p>
+            </div>
+
+            <div class="doc-section" id="shapes">
+                <h2>Shapes &amp; text</h2>
+
+                <div class="function-sig">DrawRectangle(x, y, width, height, color) → void</div>
+                <div class="function-sig">DrawCircle(centerX, centerY, radius, color) → void</div>
+                <div class="function-sig">DrawLine(startX, startY, endX, endY, color) → void</div>
+                <p>The basic 2D primitives. Outlined variants (<code>DrawRectangleLines</code>, <code>DrawCircleLines</code>), gradients (<code>DrawRectangleGradientV</code>/<code>H</code>), <code>DrawEllipse</code> and <code>DrawPixel</code> are all available.</p>
+                <pre class="simple-code">DrawRectangle(20, 20, 120, 60, RL_SKYBLUE)
+DrawCircle(400, 225, 40.0, RL_RED)
+DrawLine(0, 0, 800, 450, RL_GRAY)</pre>
+
+                <div class="function-sig">DrawText(text, x, y, fontSize, color) → void</div>
+                <p>Draw a string with the built-in font. <code>MeasureText(text, fontSize)</code> returns its pixel width, and <code>DrawFPS(x, y)</code> draws a live frame-rate counter.</p>
+
+                <div class="function-sig">collision</div>
+                <p><code>CheckCollisionPointRec(point, rect)</code> and <code>CheckCollisionPointCircle(point, center, radius)</code> answer simple hit tests — handy for buttons and hover states.</p>
+            </div>
+
+            <div class="doc-section" id="audio">
+                <h2>Audio</h2>
+                <p>Open the audio device once, then load and play sounds (one-shots) or music streams (long tracks you update each frame).</p>
+                <pre class="simple-code">InitAudioDevice()
+
+shot = LoadSound("blip.wav")
+PlaySound(shot)
+
+song = LoadMusicStream("theme.ogg")
+PlayMusicStream(song)
+-- inside the loop: UpdateMusicStream(song)
+
+-- on shutdown
+UnloadSound(shot)
+UnloadMusicStream(song)
+CloseAudioDevice()</pre>
+                <p>Sounds: <code>PauseSound</code>, <code>ResumeSound</code>, <code>StopSound</code>, <code>SetSoundVolume</code>, <code>SetSoundPitch</code>. Music: <code>SeekMusicStream</code>, <code>SetMusicVolume</code>, <code>GetMusicTimeLength</code>, <code>GetMusicTimePlayed</code>.</p>
+            </div>
+
+            <div class="doc-section" id="together">
+                <h2>Putting it together</h2>
+                <p>The classic raylib "first window" — open a window, run the frame loop until the user closes it, and draw a line of text in the middle.</p>
+                <div class="example-box">
+                    <h4>Your first window</h4>
+                    <pre class="simple-code">import vendor/raylib/raylib
+
+InitWindow(800, 450, "Bern + raylib")
+SetTargetFPS(60)
+
+for !WindowShouldClose() do
+    BeginDrawing()
+    ClearBackground(RL_RAYWHITE)
+    DrawText("Congrats! You created your first window!", 190, 200, 20, RL_LIGHTGRAY)
+    EndDrawing()
+end
+
+CloseWindow()</pre>
+                </div>
+                <p>And a tiny interactive sketch: a square you move with the arrow keys, redrawn every frame.</p>
+                <div class="example-box">
+                    <h4>A movable square</h4>
+                    <pre class="simple-code">import vendor/raylib/raylib
+
+InitWindow(800, 450, "move me")
+SetTargetFPS(60)
+
+x = 400
+y = 225
+
+for !WindowShouldClose() do
+    if IsKeyDown(KeyboardKey.RIGHT) then x = x + 4 end
+    if IsKeyDown(KeyboardKey.LEFT)  then x = x - 4 end
+    if IsKeyDown(KeyboardKey.DOWN)  then y = y + 4 end
+    if IsKeyDown(KeyboardKey.UP)    then y = y - 4 end
+
+    BeginDrawing()
+    ClearBackground(RL_RAYWHITE)
+    DrawRectangle(x, y, 40, 40, RL_MAROON)
+    DrawText("arrow keys to move", 20, 20, 20, RL_GRAY)
+    EndDrawing()
+end
+
+CloseWindow()</pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        Copyright © 2026 • All rights reserved • Built with ❤️ by <a href="https://mirvox.xyz/">Miguel Aguiar</a>
+    </footer>
+</body>
+</html>

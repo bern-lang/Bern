@@ -1,0 +1,95 @@
+{--! typed !--}
+import core
+import assert
+
+"Typed pragma tests (name :: Type = expr)"
+
+-- Canonical scalar types -----------------------------------------------------
+x :: Integer = 10
+assert_equals("Integer binds value", x, 10)
+assert_equals("Integer keeps its type", ::x, "Integer")
+
+a :: Character = 'a'
+assert_equals("Character binds value", a, 'a')
+assert_equals("Character keeps its type", ::a, "Character")
+
+pi :: Double = 3.14
+assert_equals("Double binds value", pi, 3.14)
+assert_equals("Double keeps its type", ::pi, "Double")
+
+ok :: Boolean = true
+assert_equals("Boolean binds value", ok, true)
+assert_equals("Boolean keeps its type", ::ok, "Boolean")
+
+name :: String = "bern"
+assert_equals("String binds value", name, "bern")
+
+-- Familiar aliases (Int, Float, Char, Bool, Text) ----------------------------
+i :: Int = 42
+assert_equals("Int alias works", i, 42)
+
+f :: Float = 2.5
+assert_equals("Float alias works", f, 2.5)
+
+c :: Char = 'z'
+assert_equals("Char alias works", c, 'z')
+
+b :: Bool = false
+assert_equals("Bool alias works", b, false)
+
+greeting :: Text = "hi"
+assert_equals("Text alias works", greeting, "hi")
+
+-- Collection types -----------------------------------------------------------
+xs :: List = [1, 2, 3]
+assert_equals("List binds value", :> xs, 3)
+assert_equals("List keeps its type", ::xs, "List")
+
+s :: Set = {1, 2, 3}
+assert_equals("Set keeps its type", ::s, "Set")
+
+o :: Object = #{ "k": 1 }#
+assert_equals("Object keeps its type", ::o, "Object")
+
+-- An ADT type name is accepted for a value built from any of its constructors.
+-- (The binding below would abort the program on a type mismatch, so reaching the
+-- assertion at all proves `Shape` accepted the `Circle` value. `typeof` still
+-- reports the constructor name, which is how Bern models ADT values.)
+adt Shape = Circle Double | Square Double
+
+sh :: Shape = Circle(1.0)
+assert_equals("ADT type accepts its constructor", ::sh, "Circle")
+
+sq :: Shape = Square(2.0)
+assert_equals("ADT type accepts another constructor", ::sq, "Square")
+
+-- Auto / Any: the dynamic type accepts whatever value is passed ---------------
+auto_int :: Auto = 7
+assert_equals("Auto accepts Integer", auto_int, 7)
+
+auto_str :: Auto = "anything"
+assert_equals("Auto accepts String", auto_str, "anything")
+
+auto_list :: Auto = [1, 2]
+assert_equals("Auto accepts List", :> auto_list, 2)
+
+auto_adt :: Auto = Circle(3.0)
+assert_equals("Auto accepts ADT value", ::auto_adt, "Circle")
+
+any_val :: Any = 'c'
+assert_equals("Any is a synonym for Auto", any_val, 'c')
+
+-- Auto as an ADT field type: the field holds whatever type is passed ----------
+adt Box = Box Auto
+
+bi :: Box = Box(42)
+assert_equals("Auto ADT field holds an Integer", ::bi, "Box")
+
+bs = Box("text")
+assert_equals("Auto ADT field holds a String", ::bs, "Box")
+
+-- Reassignment of a typed variable is still type-checked ----------------------
+x = 99
+assert_equals("typed var stays usable after plain reassign", x, 99)
+
+"Typed pragma tests done"

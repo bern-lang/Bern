@@ -1,16 +1,81 @@
+-- ============================================================================
+-- BernParsec - a tiny parser-combinator library for Bern
+-- ============================================================================
+--
+-- WHAT IS A PARSER COMBINATOR?
+--   A "parser" here is a small recipe for reading text. You build big parsers by
+--   gluing small ones together with "combinators" (functions that take parsers
+--   and return a new, bigger parser). For example:
+--       char('a')                    -- reads the letter a
+--       many(digitChar())            -- reads zero or more digits
+--       sepBy(decimal(), char(','))  -- reads numbers separated by commas
+--
+-- THE ONE IDEA BEHIND THE WHOLE FILE
+--   A parser is NOT a function -- it is a plain object (a #{}# dictionary) that
+--   DESCRIBES what to read, e.g. #{ "kind": "char", "char": 'a' }#. A single
+--   interpreter, parse_state, walks that description against the input. That is
+--   why parsers here are cheap to build, easy to print, and can even be spelled
+--   out as the BPParser ADT (the BP* constructors) and converted back with
+--   parser_from_adt.
+--
+-- RUNNING A PARSER
+--       result = parse(myParser, "source-name", "the input text")
+--   The result is a dictionary:
+--       result["ok"]       -- true if the parser matched
+--       result["value"]    -- the parsed value          (when ok)
+--       result["state"]    -- where parsing stopped      (index / line / column)
+--       result["expected"] -- list of what was expected  (when it failed)
+--       result["message"]  -- a human-readable error     (when it failed)
+--   Turn a failure into a readable string with errorBundlePretty(result), or use
+--   parseTest(myParser, "input") for quick experiments.
+--
+-- QUICK START
+--       import vendor/bernparsec
+--       greeting = before(string("hello"), eof())   -- "hello" then end-of-input
+--       parseTest(greeting, "hello")                 -- => "hello"
+--
+-- NAMING
+--   The core names (char, many, sepBy, ...) follow Haskell's `megaparsec` so the
+--   two libraries read alike. If you prefer plain-English names, see the
+--   "FRIENDLY ALIASES" section at the very bottom -- each alias simply forwards
+--   to the matching core function, so you can mix the two styles freely.
+-- ============================================================================
+
 import core
 import strings
 
+-- Character classes used by the is_* predicates and the digit/letter parsers.
 LOWER_ALPHA = "abcdefghijklmnopqrstuvwxyz"
 UPPER_ALPHA = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 DIGITS = "0123456789"
 WHITESPACE = " \t\n\r"
 
+-- ----------------------------------------------------------------------------
+-- Data model (ADT form)
+-- ----------------------------------------------------------------------------
+-- Everything below can be expressed two ways: as the dictionary objects the
+-- builder functions produce (the normal way), or as these ADT values. The ADT
+-- form is handy when you want a parser you can pattern-match on or pass around
+-- as plain data; normalize_parser / parser_from_adt translate it into the
+-- dictionary form the interpreter understands.
+--   BPParser     - a parser described as data (one constructor per combinator)
+--   BPStateType  - the cursor: input, source name, index, line, column
+--   BPResultType - the outcome: BPOk value/state, or BPErr expected/message/state
+--   BPMaybeType  - optional() results in ADT form: BPJust value or BPNothing
 adt BPParser = BPPure Any | BPFail String | BPSatisfy Any String | BPAnySingle | BPChar Char | BPOneOf String | BPNoneOf String | BPString String | BPEof | BPMap Any Any | BPBind Any Any | BPThen Any Any | BPBefore Any Any | BPLabel Any String | BPOrElse Any Any | BPChoice List | BPMany Any | BPSome Any | BPCount Int Any | BPOptional Any | BPBetween Any Any Any | BPSepBy Any Any | BPSepBy1 Any Any | BPManyTill Any Any | BPLookAhead Any | BPNotFollowedBy Any | BPLazy Any | BPChainL1 Any Any Any | BPFloat | BPSigned Any
 adt BPStateType = BPState String String Int Int Int
 adt BPResultType = BPOk Any BPState | BPErr List String BPState
 adt BPMaybeType = BPJust Any | BPNothing
 
+-- ----------------------------------------------------------------------------
+-- Internals: the parsing cursor (state) and outcomes (results)
+-- ----------------------------------------------------------------------------
+-- You normally never touch these directly -- the combinators and the parse_state
+-- interpreter use them under the hood. They are documented so the engine is easy
+-- to follow.
+
+-- Build the starting cursor for `input`, labelled `source_name` for error
+-- messages. Index is 0-based; line and column are 1-based.
 def mk_state(input, source_name) do
     state = #{}#
     state["input"] = input
@@ -21,8 +86,10 @@ def mk_state(input, source_name) do
     return state
 end
 
+-- True when the cursor has reached the end of the input.
 def at_end(state) -> state["index"] >= length(state["input"])
 
+-- The character under the cursor, or false at end of input.
 def current_char(state) do
     if (at_end(state)) then
         return false
@@ -30,8 +97,11 @@ def current_char(state) do
     return state["input"][state["index"]]
 end
 
+-- Render a single character as a one-character string (for error text).
 def char_to_string(c) -> "" + c
 
+-- Return a new cursor one character further on, updating line/column. A newline
+-- bumps the line and resets the column; anything else advances the column.
 def advance_state_char(state, ch) do
     next_state = #{}#
     next_state["input"] = state["input"]
@@ -47,8 +117,11 @@ def advance_state_char(state, ch) do
     return next_state
 end
 
+-- Did parsing actually move forward between two cursors? This drives the
+-- "backtrack only if nothing was consumed" rule used by orElse, optional, etc.
 def consumed(from_state, to_state) -> to_state["index"] > from_state["index"]
 
+-- A success result carrying the parsed `value` and the cursor after it.
 def ok_result(value, state) do
     result = #{}#
     result["ok"] = true
@@ -59,6 +132,8 @@ def ok_result(value, state) do
     return result
 end
 
+-- A failure result: the list of things that were `expected`, a `message`, and
+-- the cursor where the failure happened (used to report line/column).
 def err_result(expected, message, state) do
     result = #{}#
     result["ok"] = false
@@ -69,6 +144,7 @@ def err_result(expected, message, state) do
     return result
 end
 
+-- Append `value` to `list` only if it is not already present.
 def append_unique(list, value) do
     if (index_of(list, value) == -1) then
         return list <> [value]
@@ -76,6 +152,7 @@ def append_unique(list, value) do
     return list
 end
 
+-- Union of two "expected" lists, keeping each entry once.
 def merge_expected(left, right) do
     merged = left
     idx = 0
@@ -86,6 +163,9 @@ def merge_expected(left, right) do
     return merged
 end
 
+-- Combine two failures, keeping the one that got further into the input (the
+-- more specific error). On a tie, merge their "expected" lists. This is what
+-- makes choice/orElse report a helpful "expected X, Y or Z" message.
 def merge_failures(a, b) do
     pos_a = a["state"]["index"]
     pos_b = b["state"]["index"]
@@ -103,24 +183,35 @@ def merge_failures(a, b) do
     end
 end
 
+-- Every combinator below is just a small dictionary tagged with a "kind". This
+-- helper starts one; each builder then fills in its own extra fields.
 def mk_parser(kind) do
     parser = #{}#
     parser["kind"] = kind
     return parser
 end
 
+-- ----------------------------------------------------------------------------
+-- Primitive parsers (the leaves you build everything else from)
+-- ----------------------------------------------------------------------------
+
+-- Always succeeds without consuming input, yielding `value`. The neutral
+-- building block for injecting a constant into a parser pipeline.
 def pure(value) do
     parser = mk_parser("pure")
     parser["value"] = value
     return parser
 end
 
+-- Always fails with `message`, consuming nothing.
 def fail_parser(message) do
     parser = mk_parser("fail")
     parser["message"] = message
     return parser
 end
 
+-- Match a single character for which `pred(ch)` is true. `expected_label` is the
+-- name shown in error messages (e.g. "digit"); it defaults to "token".
 def satisfy(pred) -> satisfy(pred, "token")
 def satisfy(pred, expected_label) do
     parser = mk_parser("satisfy")
@@ -129,34 +220,46 @@ def satisfy(pred, expected_label) do
     return parser
 end
 
+-- Match any one character (fails only at end of input).
 def anySingle() -> mk_parser("anySingle")
 
+-- Match exactly the character `c`.
 def char(c) do
     parser = mk_parser("char")
     parser["char"] = c
     return parser
 end
 
+-- Match any one character that appears in the string `chars`.
 def oneOf(chars) do
     parser = mk_parser("oneOf")
     parser["chars"] = chars
     return parser
 end
 
+-- Match any one character that does NOT appear in the string `chars`.
 def noneOf(chars) do
     parser = mk_parser("noneOf")
     parser["chars"] = chars
     return parser
 end
 
+-- Match the exact text `token`, returning it on success.
 def string(token) do
     parser = mk_parser("string")
     parser["token"] = token
     return parser
 end
 
+-- Succeed only at the end of the input (matches no characters).
 def eof() -> mk_parser("eof")
 
+-- ----------------------------------------------------------------------------
+-- Combinators (take parsers, return a bigger parser)
+-- ----------------------------------------------------------------------------
+
+-- Run `parser`, then transform its result with `mapper`. Use this to turn raw
+-- matches into the value you actually want, e.g. mapP(some(digitChar()), to_int).
 def mapP(parser, mapper) do
     result = mk_parser("mapP")
     result["parser"] = parser
@@ -164,6 +267,9 @@ def mapP(parser, mapper) do
     return result
 end
 
+-- Sequence that depends on the first result: run `parser`, hand its value to
+-- `to_parser` (a function returning the NEXT parser), then run that. This is the
+-- most general combinator -- many others can be written in terms of it.
 def bind(parser, to_parser) do
     result = mk_parser("bind")
     result["parser"] = parser
@@ -171,6 +277,7 @@ def bind(parser, to_parser) do
     return result
 end
 
+-- Run `left` then `right`, KEEPING the right value (the left is discarded).
 def thenP(left, right) do
     parser = mk_parser("thenP")
     parser["left"] = left
@@ -178,6 +285,8 @@ def thenP(left, right) do
     return parser
 end
 
+-- Run `left` then `right`, KEEPING the left value (the right is discarded).
+-- Pairs with thenP; e.g. before(string("ok"), eof()) returns "ok".
 def before(left, right) do
     parser = mk_parser("before")
     parser["left"] = left
@@ -185,8 +294,13 @@ def before(left, right) do
     return parser
 end
 
+-- Identity: kept for megaparsec-style code. In megaparsec `try` enables
+-- backtracking; here every parser already backtracks when it consumes nothing,
+-- so `try` simply returns its argument unchanged.
 def try(parser) -> parser
 
+-- Run `parser` but, if it fails WITHOUT consuming input, replace its "expected"
+-- with `expected_label`. Use this to give a friendly name to a sub-parser.
 def label(parser, expected_label) do
     result = mk_parser("label")
     result["parser"] = parser
@@ -194,6 +308,7 @@ def label(parser, expected_label) do
     return result
 end
 
+-- Try `left`; if it fails without consuming input, try `right` instead.
 def orElse(left, right) do
     parser = mk_parser("orElse")
     parser["left"] = left
@@ -201,24 +316,29 @@ def orElse(left, right) do
     return parser
 end
 
+-- Try each parser in the list `parsers` in order; return the first that matches.
+-- Like orElse chained over many alternatives, with merged error messages.
 def choice(parsers) do
     parser = mk_parser("choice")
     parser["parsers"] = parsers
     return parser
 end
 
+-- Apply `parser` zero or more times, collecting the results into a list.
 def many(parser) do
     result = mk_parser("many")
     result["parser"] = parser
     return result
 end
 
+-- Apply `parser` one or more times (must match at least once), collecting a list.
 def some(parser) do
     result = mk_parser("some")
     result["parser"] = parser
     return result
 end
 
+-- Apply `parser` exactly `n` times, collecting a list of `n` results.
 def count(n, parser) do
     result = mk_parser("count")
     result["n"] = n
@@ -226,12 +346,16 @@ def count(n, parser) do
     return result
 end
 
+-- Apply `parser` at most once. The result is a Maybe: Just value on a match, or
+-- Nothing if it did not match (see maybe_just / maybe_nothing).
 def optional(parser) do
     result = mk_parser("optional")
     result["parser"] = parser
     return result
 end
 
+-- Match `open_parser`, then `parser`, then `close_parser`, keeping only the
+-- middle value. e.g. between(char('('), char(')'), decimal()).
 def between(open_parser, close_parser, parser) do
     result = mk_parser("between")
     result["open"] = open_parser
@@ -240,6 +364,8 @@ def between(open_parser, close_parser, parser) do
     return result
 end
 
+-- Zero or more `parser` separated by `separator` (e.g. comma-separated values),
+-- returning the list of items. Matches the empty list too.
 def sepBy(parser, separator) do
     result = mk_parser("sepBy")
     result["parser"] = parser
@@ -247,6 +373,7 @@ def sepBy(parser, separator) do
     return result
 end
 
+-- Like sepBy, but requires at least one item.
 def sepBy1(parser, separator) do
     result = mk_parser("sepBy1")
     result["parser"] = parser
@@ -254,6 +381,8 @@ def sepBy1(parser, separator) do
     return result
 end
 
+-- Apply `parser` repeatedly until `end_parser` matches, returning the items
+-- collected before the end. e.g. manyTill(anySingle(), char('"')) for a string.
 def manyTill(parser, end_parser) do
     result = mk_parser("manyTill")
     result["parser"] = parser
@@ -261,24 +390,33 @@ def manyTill(parser, end_parser) do
     return result
 end
 
+-- Run `parser` for its result but do NOT advance the cursor (a no-consume peek).
 def lookAhead(parser) do
     result = mk_parser("lookAhead")
     result["parser"] = parser
     return result
 end
 
+-- Succeed (consuming nothing) only if `parser` does NOT match here. A negative
+-- look-ahead, useful as a guard, e.g. "a keyword not followed by a letter".
 def notFollowedBy(parser) do
     result = mk_parser("notFollowedBy")
     result["parser"] = parser
     return result
 end
 
+-- Defer building a parser until it is run. `thunk` is a zero-argument function
+-- that returns the parser. This is how you write RECURSIVE grammars without an
+-- infinite loop at definition time, e.g. def expr() -> ... lazy(expr) ...
 def lazy(thunk) do
     parser = mk_parser("lazy")
     parser["thunk"] = thunk
     return parser
 end
 
+-- Left-associative chain of `term_parser` separated by `op_parser`. For each
+-- operator/right-term pair it folds with combine(accumulated, op, right). Ideal
+-- for left-associative binary operators like `1 + 2 + 3`.
 def chainl1(term_parser, op_parser, combine) do
     parser = mk_parser("chainl1")
     parser["term"] = term_parser
@@ -287,11 +425,24 @@ def chainl1(term_parser, op_parser, combine) do
     return parser
 end
 
+-- ----------------------------------------------------------------------------
+-- ADT bridge
+-- ----------------------------------------------------------------------------
+-- These translate the BPParser / BPState / BPResult / BPMaybe ADTs to and from
+-- the dictionary forms the interpreter uses. You only need them if you choose to
+-- build parsers as ADT values (e.g. BPBefore(BPString("hi"), BPEof())) or want
+-- to pattern-match on a result. normalize_parser is called automatically by
+-- parse_state, so ADT parsers "just work" when passed to parse.
+
+-- True if `value` is one of the BPParser ADT constructors.
 def is_bp_parser(value) do
     t = ::value
     return t == "BPPure" || t == "BPFail" || t == "BPSatisfy" || t == "BPAnySingle" || t == "BPChar" || t == "BPOneOf" || t == "BPNoneOf" || t == "BPString" || t == "BPEof" || t == "BPMap" || t == "BPBind" || t == "BPThen" || t == "BPBefore" || t == "BPLabel" || t == "BPOrElse" || t == "BPChoice" || t == "BPMany" || t == "BPSome" || t == "BPCount" || t == "BPOptional" || t == "BPBetween" || t == "BPSepBy" || t == "BPSepBy1" || t == "BPManyTill" || t == "BPLookAhead" || t == "BPNotFollowedBy" || t == "BPLazy" || t == "BPChainL1" || t == "BPFloat" || t == "BPSigned"
 end
 
+-- Convert a BPParser ADT value into the dictionary parser it stands for. Each
+-- clause mirrors one builder function above; the final catch-all clause passes
+-- through anything that is already a dictionary parser.
 def parser_from_adt(BPPure(value)) -> pure(value)
 def parser_from_adt(BPFail(message)) -> fail_parser(message)
 def parser_from_adt(BPSatisfy(pred, expected)) -> satisfy(pred, expected)
@@ -324,6 +475,8 @@ def parser_from_adt(BPFloat()) -> float()
 def parser_from_adt(BPSigned(number_parser)) -> signed(parser_from_adt(number_parser))
 def parser_from_adt(parser) -> parser
 
+-- If `parser` is an ADT value, convert it; otherwise return it unchanged. Called
+-- by parse_state so callers can mix ADT and dictionary parsers freely.
 def normalize_parser(parser) do
     if (is_bp_parser(parser)) then
         return parser_from_adt(parser)
@@ -331,6 +484,9 @@ def normalize_parser(parser) do
     return parser
 end
 
+-- optional() yields a Maybe represented as a small dictionary. maybe_just /
+-- maybe_nothing build them; maybe_to_adt / maybe_from_adt convert to/from the
+-- BPJust / BPNothing ADT.
 def maybe_just(value) do
     m = #{}#
     m["tag"] = "Just"
@@ -356,8 +512,12 @@ def maybe_from_adt(BPJust(value)) -> maybe_just(value)
 def maybe_from_adt(BPNothing()) -> maybe_nothing()
 def maybe_from_adt(maybe_value) -> maybe_value
 
+-- Like optional(), but its result is the BPJust / BPNothing ADT instead of the
+-- dictionary Maybe -- convenient when you want to pattern-match on the outcome.
 def optionalADT(parser) -> mapP(optional(parser), maybe_to_adt)
 
+-- state_to_adt / state_from_adt / normalize_state convert the cursor to/from the
+-- BPState ADT, so a BPState can be handed straight to parse_state.
 def state_to_adt(state) -> BPState(state["input"], state["source"], state["index"], state["line"], state["column"])
 
 def state_from_adt(BPState(input, source, index, line, column)) do
@@ -373,6 +533,9 @@ def state_from_adt(state) -> state
 
 def normalize_state(state) -> state_from_adt(state)
 
+-- result_to_adt / result_from_adt convert an outcome to/from the BPOk / BPErr
+-- ADT. parseADT returns the ADT form; result_from_adt turns it back into the
+-- dictionary you read fields off of.
 def result_to_adt(result) do
     if (result["ok"]) then
         return BPOk(result["value"], state_to_adt(result["state"]))
@@ -384,6 +547,18 @@ def result_from_adt(BPOk(value, state)) -> ok_result(value, state_from_adt(state
 def result_from_adt(BPErr(expected, message, state)) -> err_result(expected, message, state_from_adt(state))
 def result_from_adt(result) -> result
 
+-- ----------------------------------------------------------------------------
+-- The interpreter
+-- ----------------------------------------------------------------------------
+-- parse_state is the engine: given a parser description and a cursor, it returns
+-- an ok/err result. The parse_* helpers below implement the looping shapes
+-- (many, some, count, sepBy, manyTill, chainl1) that are awkward to inline. A
+-- recurring rule throughout: a parser may only safely "give up and backtrack"
+-- when it has consumed no input; if it failed after consuming, the failure is
+-- propagated so errors point at the right place.
+
+-- Apply `sub_parser` repeatedly, collecting results until it stops matching.
+-- Guards against a sub-parser that loops forever without consuming input.
 def parse_many(sub_parser, state) do
     values = []
     current = state
@@ -521,6 +696,10 @@ def parse_chainl1(term_parser, op_parser, combine, state) do
     end
 end
 
+-- The heart of the library: interpret one `parser` against `state`. It first
+-- normalizes ADT parsers/states to dictionaries, then dispatches on the parser's
+-- "kind" tag. Every branch returns either ok_result(value, newState) or
+-- err_result(expected, message, state).
 def parse_state(parser, state) do
     parser = normalize_parser(parser)
     state = normalize_state(state)
@@ -748,17 +927,29 @@ def parse_state(parser, state) do
     return err_result(["parser"], "unknown parser kind", state)
 end
 
+-- ----------------------------------------------------------------------------
+-- Running parsers and reporting errors (the public entry points)
+-- ----------------------------------------------------------------------------
+
+-- Run `parser` over `input`, labelling it `source_name` for error messages.
+-- Returns the dictionary result (ok/value/state or expected/message/state).
 def runParser(parser, source_name, input) do
     state = mk_state(input, source_name)
     return parse_state(parser, state)
 end
 
+-- Friendly name for runParser; the usual way to run a parser.
 def parse(parser, source_name, input) -> runParser(parser, source_name, input)
 
+-- Like runParser, but returns the outcome as the BPOk / BPErr ADT.
 def runParserADT(parser, source_name, input) -> result_to_adt(runParser(parser, source_name, input))
 
+-- Friendly name for runParserADT.
 def parseADT(parser, source_name, input) -> runParserADT(parser, source_name, input)
 
+-- Turn a result into a readable one-line message. On success returns a short
+-- note; on failure returns "source:line:column: message; expected: ...". Accepts
+-- either a dictionary result or the BPOk / BPErr ADT form.
 def errorBundlePretty(BPOk(_, _)) -> "parse succeeded"
 def errorBundlePretty(BPErr(expected, message, adt_state)) do
     return errorBundlePretty(err_result(expected, message, state_from_adt(adt_state)))
@@ -784,6 +975,8 @@ def errorBundlePretty(result) do
     return state["source"] + ":" + state["line"] + ":" + state["column"] + ": " + message + "; expected: " + expected_text
 end
 
+-- Quick experiment helper: run `parser` on `input` and return either the parsed
+-- value (on success) or a pretty error string (on failure). Great in the REPL.
 def parseTest(parser, input) do
     result = parse(parser, "<interactive>", input)
     if (result["ok"]) then
@@ -792,6 +985,7 @@ def parseTest(parser, input) do
     return errorBundlePretty(result)
 end
 
+-- Same as parseTest, but runs through the ADT path.
 def parseTestADT(parser, input) do
     result = parseADT(parser, "<interactive>", input)
     result_obj = result_from_adt(result)
@@ -801,36 +995,58 @@ def parseTestADT(parser, input) do
     return errorBundlePretty(result)
 end
 
+-- ----------------------------------------------------------------------------
+-- Character classes and whitespace
+-- ----------------------------------------------------------------------------
+
+-- True if character `c` occurs in the string `chars`.
 def contains_char(chars, c) -> index_of(chars, c) != -1
 
+-- Character-class predicates (each takes a character, returns true/false).
 def is_digit(c) -> contains_char(DIGITS, c)
-
 def is_letter(c) -> contains_char(LOWER_ALPHA + UPPER_ALPHA, c)
-
 def is_alpha_num(c) -> contains_char(LOWER_ALPHA + UPPER_ALPHA + DIGITS, c)
-
 def is_space_char(c) -> contains_char(WHITESPACE, c)
 
+-- Match a single ASCII digit 0-9.
 def digitChar() -> satisfy(is_digit, "digit")
 
+-- Match a single ASCII letter a-z or A-Z.
 def letterChar() -> satisfy(is_letter, "letter")
 
+-- Match a single letter or digit.
 def alphaNumChar() -> satisfy(is_alpha_num, "alphanumeric")
 
+-- Match a single whitespace character (space, tab, newline, carriage return).
 def spaceChar() -> satisfy(is_space_char, "whitespace")
 
+-- Match a newline character.
 def newline() -> char('\n')
 
+-- Match a tab character.
 def tab() -> char('\t')
 
+-- Match zero or more whitespace characters (skip optional spacing).
 def space() -> many(spaceChar())
 
+-- Match one or more whitespace characters (require some spacing).
 def space1() -> some(spaceChar())
 
+-- ----------------------------------------------------------------------------
+-- Lexing helpers (parse a token, then eat trailing whitespace)
+-- ----------------------------------------------------------------------------
+
+-- Run `parser`, then skip trailing whitespace -- so the next token starts clean.
 def lexeme(parser) -> before(parser, space())
 
+-- Match the exact text `s` as a token, skipping trailing whitespace after it.
 def symbol(s) -> lexeme(string(s))
 
+-- ----------------------------------------------------------------------------
+-- Numbers
+-- ----------------------------------------------------------------------------
+
+-- 10 raised to the (non-negative integer) power `n`, as a Double.
 def pow10(n) do
     acc = 1.0
     idx = 0
@@ -841,6 +1057,8 @@ def pow10(n) do
     return acc
 end
 
+-- Combine an integer part and a fractional part into one Double, e.g.
+-- to_float_parts(12, 50) -> 12.5 (50 has two digits, so it divides by 100).
 def to_float_parts(int_digits, frac_digits) do
     whole = to_int(int_digits) * 1.0
     frac_int = to_int(frac_digits) * 1.0
@@ -848,13 +1066,17 @@ def to_float_parts(int_digits, frac_digits) do
     return whole + (frac_int / divisor)
 end
 
+-- Match one or more digits as an unsigned integer (e.g. "123" -> 123).
 def decimal() -> mapP(some(digitChar()), to_int)
 
+-- Match a simple decimal number with a fractional part (e.g. "12.50" -> 12.5).
+-- Requires digits on both sides of the dot; the work is done by parse_float.
 def float() do
     parser = mk_parser("float")
     return parser
 end
 
+-- Interpreter routine behind float(): read digits, a '.', then more digits.
 def parse_float(state) do
     int_result = parse_state(some(digitChar()), state)
     if (!int_result["ok"]) then
@@ -875,12 +1097,15 @@ def parse_float(state) do
     return ok_result(value, frac_result["state"])
 end
 
+-- Allow an optional leading '+' or '-' in front of `number_parser`, negating the
+-- value for '-'. Works with decimal() or float().
 def signed(number_parser) do
     parser = mk_parser("signed")
     parser["parser"] = number_parser
     return parser
 end
 
+-- Interpreter routine behind signed(): handle an optional sign then the number.
 def parse_signed(number_parser, state) do
     minus_result = parse_state(char('-'), state)
     if (minus_result["ok"]) then
@@ -899,10 +1124,132 @@ def parse_signed(number_parser, state) do
     return parse_state(number_parser, state)
 end
 
+-- Match a signed integer (optional +/- then digits), e.g. "-42" -> -42.
 def integer() -> signed(decimal())
 
+-- ----------------------------------------------------------------------------
+-- Bracket wrappers (parse something inside () [] {}, skipping inner whitespace)
+-- ----------------------------------------------------------------------------
+
+-- Parse `parser` wrapped in round parentheses: ( ... ).
 def parens(parser) -> between(symbol("("), symbol(")"), parser)
 
+-- Parse `parser` wrapped in square brackets: [ ... ].
 def brackets(parser) -> between(symbol("["), symbol("]"), parser)
 
+-- Parse `parser` wrapped in curly braces: { ... }.
 def braces(parser) -> between(symbol("{"), symbol("}"), parser)
+
+-- ============================================================================
+-- FRIENDLY ALIASES
+-- ============================================================================
+-- Plain-English names for the core combinators above. Every alias simply
+-- forwards to the matching function, so you can use whichever reads better -- or
+-- mix both styles in the same grammar. The right-hand side names the original.
+-- ============================================================================
+
+-- Primitive parsers ----------------------------------------------------------
+def literalChar(c) -> char(c)                 -- match the exact character c
+def anyChar() -> anySingle()                  -- match any one character
+def charIn(chars) -> oneOf(chars)             -- match any character in `chars`
+def charNotIn(chars) -> noneOf(chars)         -- match any character NOT in `chars`
+def charWhere(pred) -> satisfy(pred)          -- match a character where pred(c) is true
+def charWhere(pred, lbl) -> satisfy(pred, lbl) -- ...with a custom label for errors
+def text(s) -> string(s)                      -- match the exact text s
+def endOfInput() -> eof()                     -- succeed only at end of input
+def succeed(value) -> pure(value)             -- always succeed, yielding value
+def failWith(message) -> fail_parser(message) -- always fail with message
+
+-- Character classes ----------------------------------------------------------
+def digit() -> digitChar()                    -- one digit 0-9
+def letter() -> letterChar()                  -- one letter a-z / A-Z
+def letterOrDigit() -> alphaNumChar()         -- one letter or digit
+def whitespaceChar() -> spaceChar()           -- one whitespace character
+
+-- Sequencing and transformation ----------------------------------------------
+def mapResult(parser, mapper) -> mapP(parser, mapper) -- transform the result
+def andThen(parser, to_parser) -> bind(parser, to_parser) -- result-dependent sequence
+def keepRight(left, right) -> thenP(left, right) -- run both, keep the right value
+def keepLeft(left, right) -> before(left, right) -- run both, keep the left value
+
+-- Choice ---------------------------------------------------------------------
+def orTry(left, right) -> orElse(left, right) -- try left, else right
+def firstOf(parsers) -> choice(parsers)       -- first matching parser in the list
+
+-- Repetition -----------------------------------------------------------------
+def zeroOrMore(parser) -> many(parser)        -- repeat 0+ times -> list
+def oneOrMore(parser) -> some(parser)         -- repeat 1+ times -> list
+def repeatExactly(n, parser) -> count(n, parser) -- repeat exactly n times -> list
+def optionally(parser) -> optional(parser)    -- match at most once -> Maybe
+def separatedBy(parser, sep) -> sepBy(parser, sep)   -- 0+ items split by sep
+def separatedBy1(parser, sep) -> sepBy1(parser, sep) -- 1+ items split by sep
+def repeatUntil(parser, stop) -> manyTill(parser, stop) -- repeat until stop matches
+
+-- Look-ahead, labels, recursion ----------------------------------------------
+def peek(parser) -> lookAhead(parser)         -- match without consuming input
+def notAhead(parser) -> notFollowedBy(parser) -- succeed only if parser does NOT match
+def describe(parser, lbl) -> label(parser, lbl) -- give the parser a friendly name
+def deferred(thunk) -> lazy(thunk)            -- defer building (for recursion)
+def surroundedBy(open, close, parser) -> between(open, close, parser) -- open .. close
+def chainLeft(term, op, combine) -> chainl1(term, op, combine) -- left-assoc operators
+
+-- Lexing and numbers ---------------------------------------------------------
+def token(parser) -> lexeme(parser)           -- parse then skip trailing space
+def digits() -> decimal()                     -- unsigned integer
+def wholeNumber() -> decimal()                -- unsigned integer (synonym)
+def integerNumber() -> integer()              -- signed integer
+def decimalNumber() -> float()                -- number with a fractional part
+def withSign(number_parser) -> signed(number_parser) -- allow a leading +/-
+
+-- Bracket wrappers -----------------------------------------------------------
+def inParens(parser) -> parens(parser)        -- ( parser )
+def inBrackets(parser) -> brackets(parser)    -- [ parser ]
+def inBraces(parser) -> braces(parser)        -- { parser }
+
+-- Running parsers ------------------------------------------------------------
+def run(parser, source_name, input) -> parse(parser, source_name, input) -- run a parser
+def quickParse(parser, input) -> parseTest(parser, input) -- run; return value or error
+def prettyError(result) -> errorBundlePretty(result)      -- format a result as text
+
+-- ============================================================================
+-- OPERATORS  (inspired by Haskell's megaparsec / Applicative)
+-- ============================================================================
+-- These read the way parser people already think, so a grammar becomes almost a
+-- one-liner. They are just the combinators above with symbols, so everything you
+-- know still applies. Precedence mirrors Haskell: <$> <*> <* *> bind tightest,
+-- then <|>, then >>=, then <?> (the loosest, so it labels a whole parser).
+--
+--   f <$> p      apply the function f to whatever p parses        (mapP)
+--   pf <*> px    sequence two parsers, apply pf's result to px's  (Applicative)
+--   p <*  q      run both in order, KEEP the LEFT result          (before)
+--   p  *> q      run both in order, KEEP the RIGHT result         (thenP)
+--   p <|> q      try p; if it fails, try q                        (orElse)
+--   p >>= f      run p, then build the next parser from its value (bind)
+--   p <?> "lbl"  rename p for nicer error messages               (label)
+--
+-- Example -- a parser is now basically its grammar (lexeme eats trailing spaces):
+--   num  = lexeme(signed(decimal()))
+--   pair = (\x, y -> [x, y]) <$> (num <* symbol(",")) <*> num
+--   parseTest(inBrackets(pair), "[ 3, 4 ]")   -- => [3, 4]
+-- ============================================================================
+
+infix <$> groups left, binds like *
+infix <*> groups left, binds like *
+infix <*  groups left, binds like *
+infix *>  groups left, binds like *
+infix <|> groups left, binds like +
+infix >>= groups left, binds like <>
+infix <?> groups left, binds like ==
+
+-- Helper for <*>: applied to px first (partial application), then to the function
+-- bind hands it. We pass `px` this way rather than capturing it in a lambda,
+-- because the right side of <*> is a function parameter.
+def bp_ap(px, f) -> mapP(px, f)
+
+def (f <$> p)   -> mapP(p, f)                     -- map the result
+def (pf <*> px) -> bind(pf, bp_ap(px))            -- applicative sequence
+def (p <* q)    -> before(p, q)                   -- keep the left value
+def (p *> q)    -> thenP(p, q)                     -- keep the right value
+def (p <|> q)   -> orElse(p, q)                    -- choice
+def (p >>= f)   -> bind(p, f)                      -- monadic bind
+def (p <?> lbl) -> label(p, lbl)                   -- label for errors

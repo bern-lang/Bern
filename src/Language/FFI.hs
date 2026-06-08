@@ -214,6 +214,9 @@ typeToCType (TCustom "Float") = BernFloat
 typeToCType (TCustom name) = BernStruct name
 typeToCType TList = BernStruct "List"
 typeToCType TSet = BernStruct "Set"
+-- `Auto` has no fixed C representation; treat it as a generic pointer at the
+-- FFI boundary. (Auto is meant for dynamic Bern values, not for C interop.)
+typeToCType TAuto = BernPtr
 
 {-
 English:

@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>json - Bibliotecas Bern</title>
+    <link rel="icon" type="image/png" href="../../images/cat.png">
+    <link rel="stylesheet" href="../../lib.css">
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <a href="../index.html" class="logo"><img src="../../images/cat.png" alt="Bern Logo" width="20%" style="margin-top: 10px;"></a>
+            <nav>
+                <a href="../documentation.html">Linguagem</a>
+                <a href="../libraries.html">Bibliotecas</a>
+                <a href="../changelog.html">Mudanças</a>
+                <a href="../../libs/json.html" style="font-weight: 600;">🌐 EN</a>
+            </nav>
+        </div>
+    </header>
+
+    <div class="layout">
+        <aside class="sidebar">
+            <h3>json</h3>
+            <ul>
+                <li><a href="#mapping">Mapeamento de valores</a></li>
+                <li><a href="#parsing">Parsing</a></li>
+                <li><a href="#null">Trabalhando com null</a></li>
+                <li><a href="#serialize">Serialização</a></li>
+                <li><a href="#together">Juntando tudo</a></li>
+            </ul>
+            <h3>Mais</h3>
+            <ul>
+                <li><a href="../libraries.html" class="back-link">← Todas as bibliotecas</a></li>
+            </ul>
+        </aside>
+
+        <div class="container">
+            <p class="breadcrumb"><a href="../documentation.html">Documentação</a> / <a href="../libraries.html">Bibliotecas</a> / json</p>
+            <h1 class="page-title">json</h1>
+            <p class="page-subtitle">Faz parse de texto JSON para valores Bern e serializa valores Bern de volta para JSON.</p>
+
+            <pre class="simple-code">import json</pre>
+
+            <div class="doc-section" id="mapping">
+                <h2>Mapeamento de valores</h2>
+                <p>Os valores JSON mapeiam para valores Bern assim:</p>
+                <table class="lib-table">
+                    <tr><th>JSON</th><th>Valor Bern</th></tr>
+                    <tr><td>object</td><td>Object (<code>#{ ... }#</code>)</td></tr>
+                    <tr><td>array</td><td>List (<code>[ ... ]</code>) - ordem e duplicatas preservadas</td></tr>
+                    <tr><td>string</td><td>string</td></tr>
+                    <tr><td>number</td><td>Integer (sem fração/expoente) ou Double</td></tr>
+                    <tr><td>true / false</td><td>Boolean</td></tr>
+                    <tr><td>null</td><td>Undefined</td></tr>
+                </table>
+                <p>Um array JSON mapeia diretamente para uma <strong>List</strong> Bern, mantendo a ordem e as duplicatas dos elementos. Arrays JSON são heterogêneos (ex.: <code>[1, "a", 34.2]</code>); a biblioteca habilita o pragma <code>impure-lists</code> internamente para que suas próprias listas possam conter tipos mistos. Esse pragma é restrito ao arquivo - nunca vaza para o programa que importa <code>json</code>.</p>
+                <pre class="simple-code">json_parse("[1, \"a\", 34.2, \"a\", \"banana\"]")
+-- Saída: [1, "a", 34.2, "a", "banana"]</pre>
+                <div class="note">
+                    <strong>Ressalva de ida e volta:</strong> uma string Bern é, ela mesma, uma List de Characters, então uma lista vazia e uma string vazia são indistinguíveis. Um array JSON vazio, portanto, serializa de volta como <code>""</code>. Esse é o único caso de borda; arrays e strings não vazios sempre se distinguem pelo tipo do elemento.
+                </div>
+            </div>
+
+            <div class="doc-section" id="parsing">
+                <h2>Parsing</h2>
+
+                <div class="function-sig">json_parse(texto) → valor</div>
+                <p>Faz parse de um documento JSON em um valor Bern.</p>
+                <pre class="simple-code">person = json_parse("{\"name\": \"Bern\", \"version\": 3}")
+person["name"]
+-- Saída: "Bern"
+person["version"]
+-- Saída: 3</pre>
+                <pre class="simple-code">nums = json_parse("[10, 20, 30]")
+nums[1]
+-- Saída: 20</pre>
+            </div>
+
+            <div class="doc-section" id="null">
+                <h2>Trabalhando com null</h2>
+
+                <div class="function-sig">is_null(valor) → booleano</div>
+                <p>Testa se um valor é um <code>null</code> JSON parseado (ou seja, <code>Undefined</code>).</p>
+                <pre class="simple-code">is_null(json_parse("null"))
+-- Saída: true
+
+doc = json_parse("{\"middle_name\": null}")
+is_null(doc["middle_name"])
+-- Saída: true</pre>
+            </div>
+
+            <div class="doc-section" id="serialize">
+                <h2>Serialização</h2>
+
+                <div class="function-sig">json_stringify(valor) → string</div>
+                <p>Serializa um valor Bern em uma string JSON. Os campos de objeto são enumerados com o <code>keys()</code> embutido; listas e conjuntos viram arrays.</p>
+                <pre class="simple-code">json_stringify(#{ items: [1, 2, 3], ok: true }#)
+-- Saída: {"items":[1,2,3],"ok":true}
+
+json_stringify(json_parse("[7, 7, 7]"))
+-- Saída: [7,7,7]</pre>
+            </div>
+
+            <div class="doc-section" id="together">
+                <h2>Juntando tudo</h2>
+                <p>Fazer parse, editar e re-serializar é o fluxo do dia a dia. Aqui lemos uma config, incrementamos um valor e a escrevemos de volta:</p>
+                <div class="example-box">
+                    <h4>Ida e volta de um objeto de config</h4>
+                    <pre class="simple-code">import json
+
+raw = "{\"name\": \"bern\", \"version\": 2, \"tags\": [\"lang\", \"fun\"]}"
+
+config = json_parse(raw)
+config["version"] = config["version"] + 1
+config["tags"] = config["tags"] <> ["docs"]
+
+json_stringify(config)
+-- Saída: {"name":"bern","version":3,"tags":["lang","fun","docs"]}</pre>
+                </div>
+                <p>E combinando com o <code>core</code> para resumir um array de registros:</p>
+                <div class="example-box">
+                    <h4>Somando valores de um array JSON</h4>
+                    <pre class="simple-code">import core
+import json
+
+data = json_parse("[{\"price\": 12}, {\"price\": 40}, {\"price\": 8}]")
+
+total = data
+    )| map(\row -> row["price"])
+    )| sum
+
+total
+-- Saída: 60</pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        Copyright © 2026 • Todos os direitos reservados • Feito com ❤️ por <a href="https://mirvox.xyz/">Miguel Aguiar</a>
+    </footer>
+</body>
+</html>

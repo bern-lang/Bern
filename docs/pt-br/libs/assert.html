@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>assert - Bibliotecas Bern</title>
+    <link rel="icon" type="image/png" href="../../images/cat.png">
+    <link rel="stylesheet" href="../../lib.css">
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <a href="../index.html" class="logo"><img src="../../images/cat.png" alt="Bern Logo" width="20%" style="margin-top: 10px;"></a>
+            <nav>
+                <a href="../documentation.html">Linguagem</a>
+                <a href="../libraries.html">Bibliotecas</a>
+                <a href="../changelog.html">Mudanças</a>
+                <a href="../../libs/assert.html" style="font-weight: 600;">🌐 EN</a>
+            </nav>
+        </div>
+    </header>
+
+    <div class="layout">
+        <aside class="sidebar">
+            <h3>assert</h3>
+            <ul>
+                <li><a href="#equality">Igualdade</a></li>
+                <li><a href="#approx">Igualdade aproximada</a></li>
+                <li><a href="#together">Juntando tudo</a></li>
+            </ul>
+            <h3>Mais</h3>
+            <ul>
+                <li><a href="../libraries.html" class="back-link">← Todas as bibliotecas</a></li>
+            </ul>
+        </aside>
+
+        <div class="container">
+            <p class="breadcrumb"><a href="../documentation.html">Documentação</a> / <a href="../libraries.html">Bibliotecas</a> / assert</p>
+            <h1 class="page-title">assert</h1>
+            <p class="page-subtitle">Pequenos auxiliares de asserção para escrever testes em Bern.</p>
+
+            <pre class="simple-code">import assert</pre>
+            <p>Cada asserção devolve uma string terminada em <code>PASS</code> ou <code>FAIL</code>, nomeada para você ler uma coluna de resultados de relance. Elas nunca lançam exceção - você coleta e imprime os resultados.</p>
+
+            <div class="doc-section" id="equality">
+                <h2>Igualdade</h2>
+
+                <div class="function-sig">assert_equals(nome, obtido, esperado) → string</div>
+                <p>Compara dois valores com <code>==</code>.</p>
+                <pre class="simple-code">assert_equals("Teste de soma", 2 + 2, 4)
+-- Saída: "Teste de soma PASS"
+
+assert_equals("Teste errado", 2 + 2, 5)
+-- Saída: "Teste errado FAIL"</pre>
+            </div>
+
+            <div class="doc-section" id="approx">
+                <h2>Igualdade aproximada</h2>
+
+                <div class="function-sig">approx_eq(a, b, tolerância) → booleano</div>
+                <p>Se <code>a</code> e <code>b</code> estão dentro de <code>tolerância</code> um do outro - o auxiliar por trás de <code>assert_approx</code>.</p>
+                <pre class="simple-code">approx_eq(3.14159, 3.14, 0.01)
+-- Saída: true</pre>
+
+                <div class="function-sig">assert_approx(nome, obtido, esperado, tolerância) → string</div>
+                <p>Como <code>assert_equals</code>, mas passa quando os dois números estão perto o suficiente - ideal para resultados de ponto flutuante.</p>
+                <pre class="simple-code">assert_approx("Teste de Pi", 3.14159, 3.14, 0.01)
+-- Saída: "Teste de Pi PASS"</pre>
+            </div>
+
+            <div class="doc-section" id="together">
+                <h2>Juntando tudo</h2>
+                <p>Um arquivo de testes geralmente reúne uma lista de resultados e os imprime. Aqui <code>assert</code> se une à <code>math</code> para checar alguns cálculos de uma vez:</p>
+                <div class="example-box">
+                    <h4>Uma pequena suíte de testes</h4>
+                    <pre class="simple-code">import assert
+import core
+import math
+
+results = [
+    assert_equals("sum",      sum([1, 2, 3, 4]), 10),
+    assert_equals("reverse",  reverse([1, 2, 3]), [3, 2, 1]),
+    assert_approx("sqrt(2)",  sqrt(2), 1.41421, 0.001),
+    assert_approx("sin(0)",   sin(0), 0.0, 0.0001)
+]
+
+loop r : results do
+    r
+end
+-- Saída:
+-- "sum PASS"
+-- "reverse PASS"
+-- "sqrt(2) PASS"
+-- "sin(0) PASS"</pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        Copyright © 2026 • Todos os direitos reservados • Feito com ❤️ por <a href="https://mirvox.xyz/">Miguel Aguiar</a>
+    </footer>
+</body>
+</html>

@@ -68,8 +68,11 @@ import Text.Megaparsec.Char
 import qualified Text.Megaparsec.Char.Lexer as L
 import Control.Monad.Combinators.Expr
 import Data.Void
+import Data.List (sortBy)
 import Control.Monad (void, mzero)
 import Language.PragmaState (pragmaActive)
+import Language.OperatorState
+    (OpAssoc(..), OpSpec(..), currentOperatorSpecs)
 
 -- The concrete parser type: consumes a String, with no custom error component
 -- (Void). Every parser in this file is a `Parser something`.
@@ -145,6 +148,93 @@ keyword kw = lexeme $ try $ do
     notFollowedBy (alphaNumChar <|> char '_')
     return kw
 
+-- A reserved word used as a statement/block keyword. Like `symbol` it consumes the
+-- trailing whitespace INCLUDING newlines, but it first requires a word boundary so
+-- an identifier such as `truevar`, `define`, `printer` or `ending` is NOT misread
+-- as the keyword (`true`/`def`/`print`/`end`) plus leftover identifier text. Use
+-- this instead of `symbol "kw"` for every alphabetic reserved word.
+-- `rwordNoNl` is the newline-stopping variant (the analogue of `symbolNoNl`).
+rwordWith :: Parser () -> String -> Parser String
+rwordWith spc name = L.lexeme spc $ try $ string name <* notFollowedBy (alphaNumChar <|> char '_')
+
+rword :: String -> Parser String
+rword = rwordWith sc
+
+rwordNoNl :: String -> Parser String
+rwordNoNl = rwordWith scn
+
+{-
+English:
+  Lexing support for USER-DEFINED operators (the `def (x ^ y)` feature). A custom
+  operator is either SYMBOLIC (`^`, `<|>`, `>>=`) or a WORD (`dot`).
+
+  A symbolic operator is any run of operator characters that is not one of the
+  reserved/built-in symbols (forbiddenOpNames). Custom operators and built-ins
+  coexist because matching is maximal-munch on BOTH sides: a built-in only matches
+  when its exact run is not followed by another operator char (see symOpTok), and a
+  custom one is matched by exact full-run comparison. So `<|` stops at `<|`, leaving
+  a custom `<|>` to match in full, and `^` never eats the `^^` of another operator.
+
+Português:
+  Suporte de lexing para operadores DEFINIDOS PELO USUÁRIO (o recurso `def (x ^ y)`).
+  Um operador custom é SIMBÓLICO (`^`, `<|>`, `>>=`) ou de PALAVRA (`dot`).
+
+  Um operador simbólico é qualquer sequência de caracteres de operador que não seja
+  um símbolo reservado/built-in (forbiddenOpNames). Custom e built-ins coexistem
+  porque o casamento é maximal-munch dos DOIS lados: um built-in só casa quando sua
+  sequência exata não é seguida por outro char de operador (ver symOpTok), e um
+  custom é casado por comparação exata da sequência inteira. Então `<|` para em `<|`,
+  deixando um custom `<|>` casar inteiro, e `^` nunca engole o `^^` de outro operador.
+-}
+-- Any operator character (shared by built-in and custom symbolic operators).
+opChar :: Parser Char
+opChar = oneOf ("!#$%&*+-/:<=>?@^|~" :: String)
+
+-- Symbolic tokens reserved by the language: the built-in operators plus a few
+-- structural symbols. These may not be redefined as a custom operator.
+forbiddenOpNames :: [String]
+forbiddenOpNames =
+    [ "+","-","*","/","%","==","!=","&&","||",">","<",">=","<=","<>","<|","|>","</>"
+    , "::",":>","->",")|","=","|","<-","..",":","\\" ]
+
+-- The raw spelling of a custom symbolic operator: a maximal run of operator
+-- characters that is not a reserved/built-in symbol.
+symbolicOpName :: Parser String
+symbolicOpName = try $ do
+    s <- some opChar
+    if s `elem` forbiddenOpNames then mzero else pure s
+
+-- Words that may NOT be used as a custom word-operator name (keywords and the
+-- built-in written-word operators).
+reservedOpWords :: [String]
+reservedOpWords =
+    [ "def","if","then","else","end","do","loop","for","case","is","when"
+    , "import","return","print","foreign","adt","lambda","as","in","infix"
+    , "true","false","iterative","groups","binds","tighter","looser","like","than"
+    , "left","right","none","when","returns","retorna","such-that","tal-que"
+    , "plus","minus","times","divided-by","modulo","mais","menos","vezes"
+    , "dividido-por","resto","concat","union","intersect","difference"
+    , "concatenar","uniao","intersecao","diferenca"
+    , "and","or","e","ou","equals","not-equals","igual","diferente"
+    , "is-greater","is-less","is-greater-or-equal","is-less-or-equal"
+    , "maior-que","menor-que","maior-ou-igual","menor-ou-igual"
+    , "negate","not","typeof","length","negativo","nao","tipo-de","tamanho"
+    , "and-do","e-faca" ]
+
+-- The raw spelling of a custom word operator: an identifier that is not reserved.
+wordOpName :: Parser String
+wordOpName = try $ do
+    firstChar <- letterChar <|> char '_'
+    rest <- many (alphaNumChar <|> char '_')
+    let name = firstChar : rest
+    if name `elem` reservedOpWords then mzero else pure name
+
+-- An operator name in DEFINITION / DECLARATION position (symbolic or word), with
+-- trailing whitespace (no newline) consumed. Returns (name, isWordOperator).
+opNameToken :: Parser (String, Bool)
+opNameToken = L.lexeme scn
+    (((\n -> (n, False)) <$> symbolicOpName) <|> ((\n -> (n, True)) <$> wordOpName))
+
 -- The loop keyword. `loop` is the preferred spelling; `for` is kept as an
 -- alias for backwards compatibility. Both introduce the repeat/while/for-in
 -- forms. The trailing boundary check stops identifiers like `loopback` or
@@ -202,8 +292,8 @@ parseVariable = lexeme $ do
 
 -- Parser for Boolean literals
 parseBoolean :: Parser Expression
-parseBoolean = lexeme $ (string "true" >> return (BoolLiteral True))
-                     <|> (string "false" >> return (BoolLiteral False))
+parseBoolean = (keyword "true" >> return (BoolLiteral True))
+           <|> (keyword "false" >> return (BoolLiteral False))
 
 -- Parser for string literals
 parseString :: Parser Expression
@@ -331,12 +421,64 @@ parseSet = do
 parseParens :: Parser Expression
 parseParens = between (symbolNoNl "(") (symbolNoNl ")") parseExpression
 
+{-
+English:
+  A SYMBOLIC custom operator used as a plain value, the way Haskell writes `(^)`:
+    (^)        -> the operator as a function value (a Variable named "^")
+    (^ 3)      -> a right section: \x -> x ^ 3
+    (2 ^)      -> a left  section: \x -> 2 ^ x
+  Only fires for a registered symbolic operator, so an ordinary `(expr)` falls
+  through to parseParens. Word operators (`dot`) need none of this: their name is
+  already an identifier, so `dot` and `dot(a, b)` work as-is.
+
+Português:
+  Um operador SIMBÓLICO custom usado como valor puro, como o Haskell escreve `(^)`:
+    (^)        -> o operador como valor de função (uma Variable de nome "^")
+    (^ 3)      -> uma seção à direita: \x -> x ^ 3
+    (2 ^)      -> uma seção à esquerda: \x -> 2 ^ x
+  Só dispara para um operador simbólico registrado, então um `(expr)` comum cai para
+  o parseParens. Operadores de palavra (`dot`) não precisam disso: o nome já é um
+  identificador, então `dot` e `dot(a, b)` já funcionam.
+-}
+parseOpFunc :: Parser Expression
+parseOpFunc = do
+    specs <- liveOperatorSpecs
+    let symNames = [ opName s | s <- specs, not (opWord s) ]
+        secArg   = "__section_arg__"
+        regSymOp = try $ L.lexeme scn $ do
+            s <- symbolicOpName
+            if s `elem` symNames then pure s else mzero
+        opValue = do                 -- (op)  ->  the operator as a value
+            op <- regSymOp
+            _  <- lookAhead (symbolNoNl ")")
+            pure (Variable op)
+        rightSection = do            -- (op rhs)  ->  \x -> op(x, rhs)
+            op  <- regSymOp
+            rhs <- parseTerm
+            pure (LambdaExpr [PVar secArg] Nothing (FunctionCall op [Variable secArg, rhs]))
+        leftSection = do             -- (lhs op)  ->  \x -> op(lhs, x)
+            lhs <- parseTerm
+            op  <- regSymOp
+            _   <- lookAhead (symbolNoNl ")")
+            pure (LambdaExpr [PVar secArg] Nothing (FunctionCall op [lhs, Variable secArg]))
+    between (symbolNoNl "(") (symbolNoNl ")")
+            (try opValue <|> try rightSection <|> leftSection)
+
+-- Match a built-in symbolic operator with MAXIMAL MUNCH: the exact characters,
+-- then a boundary check that the very next character is not another operator
+-- character (checked BEFORE trailing whitespace is consumed). This is what lets a
+-- user-defined operator share a prefix with a built-in -- e.g. `<|` matches only
+-- when it is not glued to a following op char, so `a <|> b` leaves `<|>` whole for
+-- the custom operator while `a <| b` still reads as the built-in union.
+symOpTok :: String -> Parser ()
+symOpTok name = void $ L.lexeme scn $ try (string name <* notFollowedBy opChar)
+
 -- Parse binary operations
 binary :: String -> BinaryOperation -> Operator Parser Expression
-binary name f = InfixL (BinaryOperator f <$ symbolNoNl name)
+binary name f = InfixL (BinaryOperator f <$ symOpTok name)
 
 prefix :: String -> UnaryOperation -> Operator Parser Expression
-prefix name f = Prefix (UnaryOperator f <$ symbolNoNl name)
+prefix name f = Prefix (UnaryOperator f <$ symOpTok name)
 
 -- Written-word alias for an operator (e.g. `is-greater-or-equal` for >=).
 -- The boundary check excludes '-' as well as identifier characters so that a
@@ -378,8 +520,10 @@ caseSep = void (symbol "=")
 -- Subtraction, but it must not swallow the '-' of '->' (the arrow used by
 -- lambdas, function bodies, and `when` guards). Without this, a guard like
 -- `when n > 0 ->` would parse `0 -` as the start of a subtraction.
+-- Subtraction. The maximal-munch boundary in `binary` already stops `-` from
+-- swallowing the `-` of `->` (an op char), so this is just the ordinary binary op.
 subtractOp :: Operator Parser Expression
-subtractOp = InfixL (BinaryOperator Subtract <$ try (symbolNoNl "-" <* notFollowedBy (char '>')))
+subtractOp = binary "-" Subtract
 
 -- The )| pipe operator: `x )| f` desugars to f(x), and `x )| f(a, b)` to
 -- f(x, a, b) (the piped value becomes the first argument, Elixir-style).
@@ -503,11 +647,214 @@ lowPrecedenceOps equalityExtra =
     , [ pipeOp ]
     ]
 
+-- `is` is an alphabetic infix operator, so it needs a word boundary like the
+-- written-word operators -- otherwise `a island` would parse as `a is land`.
+isOp :: Operator Parser Expression
+isOp = InfixL (BinaryOperator Equal <$ rwordNoNl "is")
+
 operatorTable :: [[Operator Parser Expression]]
-operatorTable = highPrecedenceOps ++ lowPrecedenceOps [binary "is" Equal]
+operatorTable = highPrecedenceOps ++ lowPrecedenceOps [isOp]
 
 operatorTableNoIs :: [[Operator Parser Expression]]
 operatorTableNoIs = highPrecedenceOps ++ lowPrecedenceOps []
+
+{-
+English:
+  User-defined operators are spliced into the precedence table here. The infix
+  matcher for a custom operator desugars `x ^ y` straight into the ordinary call
+  `FunctionCall "^" [x, y]`, so the evaluator needs no special case: a custom
+  operator is just a two-argument function whose name happens to be a symbol or a
+  word, and pattern matching, guards and currying all come for free.
+
+  customOpToken matches a symbolic operator by maximal munch and EXACT comparison
+  (so `^` never matches the `^^` in another operator), and a word operator with an
+  identifier boundary.
+
+Português:
+  Operadores definidos pelo usuário são encaixados na tabela de precedência aqui. O
+  casador infixo de um operador custom converte `x ^ y` diretamente na chamada comum
+  `FunctionCall "^" [x, y]`, então o avaliador não precisa de caso especial: um
+  operador custom é só uma função de dois argumentos cujo nome é um símbolo ou uma
+  palavra, e casamento de padrões, guardas e currying vêm de graça.
+-}
+customOpToken :: OpSpec -> Parser ()
+customOpToken spec
+    | opWord spec = void $ try $ L.lexeme scn
+        (string (opName spec) <* notFollowedBy (alphaNumChar <|> char '_'))
+    | otherwise   = void $ try $ L.lexeme scn $ do
+        s <- some opChar
+        if s == opName spec then pure () else mzero
+
+customOperator :: OpSpec -> Operator Parser Expression
+customOperator spec =
+    let mk l r = FunctionCall (opName spec) [l, r]
+        tok    = customOpToken spec
+    in case opAssoc spec of
+        OpLeft  -> InfixL (mk <$ tok)
+        OpRight -> InfixR (mk <$ tok)
+        OpNone  -> InfixN (mk <$ tok)
+
+-- Built-in operator levels tagged with a precedence rank (higher binds tighter).
+-- Ranks are multiples of 100; custom operators land strictly between them.
+builtinRankedLevels :: Bool -> [(Int, [Operator Parser Expression])]
+builtinRankedLevels withIs =
+    zip [1000, 900, 800, 700, 600, 500, 400, 300, 200]
+        (highPrecedenceOps ++ lowPrecedenceOps (if withIs then [isOp] else []))
+
+-- The full precedence table with the custom operators spliced in at their ranks.
+-- Custom operators that share a rank are merged into ONE level, so they have truly
+-- equal precedence (e.g. `<$>` and `<*>` both at one rank parse `f <$> a <*> b` as
+-- `(f <$> a) <*> b`, just like Haskell). sortBy is stable, so ties keep order.
+operatorTableWith :: [OpSpec] -> Bool -> [[Operator Parser Expression]]
+operatorTableWith specs withIs =
+    let custom  = [ (opRank s, customOperator s) | s <- specs ]
+        merged  = [ (r, [op | (r', op) <- custom, r' == r])
+                  | r <- distinct (map fst custom) ]
+        levels  = builtinRankedLevels withIs ++ merged
+        ordered = sortBy (\a b -> compare (fst b) (fst a)) levels
+    in map snd ordered
+  where
+    distinct = foldr (\x xs -> if x `elem` xs then xs else x : xs) []
+
+{-
+English:
+  The PRE-SCAN that finds user-defined operators before the real parse, so the
+  precedence table above can be built. It is the operator analogue of scanPragmas:
+  a quick, separate pass over the raw source. It walks the source one TOKEN at a
+  time (never starting mid-identifier, and skipping whole strings/chars; comments
+  are eaten by `sc`), and at each token boundary tries to recognise either an
+  `infix ...` fixity declaration or a `def ( pat OP pat )` header. An explicit
+  `infix` declaration always wins over a bare `def` sighting of the same operator.
+
+Português:
+  A PRÉ-VARREDURA que encontra operadores definidos pelo usuário antes do parse de
+  verdade, para que a tabela de precedência acima possa ser construída. É o análogo
+  de operadores do scanPragmas: uma passada rápida e separada pelo fonte cru. Ela
+  percorre o fonte um TOKEN por vez (nunca começando no meio de um identificador, e
+  pulando strings/chars inteiros; comentários são comidos pelo `sc`), e em cada
+  fronteira de token tenta reconhecer ou uma declaração de fixidez `infix ...` ou um
+  cabeçalho `def ( pat OP pat )`. Uma declaração `infix` explícita sempre vence uma
+  aparição nua de `def` do mesmo operador.
+-}
+data ScanItem = InfixSpec OpSpec | DefSpec OpSpec | NoItem
+
+scanOperators :: String -> [OpSpec]
+scanOperators src = case parse scanAll "" src of
+    Left _      -> []
+    Right items ->
+        let infixes    = [s | InfixSpec s <- items]
+            defs       = [s | DefSpec s <- items]
+            infixNames = map opName infixes
+            extras     = filter (\s -> opName s `notElem` infixNames) defs
+        in dedupByName (infixes ++ extras)
+  where
+    dedupByName = go []
+      where go _ [] = []
+            go seen (s:ss)
+                | opName s `elem` seen = go seen ss
+                | otherwise            = s : go (opName s : seen) ss
+
+-- `try` so the final attempt at end-of-input (whose leading `sc` may consume a
+-- trailing newline before failing) backtracks cleanly instead of aborting `many`.
+scanAll :: Parser [ScanItem]
+scanAll = sc *> many (try scanItem)
+
+scanItem :: Parser ScanItem
+scanItem = do
+    sc
+    try scanInfix
+        <|> try scanDefOp
+        <|> (skipToken >> pure NoItem)
+
+-- Consume one whole token so a target form is never recognised mid-identifier.
+-- Strings and char literals are swallowed whole so their contents are not scanned.
+skipToken :: Parser ()
+skipToken =
+        void (some (alphaNumChar <|> char '_'))
+    <|> void (char '"' >> manyTill L.charLiteral (char '"'))
+    <|> void (try (char '\'' >> L.charLiteral >> char '\''))
+    <|> void (some opChar)
+    <|> void anySingle
+
+scanInfix :: Parser ScanItem
+scanInfix = do
+    _ <- rword "infix"
+    (name, isWord) <- opNameToken
+    (assoc, rank)  <- scanFixity
+    return (InfixSpec (OpSpec name isWord assoc rank))
+
+scanDefOp :: Parser ScanItem
+scanDefOp = do
+    _ <- rword "def"
+    _ <- symbolNoNl "("
+    _ <- parsePattern
+    (name, isWord) <- opNameToken
+    -- default fixity: groups left, binds like * (rank 890)
+    return (DefSpec (OpSpec name isWord OpLeft 890))
+
+-- Parse the optional `groups ...` / `binds ...` clauses of an infix declaration,
+-- in any order, comma-separated. Defaults: groups left, binds like * (rank 890).
+scanFixity :: Parser (OpAssoc, Int)
+scanFixity = go OpLeft 890
+  where
+    go a r =
+        try (do _ <- optional (symbolNoNl ",")
+                clause <- (Left <$> groupsPart) <|> (Right <$> bindsPart)
+                case clause of
+                    Left v  -> go v r
+                    Right v -> go a v)
+        <|> pure (a, r)
+    groupsPart = lexeme (string "groups") *> groupsVal
+    groupsVal =  (lexeme (string "left")  >> pure OpLeft)
+             <|> (lexeme (string "right") >> pure OpRight)
+             <|> (lexeme (string "none")  >> pure OpNone)
+    bindsPart = lexeme (string "binds") *> bindsVal
+    bindsVal = do
+        rel <- (lexeme (string "tighter") >> lexeme (string "than") >> pure 50)
+           <|> (lexeme (string "looser")  >> lexeme (string "than") >> pure (-50))
+           <|> (lexeme (string "like") >> pure (-10))
+        anchor <- anchorToken
+        pure (anchorRank anchor + rel)
+    -- The anchor names ANY operator (built-in or custom): a run of operator
+    -- characters (`*`, `<>`, `==`) or a written-word operator name (`times`).
+    anchorToken = L.lexeme scn
+        (some (oneOf ("!#$%&*+-/:<=>?@^|~" :: String))
+         <|> some (letterChar <|> char '_'))
+
+-- Map a built-in operator name (symbol or written word) to its precedence rank,
+-- used to resolve `binds tighter than *` etc. Unknown anchors default to * (900).
+anchorRank :: String -> Int
+anchorRank name = maybe 900 id (lookup name anchorTable)
+
+anchorTable :: [(String, Int)]
+anchorTable = concat
+    [ [(n, 900) | n <- ["*","/","%","times","divided-by","modulo","vezes","dividido-por","resto"]]
+    , [(n, 800) | n <- ["+","-","plus","minus","mais","menos"]]
+    , [(n, 700) | n <- ["<>","<|","|>","</>","concat","union","intersect","difference"
+                       ,"concatenar","uniao","intersecao","diferenca"]]
+    , [(n, 600) | n <- [">","<",">=","<=","is-greater","is-less"
+                       ,"is-greater-or-equal","is-less-or-equal"
+                       ,"maior-que","menor-que","maior-ou-igual","menor-ou-igual"]]
+    , [(n, 500) | n <- ["==","!=","is","equals","not-equals","igual","diferente"]]
+    , [(n, 400) | n <- ["&&","and","e"]]
+    , [(n, 300) | n <- ["||","or","ou"]]
+    ]
+
+-- A companion pre-scan that lists the module names a source file imports, so the
+-- operator pre-scan can follow imports transitively (operators defined in a
+-- library become usable, infix, in files that import it -- just like functions).
+scanImports :: String -> [String]
+scanImports src = case parse impAll "" src of
+    Left _   -> []
+    Right xs -> [m | Just m <- xs]
+  where
+    impAll = sc *> many (try impItem)
+    impItem = do
+        sc
+        (Just <$> impDecl) <|> (skipToken >> pure Nothing)
+    impDecl = do
+        _ <- rword "import"
+        lexeme (some (letterChar <|> char '_' <|> char '/'))
 
 {-
 English:
@@ -577,6 +924,7 @@ parseBaseTerm = try parseObject
     <|> try parseMakeError
     <|> try parseFmap
     <|> try parseFunctionCallOrVar
+    <|> try parseOpFunc
     <|> parseParens
 
 -- Parse case expressions:
@@ -584,11 +932,11 @@ parseBaseTerm = try parseObject
 -- The trailing "end" is optional in one-line usage.
 parseCaseExpression :: Parser Expression
 parseCaseExpression = do
-    _ <- symbol "case"
+    _ <- rword "case"
     target <- parseExpressionNoIs
-    _ <- symbol "is"
+    _ <- rword "is"
     branches <- parseCaseBranch `sepBy1` symbol "|"
-    _ <- optional (symbol "end")
+    _ <- optional (rword "end")
     return $ CaseExpr target branches
   where
     parseCaseBranch :: Parser CaseBranch
@@ -604,12 +952,12 @@ parseCaseExpression = do
 -- if cond then expr else if cond2 then expr2 else expr3 end
 parseIfExpression :: Parser Expression
 parseIfExpression = do
-    _ <- symbol "if"
+    _ <- rword "if"
     cond <- parseExpression
-    _ <- symbol "then"
+    _ <- rword "then"
     thenExpr <- parseExpression
     elseExpr <- parseElseExpr
-    _ <- symbol "end"
+    _ <- rword "end"
     return $ IfExpr cond thenExpr elseExpr
   where
     parseElseExpr :: Parser Expression
@@ -617,23 +965,23 @@ parseIfExpression = do
 
     parseElseIf :: Parser Expression
     parseElseIf = do
-        _ <- L.symbol scn "else"
-        _ <- symbolNoNl "if"
+        _ <- rwordNoNl "else"
+        _ <- rwordNoNl "if"
         cond <- parseExpression
-        _ <- symbol "then"
+        _ <- rword "then"
         thenExpr <- parseExpression
         elseExpr <- parseElseExpr
         return $ IfExpr cond thenExpr elseExpr
 
     parseElseOnly :: Parser Expression
     parseElseOnly = do
-        _ <- symbol "else"
+        _ <- rword "else"
         parseExpression
 
 parseCBinding ::  Parser Command
 parseCBinding = do
-    _ <- symbol "foreign"
-    
+    _ <- rword "foreign"
+
     -- Parse the function name
     funcName <- lexeme $ do
         first <- letterChar <|> char '_'
@@ -736,14 +1084,14 @@ Português:
 -}
 parsePattern :: Parser Pattern
 parsePattern = lexeme $ choice
-    [ string "_" >> return PWildcard
+    [ try (string "_" <* notFollowedBy (alphaNumChar <|> char '_')) >> return PWildcard
     , try parseADTConstructorPattern
     , try parseListPattern  -- [head|tail] or [] or [a, b, c]
     , try parseSetPattern   -- {head|tail} or {} or {a, b, c}
     , try $ PDouble <$> L.signed scn L.float    -- doubles first so -1.5 isn't read as PInt -1
     , try $ PInt <$> L.signed scn L.decimal     -- signed so negative literal patterns parse
-    , try $ (string "true" >> return (PBool True))
-    , try $ (string "false" >> return (PBool False))
+    , try (string "true"  <* notFollowedBy (alphaNumChar <|> char '_')) >> return (PBool True)
+    , try (string "false" <* notFollowedBy (alphaNumChar <|> char '_')) >> return (PBool False)
     , try $ do _ <- char '\''; c <- L.charLiteral; _ <- char '\''; return (PChar c)
     , try $ do _ <- char '"'; s <- manyTill L.charLiteral (char '"'); return (PString s)
     , do firstChar <- letterChar <|> char '_'
@@ -820,16 +1168,24 @@ parseIndexAccess = do
     _ <- char ']'
     return idx
 
+-- Read the registered operators afresh from inside the parser monad. Tying the
+-- read to the current offset stops GHC from caching one (possibly empty) result
+-- in the surrounding CAF, so operators registered by the pre-scan are always seen.
+liveOperatorSpecs :: Parser [OpSpec]
+liveOperatorSpecs = currentOperatorSpecs <$> getOffset
+
 parseExpression :: Parser Expression
 parseExpression = do
     pos <- getSourcePos
-    expr <- makeExprParser (lexeme parseTerm) operatorTable
+    specs <- liveOperatorSpecs
+    expr <- makeExprParser (lexeme parseTerm) (operatorTableWith specs True)
     return $ WithPos pos expr
 
 parseExpressionNoIs :: Parser Expression
 parseExpressionNoIs = do
     pos <- getSourcePos
-    expr <- makeExprParser (lexeme parseTerm) operatorTableNoIs
+    specs <- liveOperatorSpecs
+    expr <- makeExprParser (lexeme parseTerm) (operatorTableWith specs False)
     return $ WithPos pos expr
 
 parseVarWithIndices :: Parser (String, [Expression])
@@ -841,8 +1197,26 @@ parseVarWithIndices = do
     return (varName, idxs)
 
 parseAssignment :: Parser Command
-parseAssignment = try parseIndexedAssign <|> try parseGlobalAssign <|> parseSimpleAssign
+parseAssignment = try parseTypedAssign <|> try parseIndexedAssign <|> try parseGlobalAssign <|> parseSimpleAssign
   where
+    -- `name :: Type = expr`, only when the `typed` pragma is on (otherwise this
+    -- alternative fails immediately and ordinary assignment is parsed as before).
+    -- The declared type is checked at evaluation time (see TypedAssign in Eval).
+    parseTypedAssign = try $ do
+        if pragmaActive "typed" () then pure () else fail "typed pragma off"
+        (varName, idxs) <- lexeme parseVarWithIndices
+        if not (null idxs) then fail "indexed" else pure ()
+        _ <- optional scn
+        _ <- symbol "::"
+        tyName <- lexeme $ do
+            firstChar <- letterChar <|> char '_'
+            rest <- many (alphaNumChar <|> char '_')
+            return (firstChar : rest)
+        _ <- optional scn
+        _ <- void (symbol "=") <|> wordOp "be" <|> wordOp "recebe"
+        _ <- optional sc
+        expr <- parseExpression
+        return $ TypedAssign varName tyName expr
     parseIndexedAssign = try $ do
         (varName, idxs) <- lexeme parseVarWithIndices
         if null idxs then fail "no indices" else pure ()
@@ -883,30 +1257,61 @@ parseAssignment = try parseIndexedAssign <|> try parseGlobalAssign <|> parseSimp
 
 parsePrint :: Parser Command
 parsePrint = do
-    _ <- symbol "print"
+    _ <- rword "print"
     expr <- parseExpression
     return $ Print expr
 
+-- A function definition. Two shapes share the `def` keyword:
+--   * named:  def name(p, ...) -> body          (the usual form)
+--   * infix:  def (lhs OP rhs) -> body           (defines a custom operator OP)
+-- The infix shape is recognised by a `(` appearing immediately after `def` (a
+-- named def always has its name first), so a quick `try` tells them apart.
 parseFunctionDef :: Parser Command
 parseFunctionDef = do
-    _ <- symbol "def"
-    name <- lexeme $ do
-        first <- letterChar <|> char '_'
-        rest <- many (alphaNumChar <|> char '_')
-        return (first:rest)
-    _ <- symbol "("
-    params <- parsePatterns
-    _ <- symbol ")"
-    mGuard <- optional (keyword "when" *> parseExpression)
-    body <- (arrowSep >> (BodyExpr <$> parseExpression))
-        <|> (symbol "do" >> (BodyBlock <$> parseBlockCommands) <* symbol "end")
-    return $ FunctionDef name (Clause params mGuard body)
+    _ <- rword "def"
+    try parseInfixDefBody <|> parseNamedDefBody
+  where
+    defBody = (arrowSep >> (BodyExpr <$> parseExpression))
+          <|> (rword "do" >> (BodyBlock <$> parseBlockCommands) <* rword "end")
+
+    parseNamedDefBody = do
+        name <- lexeme $ do
+            first <- letterChar <|> char '_'
+            rest <- many (alphaNumChar <|> char '_')
+            return (first:rest)
+        _ <- symbol "("
+        params <- parsePatterns
+        _ <- symbol ")"
+        mGuard <- optional (keyword "when" *> parseExpression)
+        body <- defBody
+        return $ FunctionDef name (Clause params mGuard body)
+
+    parseInfixDefBody = do
+        _ <- symbol "("
+        lhs <- parsePattern
+        (op, _isWord) <- opNameToken
+        rhs <- parsePattern
+        _ <- symbol ")"
+        mGuard <- optional (keyword "when" *> parseExpression)
+        body <- defBody
+        return $ FunctionDef op (Clause [lhs, rhs] mGuard body)
+
+-- An `infix` fixity declaration: `infix <op> [groups ...] [, binds ...]`. The
+-- pre-scan (scanOperators) already read it to build the precedence table, so at
+-- real parse time it has no effect and becomes Skip. We still parse it fully so
+-- the line is accepted rather than a syntax error.
+parseInfixDecl :: Parser Command
+parseInfixDecl = do
+    _ <- rword "infix"
+    _ <- opNameToken
+    _ <- scanFixity
+    return Skip
 
 parseConditional :: Parser Command
 parseConditional = do
-    _ <- symbol "if"
+    _ <- rword "if"
     cond <- parseExpression
-    _ <- symbol "then"
+    _ <- rword "then"
     thenCmd <- parseBlockCommands
     elseCmd <- parseElseChain
     return $ Conditional cond thenCmd elseCmd
@@ -916,22 +1321,22 @@ parseElseChain :: Parser Command
 parseElseChain = try parseElseIf <|> parseElseOnly <|> parseNoElse
   where
     parseElseIf = do
-        _ <- L.symbol scn "else"
-        _ <- symbolNoNl "if"
+        _ <- rwordNoNl "else"
+        _ <- rwordNoNl "if"
         cond <- parseExpression
-        _ <- symbol "then"
+        _ <- rword "then"
         thenCmd <- parseBlockCommands
         elseCmd <- parseElseChain
         return $ Conditional cond thenCmd elseCmd
 
     parseElseOnly = do
-        _ <- symbol "else"
+        _ <- rword "else"
         elseCmd <- parseBlockCommands
-        _ <- symbol "end"
+        _ <- rword "end"
         return elseCmd
 
     parseNoElse = do
-        _ <- symbol "end"
+        _ <- rword "end"
         return Skip
 
 parseWriteFile :: Parser Command
@@ -996,8 +1401,8 @@ parseFmap = do
 
 parseAlgebraicDataType :: Parser Command
 parseAlgebraicDataType = do
-    _ <- symbol "adt"
-    iterativeKw <- optional (symbol "iterative")
+    _ <- rword "adt"
+    iterativeKw <- optional (rword "iterative")
     let isIterative = case iterativeKw of
             Just _  -> True
             Nothing -> False
@@ -1006,7 +1411,10 @@ parseAlgebraicDataType = do
         rest <- many (alphaNumChar <|> char '_')
         return (firstChar : rest)
     _ <- symbol "="
-    constructors <- parseConstructor `sepBy1` symbol "|"
+    -- The separator tolerates line breaks before the `|`, so constructors may be
+    -- listed one-per-line (Haskell-style). `try` backtracks the consumed newlines
+    -- when no further `|` follows, leaving them for the top-level terminator.
+    constructors <- parseConstructor `sepBy1` try (sc *> symbol "|")
     return $ AlgebraicTypeDef (ADTDef isIterative typeName constructors)
   where
     parseConstructor = do
@@ -1028,16 +1436,23 @@ parseAlgebraicDataType = do
         , do
             first <- letterChar <|> char '_'
             rest <- many (alphaNumChar <|> char '_')
-            return (TCustom (first:rest))
+            let name = first : rest
+            -- `Auto` (and its synonym `Any`) is the dynamic, accepts-anything
+            -- field type. We resolve it here, after reading the whole identifier,
+            -- so a custom type that merely starts with "Auto" is not mis-parsed.
+            return $ case name of
+                "Auto" -> TAuto
+                "Any"  -> TAuto
+                _      -> TCustom name
         ]
 
 parseRepeat :: Parser Command
 parseRepeat = do
     _ <- loopKeyword
     countExpr <- parseExpression
-    _ <- symbol "do"
+    _ <- rword "do"
     cmd <- parseBlockCommands
-    _ <- symbol "end"
+    _ <- rword "end"
     -- If it's a simple number (possibly wrapped with WithPos), use Repeat; otherwise use While (for conditions)
     case stripPos countExpr of
         Number _ -> return $ Repeat countExpr cmd
@@ -1053,11 +1468,11 @@ parseForIn = do
     _ <- loopKeyword
     varName <- lexeme $ some letterChar
     idxVar <- optional (symbol "," >> lexeme (some letterChar))
-    _ <- symbol ":" <|> symbol "in"
+    _ <- symbol ":" <|> rword "in"
     collection <- parseExpression
-    _ <- symbol "do"
+    _ <- rword "do"
     body <- parseBlockCommands
-    _ <- symbol "end"
+    _ <- rword "end"
     case idxVar of
         Just i  -> return $ ForInCount varName i collection body
         Nothing -> return $ ForIn varName collection body
@@ -1066,9 +1481,9 @@ parseForCond :: Parser Command
 parseForCond = do
     _ <- loopKeyword
     cond <- parseExpression
-    _ <- symbol "do"
+    _ <- rword "do"
     cmd <- parseBlockCommands
-    _ <- symbol "end"
+    _ <- rword "end"
     return $ While cond cmd
 
 {-
@@ -1101,6 +1516,7 @@ parseSingleCommand = try parseCBinding
                <|> try parseWriteFile
                <|> try parseAssignment
                <|> try parseImport
+               <|> try parseInfixDecl
                <|> try parseFunctionDef
                <|> try parseReturn
                <|> try parsePrint
@@ -1113,7 +1529,7 @@ parseSingleCommand = try parseCBinding
 
 parseImport :: Parser Command
 parseImport = do
-    _ <- symbol "import"
+    _ <- rword "import"
     name <- lexeme $ some (letterChar <|> char '_' <|> char '/')
     alias <- optional $ try $ do
         _ <- keyword "as"
@@ -1124,9 +1540,15 @@ parseImport = do
 
 parseReturn :: Parser Command
 parseReturn = do
-    _ <- symbol "return"
+    _ <- rword "return"
     expr <- parseExpression
     return (Return expr)
+
+-- A block-terminating keyword (`end`/`else`), boundary-checked so identifiers like
+-- `ending` or `elsewhere` are NOT mistaken for the terminator.
+blockTerminator :: Parser ()
+blockTerminator = void $ term "end" <|> term "else"
+  where term n = try (string n <* notFollowedBy (alphaNumChar <|> char '_'))
 
 -- Parse commands inside a block (stops at end/else keywords)
 parseBlockCommands :: Parser Command
@@ -1135,7 +1557,7 @@ parseBlockCommands = do
     cmd <- parseSingleCommand
     rest <- many $ try $ do
         sc
-        notFollowedBy (string "end" <|> string "else")
+        notFollowedBy blockTerminator
         parseSingleCommand
     sc
     return $ foldl Concat cmd rest

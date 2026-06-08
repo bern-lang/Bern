@@ -1,0 +1,56 @@
+import assert
+
+-- Regression tests: identifiers (variables, functions, ADT names, params) that
+-- contain a reserved word as a PREFIX must NOT be tokenised as the keyword plus
+-- leftover text. e.g. `truevar` is one identifier, not `true` followed by `var`.
+"Keyword-prefix identifier tests"
+
+-- Variables whose names start with a literal/keyword
+truevar = 1
+falsehood = 2
+island = 3       -- starts with the `is` operator
+ending = 4       -- starts with `end`
+elsewhere = 5    -- starts with `else`
+printer = 6      -- starts with `print`
+returned = 7     -- starts with `return`
+defcon = 8       -- starts with `def`
+importance = 9   -- starts with `import`
+thenable = 10    -- starts with `then`
+doer = 11        -- starts with `do`
+inbox = 12       -- starts with `in`
+
+assert_equals("var truevar", truevar, 1)
+assert_equals("var falsehood", falsehood, 2)
+assert_equals("var island", island, 3)
+assert_equals("var ending", ending, 4)
+assert_equals("var elsewhere", elsewhere, 5)
+assert_equals("var printer", printer, 6)
+assert_equals("var returned", returned, 7)
+assert_equals("var defcon", defcon, 8)
+assert_equals("var importance", importance, 9)
+assert_equals("var thenable", thenable, 10)
+assert_equals("var doer", doer, 11)
+assert_equals("var inbox", inbox, 12)
+
+-- Functions whose names start with a keyword, both body forms
+def truevar_fn() -> 100
+def define(x) -> x + 1
+def whenever() do
+  ending = 200      -- keyword-prefixed name used inside a do/end block
+  return ending
+end
+
+assert_equals("fn truevar_fn", truevar_fn(), 100)
+assert_equals("fn define", define(41), 42)
+assert_equals("fn whenever (end-prefixed local)", whenever(), 200)
+
+-- `is` as an operator must still work, and must not eat an identifier
+assert_equals("is operator true", 2 is 2, true)
+assert_equals("is operator false", 2 is 3, false)
+assert_equals("island not parsed as 'is land'", island is 3, true)
+
+-- Booleans still parse where a boolean is intended
+assert_equals("literal true", true, true)
+assert_equals("literal false", false, false)
+
+"All keyword-prefix tests passed"

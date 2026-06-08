@@ -1,6 +1,6 @@
 cabal-version:      3.0
 name:               Bern
-version:            2.0.0.0
+version:            2.1.0.0
 synopsis:           Interpreted Dynamic Typed Programming Language
 -- description:
 homepage:           mirvox.xyz
@@ -24,6 +24,7 @@ library
                       Language.Helpers,
                       Language.FFI,
                       Language.PragmaState,
+                      Language.OperatorState,
                       Parsing.Parser,
                       Data.Hashtable.Hashtable
     -- other-modules:

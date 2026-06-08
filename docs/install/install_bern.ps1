@@ -21,9 +21,9 @@ $installDir = "C:\Bern"
 
 # Fallback values, used only if the manifest cannot be fetched/parsed.
 $repo    = "bern-lang/Bern"
-$zipName = "Bern-2.0.0-win.zip"
+$zipName = "Bern-2.1.0-win.zip"
 $exeName = "Bern.exe"
-$version = "2.0.0"
+$version = "2.1.0"
 
 
 

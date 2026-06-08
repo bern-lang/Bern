@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>assert - Bern Libraries</title>
+    <link rel="icon" type="image/png" href="../images/cat.png">
+    <link rel="stylesheet" href="../lib.css">
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <a href="../index.html" class="logo"><img src="../images/cat.png" alt="Bern Logo" width="20%" style="margin-top: 10px;"></a>
+            <nav>
+                <a href="../documentation.html">Language</a>
+                <a href="../libraries.html">Libraries</a>
+                <!-- <a href="../examples.html">Learn Bern</a> -->
+                <a href="../changelog.html">Changelog</a>
+                <a href="../pt-br/libs/assert.html" style="font-weight: 600;">🌐 PT-BR</a>
+            </nav>
+        </div>
+    </header>
+
+    <div class="layout">
+        <aside class="sidebar">
+            <h3>assert</h3>
+            <ul>
+                <li><a href="#equality">Equality</a></li>
+                <li><a href="#approx">Approximate equality</a></li>
+                <li><a href="#together">Putting it together</a></li>
+            </ul>
+            <h3>More</h3>
+            <ul>
+                <li><a href="../libraries.html" class="back-link">← All libraries</a></li>
+            </ul>
+        </aside>
+
+        <div class="container">
+            <p class="breadcrumb"><a href="../documentation.html">Documentation</a> / <a href="../libraries.html">Libraries</a> / assert</p>
+            <h1 class="page-title">assert</h1>
+            <p class="page-subtitle">Tiny assertion helpers for writing tests in Bern.</p>
+
+            <pre class="simple-code">import assert</pre>
+            <p>Each assertion returns a string ending in <code>PASS</code> or <code>FAIL</code>, named so you can read a column of results at a glance. They never throw - you collect and print the outcomes yourself.</p>
+
+            <div class="doc-section" id="equality">
+                <h2>Equality</h2>
+
+                <div class="function-sig">assert_equals(name, got, expected) → string</div>
+                <p>Compare two values with <code>==</code>.</p>
+                <pre class="simple-code">assert_equals("Addition test", 2 + 2, 4)
+-- Output: "Addition test PASS"
+
+assert_equals("Wrong test", 2 + 2, 5)
+-- Output: "Wrong test FAIL"</pre>
+            </div>
+
+            <div class="doc-section" id="approx">
+                <h2>Approximate equality</h2>
+
+                <div class="function-sig">approx_eq(a, b, tolerance) → boolean</div>
+                <p>Whether <code>a</code> and <code>b</code> are within <code>tolerance</code> of each other - the helper behind <code>assert_approx</code>.</p>
+                <pre class="simple-code">approx_eq(3.14159, 3.14, 0.01)
+-- Output: true</pre>
+
+                <div class="function-sig">assert_approx(name, got, expected, tolerance) → string</div>
+                <p>Like <code>assert_equals</code>, but passes when the two numbers are close enough - the right tool for floating-point results.</p>
+                <pre class="simple-code">assert_approx("Pi test", 3.14159, 3.14, 0.01)
+-- Output: "Pi test PASS"</pre>
+            </div>
+
+            <div class="doc-section" id="together">
+                <h2>Putting it together</h2>
+                <p>A test file usually gathers a list of results and prints them. Here <code>assert</code> teams up with <code>math</code> to check a couple of computations at once:</p>
+                <div class="example-box">
+                    <h4>A small test suite</h4>
+                    <pre class="simple-code">import assert
+import core
+import math
+
+results = [
+    assert_equals("sum",      sum([1, 2, 3, 4]), 10),
+    assert_equals("reverse",  reverse([1, 2, 3]), [3, 2, 1]),
+    assert_approx("sqrt(2)",  sqrt(2), 1.41421, 0.001),
+    assert_approx("sin(0)",   sin(0), 0.0, 0.0001)
+]
+
+loop r : results do
+    r
+end
+-- Output:
+-- "sum PASS"
+-- "reverse PASS"
+-- "sqrt(2) PASS"
+-- "sin(0) PASS"</pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        Copyright © 2026 • All rights reserved • Built with ❤️ by <a href="https://mirvox.xyz/">Miguel Aguiar</a>
+    </footer>
+</body>
+</html>

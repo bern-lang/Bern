@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>strings - Bern Libraries</title>
+    <link rel="icon" type="image/png" href="../images/cat.png">
+    <link rel="stylesheet" href="../lib.css">
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <a href="../index.html" class="logo"><img src="../images/cat.png" alt="Bern Logo" width="20%" style="margin-top: 10px;"></a>
+            <nav>
+                <a href="../documentation.html">Language</a>
+                <a href="../libraries.html">Libraries</a>
+                <!-- <a href="../examples.html">Learn Bern</a> -->
+                <a href="../changelog.html">Changelog</a>
+                <a href="../pt-br/libs/strings.html" style="font-weight: 600;">🌐 PT-BR</a>
+            </nav>
+        </div>
+    </header>
+
+    <div class="layout">
+        <aside class="sidebar">
+            <h3>strings</h3>
+            <ul>
+                <li><a href="#extract">Extraction</a></li>
+                <li><a href="#splitjoin">Split &amp; join</a></li>
+                <li><a href="#case">Case conversion</a></li>
+                <li><a href="#modify">Modification</a></li>
+                <li><a href="#search">Searching</a></li>
+                <li><a href="#numbers">Numbers</a></li>
+                <li><a href="#together">Putting it together</a></li>
+            </ul>
+            <h3>More</h3>
+            <ul>
+                <li><a href="../libraries.html" class="back-link">← All libraries</a></li>
+            </ul>
+        </aside>
+
+        <div class="container">
+            <p class="breadcrumb"><a href="../documentation.html">Documentation</a> / <a href="../libraries.html">Libraries</a> / strings</p>
+            <h1 class="page-title">strings</h1>
+            <p class="page-subtitle">Text utilities for slicing, splitting, joining, case conversion, and searching.</p>
+
+            <pre class="simple-code">import strings</pre>
+            <p>Remember that in Bern a string <em>is</em> a list of characters, so list operators apply to strings too - <code>"ab" &lt;&gt; "cd"</code> is <code>"abcd"</code>, and <code>"hello"[0]</code> is <code>'h'</code>. The <code>strings</code> library adds the higher-level text operations on top.</p>
+
+            <div class="doc-section" id="extract">
+                <h2>Extraction</h2>
+
+                <div class="function-sig">substring(string, start, end) → string</div>
+                <p>The slice from index <code>start</code> up to (but not including) <code>end</code>.</p>
+                <pre class="simple-code">substring("Hello", 1, 4)
+-- Output: "ell"</pre>
+
+                <div class="function-sig">char_at(string, index) → char</div>
+                <p>The character at <code>index</code> (the same as indexing with <code>[]</code>).</p>
+                <pre class="simple-code">char_at("Bern", 0)
+-- Output: 'B'</pre>
+            </div>
+
+            <div class="doc-section" id="splitjoin">
+                <h2>Split &amp; join</h2>
+
+                <div class="function-sig">split(string, delimiter) → list</div>
+                <p>Break a string into a list of pieces on each occurrence of <code>delimiter</code>.</p>
+                <pre class="simple-code">split("a,b,c", ",")
+-- Output: ["a", "b", "c"]</pre>
+
+                <div class="function-sig">join(list, delimiter) → string</div>
+                <p>The inverse of <code>split</code>: glue a list of strings together with a separator.</p>
+                <pre class="simple-code">join(["a", "b", "c"], "-")
+-- Output: "a-b-c"</pre>
+            </div>
+
+            <div class="doc-section" id="case">
+                <h2>Case conversion</h2>
+
+                <div class="function-sig">to_upper(string) → string</div>
+                <p>Uppercase every letter.</p>
+                <pre class="simple-code">to_upper("bern")
+-- Output: "BERN"</pre>
+
+                <div class="function-sig">to_lower(string) → string</div>
+                <p>Lowercase every letter.</p>
+                <pre class="simple-code">to_lower("BERN")
+-- Output: "bern"</pre>
+
+                <div class="function-sig">char_to_upper(char) → char</div>
+                <p>Uppercase a single character (non-letters pass through unchanged).</p>
+                <pre class="simple-code">char_to_upper('a')
+-- Output: 'A'</pre>
+
+                <div class="function-sig">char_to_lower(char) → char</div>
+                <p>Lowercase a single character.</p>
+                <pre class="simple-code">char_to_lower('Z')
+-- Output: 'z'</pre>
+            </div>
+
+            <div class="doc-section" id="modify">
+                <h2>Modification</h2>
+
+                <div class="function-sig">trim(string) → string</div>
+                <p>Remove leading and trailing spaces, newlines, and tabs.</p>
+                <pre class="simple-code">trim("  hello  ")
+-- Output: "hello"</pre>
+
+                <div class="function-sig">replace(string, old, new) → string</div>
+                <p>Replace every occurrence of <code>old</code> with <code>new</code>.</p>
+                <pre class="simple-code">replace("hello world", "world", "Bern")
+-- Output: "hello Bern"</pre>
+            </div>
+
+            <div class="doc-section" id="search">
+                <h2>Searching</h2>
+
+                <div class="function-sig">contains(string, substring) → boolean</div>
+                <p>Whether the substring appears anywhere.</p>
+                <pre class="simple-code">contains("documentation", "ment")
+-- Output: true</pre>
+
+                <div class="function-sig">starts_with(string, prefix) → boolean</div>
+                <p>Whether the string begins with <code>prefix</code>.</p>
+                <pre class="simple-code">starts_with("bernlang", "bern")
+-- Output: true</pre>
+
+                <div class="function-sig">ends_with(string, suffix) → boolean</div>
+                <p>Whether the string ends with <code>suffix</code>.</p>
+                <pre class="simple-code">ends_with("script.brn", ".brn")
+-- Output: true</pre>
+            </div>
+
+            <div class="doc-section" id="numbers">
+                <h2>Numbers</h2>
+
+                <div class="function-sig">from_int(int) → string</div>
+                <p>Render an integer as a string (handles negatives). The counterpart of <code>core</code>'s <code>to_int</code>.</p>
+                <pre class="simple-code">from_int(-42)
+-- Output: "-42"
+"v" + from_int(2)
+-- Output: "v2"</pre>
+            </div>
+
+            <div class="doc-section" id="together">
+                <h2>Putting it together</h2>
+                <p>The functions chain well for cleaning and reshaping text. Here a messy CSV-ish line is split, trimmed, normalized, and rejoined:</p>
+                <div class="example-box">
+                    <h4>Normalizing a line of tags</h4>
+                    <pre class="simple-code">import core
+import strings
+
+line = "  Bern , Lang ,DOCS  "
+
+tags = split(line, ",")
+    )| map(\t -> to_lower(trim(t)))
+
+clean = join(tags, ", ")
+-- Output: "bern, lang, docs"</pre>
+                </div>
+                <p>And a tiny "slugify" that combines <code>to_lower</code>, <code>replace</code>, and <code>trim</code>:</p>
+                <div class="example-box">
+                    <h4>Building a URL slug</h4>
+                    <pre class="simple-code">import strings
+
+def slugify(title) do
+    lower = to_lower(trim(title))
+    return replace(lower, " ", "-")
+end
+
+slugify("  Getting Started With Bern ")
+-- Output: "getting-started-with-bern"</pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        Copyright © 2026 • All rights reserved • Built with ❤️ by <a href="https://mirvox.xyz/">Miguel Aguiar</a>
+    </footer>
+</body>
+</html>

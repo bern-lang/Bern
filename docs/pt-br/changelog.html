@@ -19,11 +19,11 @@
         .release {
             position: relative;
             background: #fff;
-            border: 2px solid var(--border);
-            border-left: 8px solid var(--primary);
+            border: 1px solid var(--border);
+            border-left: 4px solid var(--primary);
             border-radius: 0;
-            padding: 2rem 2.25rem;
-            margin-bottom: 2.5rem;
+            padding: 2.25rem 2.6rem;
+            margin-bottom: 2.75rem;
         }
         .release.latest {
             border-left-color: var(--accent);
@@ -32,28 +32,31 @@
         .release h2 {
             display: flex; align-items: center; flex-wrap: wrap; gap: 0.75rem;
             color: var(--primary); font-size: 1.9rem;
-            border-bottom: 2px solid var(--border);
+            border-bottom: 1px solid var(--border);
             padding-bottom: 0.6rem; margin-bottom: 0.75rem;
         }
         .release h2 .date {
             font-size: 0.9rem; color: var(--text-light); font-weight: 400;
             margin-left: auto;
         }
-        .release > p { color: var(--text-light); font-size: 1.05rem; }
+        .release > p { color: var(--text-light); font-size: 1.06rem; line-height: 1.85; max-width: 74ch; margin-bottom: 1.3rem; }
 
         .release h3 {
             color: var(--primary-dark); font-size: 1.2rem; margin: 2.2rem 0 0.8rem;
             display: flex; align-items: center; gap: 0.55rem;
-            border-bottom: 2px solid var(--border); padding-bottom: 0.4rem;
+            border-bottom: 1px solid var(--border); padding-bottom: 0.4rem;
         }
         .release h3::before {
             content: ""; width: 10px; height: 10px; border-radius: 0;
             background: var(--accent); display: inline-block; flex: none;
         }
 
-        .feat { color: var(--text); font-size: 1.02rem; margin: 1.4rem 0 0.6rem; }
-        .feat strong { color: var(--primary-dark); }
+        .feat { color: var(--text); font-size: 1.05rem; line-height: 1.85; margin: 2rem 0 0.7rem; max-width: 74ch; }
+        .feat strong { color: var(--primary-dark); display: block; font-size: 1.1rem; margin-bottom: 0.35rem; }
         .feat:first-of-type { margin-top: 0.8rem; }
+
+        .release a, .changelog-hero a { color: var(--primary); font-weight: 700; }
+        .release a:hover, .changelog-hero a:hover { text-decoration: underline; }
 
         .badge {
             display: inline-block;
@@ -63,14 +66,23 @@
         }
 
         /* boxy overrides: square off everything inherited from style.css */
-        .changelog .simple-code { border: 2px solid var(--border); border-radius: 0; }
+        .changelog .simple-code { border: 1px solid var(--border); border-radius: 0; }
         .changelog code { border-radius: 0; }
 
         .pragma-table { border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: 0.92rem; }
-        .pragma-table th, .pragma-table td { border: 2px solid var(--border); padding: 0.5rem 0.85rem; text-align: left; }
-        .pragma-table th { background: var(--primary); color: #fff; font-weight: 600; }
+        .pragma-table th, .pragma-table td { border: 1px solid var(--border); padding: 0.5rem 0.85rem; text-align: left; }
+        .pragma-table th { background: #f4f4f7; color: var(--primary-dark); font-weight: 600; }
         .pragma-table tr:nth-child(even) td { background: #faf9fc; }
         .pragma-table code { background: var(--code-bg); border: 1px solid var(--border); }
+
+        @media (max-width: 768px) {
+            .changelog { padding: 2rem 1rem 3rem; }
+            .changelog-hero h1 { font-size: 2rem; }
+            .release { padding: 1.5rem 1.25rem; }
+            .release h2 { font-size: 1.5rem; }
+            .release h2 .date { margin-left: 0; }
+            .pragma-table { display: block; overflow-x: auto; white-space: nowrap; }
+        }
     </style>
 </head>
 <body>
@@ -88,13 +100,73 @@
     </header>
 
     <div class="changelog">
+        <p class="breadcrumb"><a href="index.html">Início</a> / Mudanças</p>
         <div class="changelog-hero">
             <h1>Mudanças</h1>
             <p class="lead">As novidades de cada versão da linguagem Bern.</p>
         </div>
 
         <div class="release latest">
-            <h2>Bern 2.0 <span class="badge">mais recente</span> <span class="date">Junho de 2026</span></h2>
+            <h2>Bern 2.1 <span class="badge">mais recente</span> <span class="date">Junho de 2026</span></h2>
+            <p>Bern 2.1 constrói sobre a base do 2.0: operadores definidos pelo usuário, anotações de tipo opcionais, declarações multi-linha mais amigáveis, uma correção no lexer para identificadores que começam com uma palavra-chave, e um conjunto de combinadores de parser bem maior. A referência de bibliotecas do site também foi reconstruída em torno de uma página por biblioteca.</p>
+
+            <h3>Linguagem</h3>
+
+            <p class="feat"><strong>Operadores definidos pelo usuário.</strong> Agora você pode declarar seus próprios operadores infixos - simbólicos como <code>^</code> e de palavra como <code>dot</code> - com <code>def (x ^ y) -> ...</code>. Por baixo dos panos são funções comuns de dois argumentos, então casamento de padrões, guardas e currying simplesmente funcionam, e um operador simbólico pode ser usado como valor puro (<code>(^)</code>) ou como seção (<code>(^ 2)</code>, <code>(2 ^)</code>). Uma linha <code>infix</code> opcional, em inglês claro, define a fixidez - <code>infix ^ groups right, binds tighter than *</code> - e operadores se propagam pelo <code>import</code> como as funções, então dá para defini-los uma vez em uma biblioteca.</p>
+            <pre class="simple-code"><span class="keyword">infix</span> ^ groups right, binds tighter than *
+
+<span class="keyword">def</span> <span class="function">(x ^ <span class="number">0</span>)</span> <span class="operator">-&gt;</span> <span class="number">1</span>
+<span class="keyword">def</span> <span class="function">(x ^ y)</span> <span class="operator">-&gt;</span> x <span class="operator">*</span> (x ^ (y <span class="operator">-</span> <span class="number">1</span>))
+
+<span class="number">2</span> ^ <span class="number">10</span>                  <span class="comment">-- 1024</span>
+<span class="number">2</span> <span class="operator">*</span> <span class="number">3</span> ^ <span class="number">2</span>               <span class="comment">-- 18  (^ prende mais forte que *)</span>
+<span class="function">map</span>([<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>], (^ <span class="number">2</span>))     <span class="comment">-- [1, 4, 9]  (uma seção)</span></pre>
+
+            <p class="feat"><strong>Declarações de variável tipadas.</strong> Com o novo pragma <code>typed</code>, uma atribuição pode carregar um tipo: <code>nome :: Tipo = valor</code>. O valor é verificado contra o tipo declarado quando a atribuição executa, e uma incompatibilidade é um erro fatal, então um arquivo tipado falha alto em vez de seguir errado. É totalmente opcional - sem o pragma, a sintaxe fica inativa e <code>::</code> mantém seu significado usual de operador typeof.</p>
+            <pre class="simple-code"><span class="comment">{--! typed !--}</span>
+
+count :: <span class="type">Integer</span> = <span class="number">10</span>
+name  :: <span class="type">String</span>  = <span class="string">"bern"</span>
+ratio :: <span class="type">Double</span>  = <span class="number">3.14</span>
+<span class="comment">-- count :: Integer = "oops"   -- erro: incompatibilidade de tipo</span></pre>
+            <p class="feat">O tipo declarado aceita os nomes canônicos do <code>typeof</code> (<code>Integer</code>, <code>Double</code>, <code>Boolean</code>, <code>Character</code>, <code>String</code>, <code>List</code>, <code>Set</code>, <code>Object</code>), os apelidos familiares <code>Int</code>, <code>Float</code>, <code>Char</code>, <code>Bool</code>, <code>Text</code>, e qualquer nome de ADT (que casa com um valor construído por qualquer um dos construtores daquele tipo).</p>
+
+            <p class="feat"><strong>O tipo <code>Auto</code> / <code>Any</code>.</strong> Um tipo dinâmico que aceita um valor de <em>qualquer</em> tipo - a forma explícita de dizer "qualquer coisa serve" numa linguagem de tipagem dinâmica. Funciona tanto como anotação de variável tipada quanto como tipo de campo de ADT.</p>
+            <pre class="simple-code"><span class="comment">{--! typed !--}</span>
+anything :: <span class="type">Auto</span> = <span class="number">7</span>
+anything :: <span class="type">Auto</span> = <span class="string">"agora uma string"</span>   <span class="comment">-- Auto nunca reclama</span>
+
+<span class="keyword">adt</span> <span class="type">Box</span> = <span class="type">Box</span> <span class="type">Auto</span>                     <span class="comment">-- um campo que guarda qualquer valor</span></pre>
+
+            <p class="feat"><strong>Declarações de tipo multi-linha.</strong> Um tipo com muitos construtores pode ser dividido em várias linhas, um construtor por linha, com o <code>|</code> no início de cada linha de continuação - estilo Haskell. É puramente cosmético; as formas de uma linha e multi-linha são equivalentes.</p>
+            <pre class="simple-code"><span class="keyword">adt</span> <span class="type">Expression</span> = <span class="type">Num</span> <span class="type">Double</span>
+    | <span class="type">Add</span> <span class="type">Expression</span> <span class="type">Expression</span>
+    | <span class="type">Sub</span> <span class="type">Expression</span> <span class="type">Expression</span>
+    | <span class="type">If</span>  <span class="type">Expression</span> <span class="type">Expression</span> <span class="type">Expression</span></pre>
+
+            <p class="feat"><strong>Identificadores com prefixo de palavra-chave.</strong> Nomes que apenas <em>começam</em> com uma palavra reservada agora são tokenizados como um único identificador, em vez da palavra-chave mais o texto restante. Variáveis, funções, parâmetros e nomes de ADT como <code>truevar</code>, <code>island</code>, <code>ending</code>, <code>define</code> ou <code>importance</code> finalmente se comportam como esperado.</p>
+            <pre class="simple-code">island = <span class="number">3</span>            <span class="comment">-- um identificador, não `is` + `land`</span>
+<span class="keyword">def</span> <span class="function">define</span>(x) <span class="operator">-&gt;</span> x <span class="operator">+</span> <span class="number">1</span>
+truevar = true        <span class="comment">-- o literal ainda parseia onde um valor é esperado</span></pre>
+
+            <h3>Bibliotecas</h3>
+
+            <p class="feat"><strong>Apelidos amigáveis do BernParsec.</strong> A biblioteca de combinadores de parser <code>vendor/bernparsec</code> agora traz um conjunto completo de nomes em inglês claro que encaminham para o núcleo estilo megaparsec: <code>literalChar</code>, <code>text</code>, <code>charIn</code>, <code>digit</code>, <code>letter</code>, <code>zeroOrMore</code>, <code>oneOrMore</code>, <code>separatedBy</code>, <code>keepLeft</code>/<code>keepRight</code>, <code>firstOf</code>, <code>orTry</code>, <code>integerNumber</code>, <code>decimalNumber</code>, <code>inParens</code>, <code>peek</code>, <code>deferred</code>, <code>chainLeft</code>, <code>run</code>, <code>quickParse</code>, <code>prettyError</code>, e mais. Misture os dois estilos livremente.</p>
+            <p class="feat"><strong>Operadores do BernParsec.</strong> Agora ele também traz operadores infixos estilo megaparsec - <code>&lt;$&gt;</code> (map), <code>&lt;*&gt;</code> (applicative), <code>&lt;*</code> / <code>*&gt;</code> (mantém esquerda / direita), <code>&lt;|&gt;</code> (escolha), <code>&gt;&gt;=</code> (bind) e <code>&lt;?&gt;</code> (rótulo) - construídos sobre os novos operadores definidos pelo usuário, então uma gramática se lê quase como a coisa que descreve: <code>char('$') *&gt; num</code>, ou <code>string("if") &lt;|&gt; string("else")</code>.</p>
+            <pre class="simple-code"><span class="keyword">import</span> vendor/bernparsec
+
+<span class="function">quickParse</span>(<span class="function">separatedBy</span>(<span class="function">digits</span>(), <span class="function">literalChar</span>(<span class="string">','</span>)), <span class="string">"1,2,33"</span>)
+<span class="comment">-- [1, 2, 33]</span></pre>
+
+            <p class="feat"><strong>BernParsec como dado (forma ADT).</strong> Parsers, resultados e valores opcionais também podem ser expressos como dados pelo ADT <code>BPParser</code> (os construtores <code>BP*</code>), com resultados <code>BPOk</code>/<code>BPErr</code> e opcionais <code>BPJust</code>/<code>BPNothing</code>. Rode um parser pelo caminho ADT com <code>parseADT</code> / <code>runParserADT</code> quando quiser um resultado sobre o qual fazer pattern matching.</p>
+
+            <h3>Documentação &amp; site</h3>
+            <p class="feat"><strong>Uma página por biblioteca.</strong> A biblioteca padrão e os módulos vendor embutidos têm cada um sua própria página de referência agora - em inglês e português - com toda função documentada por exemplo e uma seção "juntando tudo" que as combina. Um novo <a href="libraries.html">hub de Bibliotecas</a> liga todas elas.</p>
+            <p class="feat"><strong>Leitura mais limpa.</strong> Breadcrumbs foram adicionados pela documentação, e o site inteiro passou por uma revisão mais minimalista: regras mais finas, cabeçalhos de tabela neutros e acentos mais suaves.</p>
+        </div>
+
+        <div class="release">
+            <h2>Bern 2.0 <span class="date">Junho de 2026</span></h2>
             <p>Bern 2.0 é uma versão importante. Ela transforma o interpretador em uma linguagem configurável: um conjunto de pragmas permite optar por comportamentos mais rígidos ou mais flexíveis por arquivo, e várias arestas antigas agora têm padrões sensatos. Também adiciona JSON, operadores em palavras, currying, intervalos preguiçosos e erros recuperáveis.</p>
 
             <h3>Novos comportamentos padrão</h3>

@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>vendor/csv - Bibliotecas Bern</title>
+    <link rel="icon" type="image/png" href="../../images/cat.png">
+    <link rel="stylesheet" href="../../lib.css">
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <a href="../index.html" class="logo"><img src="../../images/cat.png" alt="Bern Logo" width="20%" style="margin-top: 10px;"></a>
+            <nav>
+                <a href="../documentation.html">Linguagem</a>
+                <a href="../libraries.html">Bibliotecas</a>
+                <a href="../changelog.html">Mudanças</a>
+                <a href="../../libs/csv.html" style="font-weight: 600;">🌐 EN</a>
+            </nav>
+        </div>
+    </header>
+
+    <div class="layout">
+        <aside class="sidebar">
+            <h3>vendor/csv</h3>
+            <ul>
+                <li><a href="#shape">Formato dos dados</a></li>
+                <li><a href="#read">Leitura &amp; parsing</a></li>
+                <li><a href="#write">Escrita</a></li>
+                <li><a href="#together">Juntando tudo</a></li>
+            </ul>
+            <h3>Mais</h3>
+            <ul>
+                <li><a href="../libraries.html" class="back-link">← Todas as bibliotecas</a></li>
+            </ul>
+        </aside>
+
+        <div class="container">
+            <p class="breadcrumb"><a href="../documentation.html">Documentação</a> / <a href="../libraries.html">Bibliotecas</a> / vendor/csv</p>
+            <h1 class="page-title">vendor/csv <span class="vendor-badge">Vendor</span></h1>
+            <p class="page-subtitle">Ler e escrever dados CSV a partir de strings ou arquivos, com aspas e escapes corretos.</p>
+
+            <pre class="simple-code">import vendor/csv</pre>
+            <p>O parser lida com campos entre aspas, aspas escapadas (<code>""</code>), quebras de linha internas e retornos de carro finais. Toda função de leitura aceita argumentos opcionais graças aos padrões por cláusula da Bern.</p>
+
+            <div class="doc-section" id="shape">
+                <h2>Formato dos dados</h2>
+                <p>As linhas são devolvidas como um <strong>objeto indexado pelo número da linha</strong> (<code>"0"</code>, <code>"1"</code>, …). Com cabeçalhos ativados (o padrão), cada linha é, ela mesma, um objeto indexado pelos nomes dos cabeçalhos; sem cabeçalhos, cada linha é uma lista simples de campos.</p>
+                <pre class="simple-code">-- com cabeçalhos (padrão)
+#{ "0": #{ name: "Ana", age: "30" }#, "1": #{ name: "Bob", age: "25" }# }#
+
+-- sem cabeçalhos / parse_csv_rows
+#{ "0": ["name", "age"], "1": ["Ana", "30"], "2": ["Bob", "25"] }#</pre>
+            </div>
+
+            <div class="doc-section" id="read">
+                <h2>Leitura &amp; parsing</h2>
+
+                <div class="function-sig">parse_csv(conteúdo, delimitador=",", tem_cabeçalho=true, pular_linhas_vazias=true) → objeto</div>
+                <p>Faz parse de texto CSV. Com cabeçalhos ligados, devolve as linhas como objetos indexados pelo cabeçalho.</p>
+                <pre class="simple-code">csv = "name,age\nAna,30\nBob,25"
+rows = parse_csv(csv)
+rows["0"]["name"]
+-- Saída: "Ana"
+rows["1"]["age"]
+-- Saída: "25"</pre>
+
+                <div class="function-sig">parse_csv_rows(conteúdo, delimitador=",", pular_linhas_vazias=true) → objeto</div>
+                <p>Faz parse em linhas cruas (listas de campos), sem aplicar cabeçalhos.</p>
+                <pre class="simple-code">rows = parse_csv_rows("a,b\n1,2")
+rows["0"]
+-- Saída: ["a", "b"]
+rows["1"]
+-- Saída: ["1", "2"]</pre>
+
+                <div class="function-sig">read_csv(nome_arquivo, delimitador=",", tem_cabeçalho=true, pular_linhas_vazias=true) → objeto</div>
+                <p>Lê um arquivo e o parseia em um passo (a versão de arquivo do <code>parse_csv</code>).</p>
+                <pre class="simple-code">rows = read_csv("people.csv")
+rows["0"]["name"]
+-- Saída: (nome da primeira pessoa)</pre>
+
+                <div class="function-sig">read_csv_rows(nome_arquivo, delimitador=",", pular_linhas_vazias=true) → objeto</div>
+                <p>Lê um arquivo em linhas cruas (a versão de arquivo do <code>parse_csv_rows</code>).</p>
+                <pre class="simple-code">rows = read_csv_rows("data.tsv", "\t")
+rows["0"]
+-- Saída: (primeira linha como lista de campos)</pre>
+            </div>
+
+            <div class="doc-section" id="write">
+                <h2>Escrita</h2>
+
+                <div class="function-sig">write_csv_from_list(cabeçalhos, lista_dados, nome_arquivo, delimitador=",") → void</div>
+                <p>Escreve um conjunto lista-de-listas, prefixado pela linha de cabeçalho. Campos são colocados entre aspas automaticamente quando necessário.</p>
+                <pre class="simple-code">write_csv_from_list(
+    ["name", "age"],
+    [["Ana", "30"], ["Bob", "25"]],
+    "out.csv"
+)
+-- Escreve:
+-- name,age
+-- Ana,30
+-- Bob,25</pre>
+
+                <div class="function-sig">write_csv_from_objects(cabeçalhos, objeto_dados, nome_arquivo, delimitador=",") → void</div>
+                <p>Escreve um objeto indexado de objetos-linha, puxando os campos na ordem de cabeçalho informada.</p>
+                <pre class="simple-code">people = #{
+    "0": #{ name: "Ana", age: "30" }#,
+    "1": #{ name: "Bob", age: "25" }#
+}#
+write_csv_from_objects(["name", "age"], people, "out.csv")</pre>
+            </div>
+
+            <div class="doc-section" id="together">
+                <h2>Juntando tudo</h2>
+                <p>Um pipeline completo: ler um arquivo, transformar uma coluna e escrever o resultado de volta. Aqui lemos pessoas, incrementamos a idade de todas e salvamos:</p>
+                <div class="example-box">
+                    <h4>Ler → transformar → escrever</h4>
+                    <pre class="simple-code">import core
+import strings
+import vendor/csv
+
+rows = parse_csv("name,age\nAna,30\nBob,25")
+
+-- monta as novas linhas como listas, na ordem do cabeçalho
+out = []
+loop i : [0..(length(keys(rows)) - 1)] do
+    r = rows["" + i]
+    next_age = to_int(r["age"]) + 1
+    out = out <> [[r["name"], from_int(next_age)]]
+end
+
+write_csv_from_list(["name", "age"], out, "people_aged.csv")
+-- people_aged.csv agora contém Ana,31 e Bob,26</pre>
+                </div>
+                <p>E uma agregação rápida direto das linhas parseadas, com <code>core</code>:</p>
+                <div class="example-box">
+                    <h4>Totalizando uma coluna numérica</h4>
+                    <pre class="simple-code">import core
+import vendor/csv
+
+rows = parse_csv("item,price\npen,3\nbook,12\nlamp,20")
+
+total = 0
+loop i : [0..(length(keys(rows)) - 1)] do
+    total = total + to_int(rows["" + i]["price"])
+end
+
+total
+-- Saída: 35</pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        Copyright © 2026 • Todos os direitos reservados • Feito com ❤️ por <a href="https://mirvox.xyz/">Miguel Aguiar</a>
+    </footer>
+</body>
+</html>

@@ -231,6 +231,7 @@ runFile :: FilePath -> IO ()
 runFile path = do
   contents <- readFile path
   applyPragmas contents
+  preloadOperators contents   -- register user-defined operators (this file + imports) before parsing
   case parseBernFile path contents of
     Left err -> putStrLn (formatParseError err) >> exitFailure
     Right cmd -> case checkExhaustive cmd of

@@ -134,7 +134,7 @@ printWelcome = do
   putStrLn (purple ++ "| |_/ / ___ _ __ _ __       " ++ reset)
   putStrLn (purple ++ "| ___ \\/ _ \\ '__| '_ \\     Type \":help\" for REPL commands." ++ reset)
   putStrLn (purple ++ "| |_/ /  __/ |  | | | |      Use \"bern <file>\" to run a program." ++ reset)
-  putStrLn (purple ++ "\\____/ \\___|_|  |_| |_|            [ v.2.0.0  05.06.2026 ]" ++ reset)
+  putStrLn (purple ++ "\\____/ \\___|_|  |_| |_|            [ v.2.1.0  08.06.2026 ]" ++ reset)
 
 {-
 English:
@@ -275,6 +275,7 @@ Português:
 runLine :: String -> Hashtable String Value -> IO (Hashtable String Value)
 runLine input table = do
   applyPragmas input
+  preloadOperators input   -- register user-defined operators (line + its imports) before parsing
   let cleaned = stripPragmas input
   if null (trim cleaned)
     then return table

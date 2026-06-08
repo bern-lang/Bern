@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>url - Bern Libraries</title>
+    <link rel="icon" type="image/png" href="../images/cat.png">
+    <link rel="stylesheet" href="../lib.css">
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <a href="../index.html" class="logo"><img src="../images/cat.png" alt="Bern Logo" width="20%" style="margin-top: 10px;"></a>
+            <nav>
+                <a href="../documentation.html">Language</a>
+                <a href="../libraries.html">Libraries</a>
+                <!-- <a href="../examples.html">Learn Bern</a> -->
+                <a href="../changelog.html">Changelog</a>
+                <a href="../pt-br/libs/url.html" style="font-weight: 600;">🌐 PT-BR</a>
+            </nav>
+        </div>
+    </header>
+
+    <div class="layout">
+        <aside class="sidebar">
+            <h3>url</h3>
+            <ul>
+                <li><a href="#encode">Component encoding</a></li>
+                <li><a href="#query">Query utilities</a></li>
+                <li><a href="#full">Full URL operations</a></li>
+                <li><a href="#together">Putting it together</a></li>
+            </ul>
+            <h3>More</h3>
+            <ul>
+                <li><a href="../libraries.html" class="back-link">← All libraries</a></li>
+            </ul>
+        </aside>
+
+        <div class="container">
+            <p class="breadcrumb"><a href="../documentation.html">Documentation</a> / <a href="../libraries.html">Libraries</a> / url</p>
+            <h1 class="page-title">url</h1>
+            <p class="page-subtitle">Percent-encoding, query-string handling, and full URL parsing/building.</p>
+
+            <pre class="simple-code">import url</pre>
+
+            <div class="doc-section" id="encode">
+                <h2>Component encoding</h2>
+
+                <div class="function-sig">url_encode_component(text) → string</div>
+                <p>Percent-encode a single component, escaping reserved characters.</p>
+                <pre class="simple-code">url_encode_component("a b&c")
+-- Output: "a%20b%26c"</pre>
+
+                <div class="function-sig">url_decode_component(text) → string</div>
+                <p>Decode a percent-encoded component (and turn <code>+</code> into a space).</p>
+                <pre class="simple-code">url_decode_component("a%20b%26c")
+-- Output: "a b&c"</pre>
+            </div>
+
+            <div class="doc-section" id="query">
+                <h2>Query utilities</h2>
+
+                <div class="function-sig">build_query(pairs) → string</div>
+                <p>Build a query string from a list of <code>[key, value]</code> pairs, encoding each part.</p>
+                <pre class="simple-code">build_query([["a", "1"], ["name", "bern lang"]])
+-- Output: "a=1&name=bern%20lang"</pre>
+
+                <div class="function-sig">parse_query(query) → object</div>
+                <p>Parse a query string into an object of decoded keys and values.</p>
+                <pre class="simple-code">params = parse_query("a=1&name=bern%20lang")
+params["name"]
+-- Output: "bern lang"</pre>
+            </div>
+
+            <div class="doc-section" id="full">
+                <h2>Full URL operations</h2>
+
+                <div class="function-sig">parse_url(url_text) → object</div>
+                <p>Parse a URL into <code>scheme</code>, <code>host</code>, <code>port</code>, <code>path</code>, <code>query</code>, and <code>fragment</code>. Default ports are filled in for <code>http</code> (80) and <code>https</code> (443).</p>
+                <pre class="simple-code">parsed = parse_url("http://example.com:8080/docs/api?x=1#top")
+parsed["host"]
+-- Output: "example.com"
+parsed["port"]
+-- Output: 8080
+parsed["path"]
+-- Output: "/docs/api"</pre>
+
+                <div class="function-sig">build_url(scheme, host, port, path, query, fragment) → string</div>
+                <p>Assemble a URL from its components. A port equal to the scheme's default is omitted.</p>
+                <pre class="simple-code">build_url("https", "example.com", 443, "/hello", "a=1", "frag")
+-- Output: "https://example.com/hello?a=1#frag"</pre>
+            </div>
+
+            <div class="doc-section" id="together">
+                <h2>Putting it together</h2>
+                <p>The pieces combine for a full round trip: parse a URL, edit its query, and rebuild it. Here we add a parameter to an existing link:</p>
+                <div class="example-box">
+                    <h4>Adding a query parameter to a URL</h4>
+                    <pre class="simple-code">import url
+
+original = "https://search.example.com/?q=bern"
+
+u = parse_url(original)
+params = parse_query(u["query"])
+params["page"] = "2"
+
+-- rebuild the query from the (now larger) object
+new_query = build_query([["q", params["q"]], ["page", params["page"]]])
+
+build_url(u["scheme"], u["host"], u["port"], u["path"], new_query, "")
+-- Output: "https://search.example.com/?q=bern&page=2"</pre>
+                </div>
+                <p>And encoding user input safely before putting it in a link:</p>
+                <div class="example-box">
+                    <h4>Safely linking a search term</h4>
+                    <pre class="simple-code">import url
+
+term = "bern lang & friends"
+"https://example.com/?q=" + url_encode_component(term)
+-- Output: "https://example.com/?q=bern%20lang%20%26%20friends"</pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        Copyright © 2026 • All rights reserved • Built with ❤️ by <a href="https://mirvox.xyz/">Miguel Aguiar</a>
+    </footer>
+</body>
+</html>

@@ -275,14 +275,57 @@
             font-size: 0.9rem;
         }
 
+        .hero pre {
+            overflow-x: auto;
+            max-width: 100%;
+        }
+
         @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 0.85rem;
+                padding: 0 1rem;
+            }
+
+            .logo img {
+                width: 64px !important;
+                margin-top: 0 !important;
+            }
+
+            nav {
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 0.5rem 1.1rem;
+            }
+
+            .container {
+                padding: 2rem 1rem;
+            }
+
+            .hero {
+                margin-bottom: 2.5rem;
+            }
+
+            .hero img {
+                width: 80%;
+            }
+
             .hero h1 {
                 font-size: 2rem;
+            }
+
+            .hero .subtitle {
+                font-size: 1.1rem;
+            }
+
+            .hero pre {
+                font-size: 14px !important;
             }
 
             .feature-section {
                 grid-template-columns: 1fr;
                 gap: 1rem;
+                margin: 2.5rem 0;
             }
 
             .feature-icon {
@@ -293,3 +336,27 @@
                 font-size: 0.85rem;
             }
         }
+
+.breadcrumb {
+    font-size: 0.9rem;
+    color: var(--text-light);
+    margin-bottom: 1.5rem;
+}
+
+.breadcrumb a {
+    color: var(--primary);
+    text-decoration: none;
+}
+
+.breadcrumb a:hover {
+    text-decoration: underline;
+}
+
+.doc-section a {
+    color: var(--primary);
+    font-weight: 700;
+}
+
+.doc-section a:hover {
+    text-decoration: underline;
+}

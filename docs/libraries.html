@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bern Libraries</title>
+    <link rel="icon" type="image/png" href="images/cat.png">
+    <link rel="stylesheet" href="lib.css">
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <a href="index.html" class="logo"><img src="images/cat.png" alt="Bern Logo" width="20%" style="margin-top: 10px;"></a>
+            <nav>
+                <a href="documentation.html">Language</a>
+                <a href="libraries.html">Libraries</a>
+                <!-- <a href="examples.html">Learn Bern</a> -->
+                <a href="changelog.html">Changelog</a>
+                <a href="pt-br/libraries.html" style="font-weight: 600;">🌐 PT-BR</a>
+            </nav>
+        </div>
+    </header>
+
+    <div class="layout">
+        <div class="container" style="margin: 0 auto;">
+            <p class="breadcrumb"><a href="documentation.html">Documentation</a> / Libraries</p>
+            <h1 class="page-title">Bern Libraries</h1>
+            <p class="page-subtitle">Every library ships with Bern. Each one has its own page with a full function reference and worked examples.</p>
+
+            <p style="color: var(--text-light);">Standard libraries are imported by name (<code>import math</code>); vendor modules are bundled and imported with their path (<code>import vendor/csv</code>).</p>
+
+            <h2 class="hub-group-title">Standard Library</h2>
+            <div class="lib-grid">
+                <a class="lib-card" href="libs/core.html">
+                    <h3>core</h3>
+                    <p>Lists, folds, higher-order helpers and type conversions - the functional toolbox.</p>
+                    <span class="import-line">import core</span>
+                </a>
+                <a class="lib-card" href="libs/math.html">
+                    <h3>math</h3>
+                    <p>Constants, powers, roots, logs and trigonometry inspired by C's <code>math.h</code>.</p>
+                    <span class="import-line">import math</span>
+                </a>
+                <a class="lib-card" href="libs/strings.html">
+                    <h3>strings</h3>
+                    <p>Slice, split, join, case-convert and search text.</p>
+                    <span class="import-line">import strings</span>
+                </a>
+                <a class="lib-card" href="libs/random.html">
+                    <h3>random</h3>
+                    <p>Random integers, doubles, choices and strings via the system C library.</p>
+                    <span class="import-line">import random</span>
+                </a>
+                <a class="lib-card" href="libs/assert.html">
+                    <h3>assert</h3>
+                    <p>Tiny assertion helpers for writing tests in Bern.</p>
+                    <span class="import-line">import assert</span>
+                </a>
+                <a class="lib-card" href="libs/path.html">
+                    <h3>path</h3>
+                    <p>Join, normalize and inspect filesystem paths.</p>
+                    <span class="import-line">import path</span>
+                </a>
+                <a class="lib-card" href="libs/url.html">
+                    <h3>url</h3>
+                    <p>Percent-encoding, query strings and full URL parsing/building.</p>
+                    <span class="import-line">import url</span>
+                </a>
+                <a class="lib-card" href="libs/crypto.html">
+                    <h3>crypto</h3>
+                    <p>Tokens, checksums and UUID-like identifiers in pure Bern.</p>
+                    <span class="import-line">import crypto</span>
+                </a>
+                <a class="lib-card" href="libs/json.html">
+                    <h3>json</h3>
+                    <p>Parse JSON into Bern values and serialize them back.</p>
+                    <span class="import-line">import json</span>
+                </a>
+            </div>
+
+            <h2 class="hub-group-title">Vendor Modules</h2>
+            <div class="lib-grid">
+                <a class="lib-card" href="libs/csv.html">
+                    <h3>vendor/csv</h3>
+                    <p>Read and write CSV data from strings or files.</p>
+                    <span class="import-line">import vendor/csv</span>
+                </a>
+                <a class="lib-card" href="libs/http.html">
+                    <h3>vendor/http</h3>
+                    <p>A small FFI-backed HTTP server for static routes.</p>
+                    <span class="import-line">import vendor/http/http</span>
+                </a>
+                <a class="lib-card" href="libs/bernparsec.html">
+                    <h3>vendor/bernparsec</h3>
+                    <p>A megaparsec-style parser-combinator library for building grammars.</p>
+                    <span class="import-line">import vendor/bernparsec</span>
+                </a>
+                <a class="lib-card" href="libs/raylib.html">
+                    <h3>vendor/raylib</h3>
+                    <p>Bindings for raylib 5.5 - windowing, 2D/3D drawing, input and audio via FFI.</p>
+                    <span class="import-line">import vendor/raylib/raylib</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        Copyright © 2026 • All rights reserved • Built with ❤️ by <a href="https://mirvox.xyz/">Miguel Aguiar</a>
+    </footer>
+</body>
+</html>

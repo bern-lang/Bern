@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>vendor/csv - Bern Libraries</title>
+    <link rel="icon" type="image/png" href="../images/cat.png">
+    <link rel="stylesheet" href="../lib.css">
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <a href="../index.html" class="logo"><img src="../images/cat.png" alt="Bern Logo" width="20%" style="margin-top: 10px;"></a>
+            <nav>
+                <a href="../documentation.html">Language</a>
+                <a href="../libraries.html">Libraries</a>
+                <!-- <a href="../examples.html">Learn Bern</a> -->
+                <a href="../changelog.html">Changelog</a>
+                <a href="../pt-br/libs/csv.html" style="font-weight: 600;">🌐 PT-BR</a>
+            </nav>
+        </div>
+    </header>
+
+    <div class="layout">
+        <aside class="sidebar">
+            <h3>vendor/csv</h3>
+            <ul>
+                <li><a href="#shape">Data shape</a></li>
+                <li><a href="#read">Reading &amp; parsing</a></li>
+                <li><a href="#write">Writing</a></li>
+                <li><a href="#together">Putting it together</a></li>
+            </ul>
+            <h3>More</h3>
+            <ul>
+                <li><a href="../libraries.html" class="back-link">← All libraries</a></li>
+            </ul>
+        </aside>
+
+        <div class="container">
+            <p class="breadcrumb"><a href="../documentation.html">Documentation</a> / <a href="../libraries.html">Libraries</a> / vendor/csv</p>
+            <h1 class="page-title">vendor/csv <span class="vendor-badge">Vendor</span></h1>
+            <p class="page-subtitle">Read and write CSV data from strings or files, with proper quoting and escaping.</p>
+
+            <pre class="simple-code">import vendor/csv</pre>
+            <p>The parser handles quoted fields, escaped quotes (<code>""</code>), embedded newlines, and trailing carriage returns. Every reading function accepts optional arguments thanks to Bern's clause-based defaults.</p>
+
+            <div class="doc-section" id="shape">
+                <h2>Data shape</h2>
+                <p>Rows are returned as an <strong>object keyed by row number</strong> (<code>"0"</code>, <code>"1"</code>, …). With headers enabled (the default), each row is itself an object keyed by the header names; without headers, each row is a plain list of fields.</p>
+                <pre class="simple-code">-- with headers (default)
+#{ "0": #{ name: "Ana", age: "30" }#, "1": #{ name: "Bob", age: "25" }# }#
+
+-- without headers / parse_csv_rows
+#{ "0": ["name", "age"], "1": ["Ana", "30"], "2": ["Bob", "25"] }#</pre>
+            </div>
+
+            <div class="doc-section" id="read">
+                <h2>Reading &amp; parsing</h2>
+
+                <div class="function-sig">parse_csv(content, delimiter=",", has_header=true, skip_empty_lines=true) → object</div>
+                <p>Parse CSV text. With headers on, returns rows as header-keyed objects.</p>
+                <pre class="simple-code">csv = "name,age\nAna,30\nBob,25"
+rows = parse_csv(csv)
+rows["0"]["name"]
+-- Output: "Ana"
+rows["1"]["age"]
+-- Output: "25"</pre>
+
+                <div class="function-sig">parse_csv_rows(content, delimiter=",", skip_empty_lines=true) → object</div>
+                <p>Parse into raw rows (lists of fields) without applying headers.</p>
+                <pre class="simple-code">rows = parse_csv_rows("a,b\n1,2")
+rows["0"]
+-- Output: ["a", "b"]
+rows["1"]
+-- Output: ["1", "2"]</pre>
+
+                <div class="function-sig">read_csv(file_name, delimiter=",", has_header=true, skip_empty_lines=true) → object</div>
+                <p>Read a file and parse it in one step (the file version of <code>parse_csv</code>).</p>
+                <pre class="simple-code">rows = read_csv("people.csv")
+rows["0"]["name"]
+-- Output: (first person's name)</pre>
+
+                <div class="function-sig">read_csv_rows(file_name, delimiter=",", skip_empty_lines=true) → object</div>
+                <p>Read a file into raw rows (the file version of <code>parse_csv_rows</code>).</p>
+                <pre class="simple-code">rows = read_csv_rows("data.tsv", "\t")
+rows["0"]
+-- Output: (first row as a list of fields)</pre>
+            </div>
+
+            <div class="doc-section" id="write">
+                <h2>Writing</h2>
+
+                <div class="function-sig">write_csv_from_list(headers, data_list, file_name, delimiter=",") → void</div>
+                <p>Write a list-of-lists dataset, prefixed by the header row. Fields are quoted automatically when needed.</p>
+                <pre class="simple-code">write_csv_from_list(
+    ["name", "age"],
+    [["Ana", "30"], ["Bob", "25"]],
+    "out.csv"
+)
+-- Writes:
+-- name,age
+-- Ana,30
+-- Bob,25</pre>
+
+                <div class="function-sig">write_csv_from_objects(headers, data_object, file_name, delimiter=",") → void</div>
+                <p>Write an indexed object of row-objects, pulling fields in the given header order.</p>
+                <pre class="simple-code">people = #{
+    "0": #{ name: "Ana", age: "30" }#,
+    "1": #{ name: "Bob", age: "25" }#
+}#
+write_csv_from_objects(["name", "age"], people, "out.csv")</pre>
+            </div>
+
+            <div class="doc-section" id="together">
+                <h2>Putting it together</h2>
+                <p>A full pipeline: read a file, transform a column, and write the result back out. Here we read people, increment everyone's age, and save:</p>
+                <div class="example-box">
+                    <h4>Read → transform → write</h4>
+                    <pre class="simple-code">import core
+import strings
+import vendor/csv
+
+rows = parse_csv("name,age\nAna,30\nBob,25")
+
+-- build the new rows as lists, in header order
+out = []
+loop i : [0..(length(keys(rows)) - 1)] do
+    r = rows["" + i]
+    next_age = to_int(r["age"]) + 1
+    out = out <> [[r["name"], from_int(next_age)]]
+end
+
+write_csv_from_list(["name", "age"], out, "people_aged.csv")
+-- people_aged.csv now contains Ana,31 and Bob,26</pre>
+                </div>
+                <p>And a quick aggregation straight from parsed rows, with <code>core</code>:</p>
+                <div class="example-box">
+                    <h4>Totalling a numeric column</h4>
+                    <pre class="simple-code">import core
+import vendor/csv
+
+rows = parse_csv("item,price\npen,3\nbook,12\nlamp,20")
+
+total = 0
+loop i : [0..(length(keys(rows)) - 1)] do
+    total = total + to_int(rows["" + i]["price"])
+end
+
+total
+-- Output: 35</pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        Copyright © 2026 • All rights reserved • Built with ❤️ by <a href="https://mirvox.xyz/">Miguel Aguiar</a>
+    </footer>
+</body>
+</html>

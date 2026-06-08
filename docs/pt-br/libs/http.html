@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>vendor/http - Bibliotecas Bern</title>
+    <link rel="icon" type="image/png" href="../../images/cat.png">
+    <link rel="stylesheet" href="../../lib.css">
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <a href="../index.html" class="logo"><img src="../../images/cat.png" alt="Bern Logo" width="20%" style="margin-top: 10px;"></a>
+            <nav>
+                <a href="../documentation.html">Linguagem</a>
+                <a href="../libraries.html">Bibliotecas</a>
+                <a href="../changelog.html">Mudanças</a>
+                <a href="../../libs/http.html" style="font-weight: 600;">🌐 EN</a>
+            </nav>
+        </div>
+    </header>
+
+    <div class="layout">
+        <aside class="sidebar">
+            <h3>vendor/http</h3>
+            <ul>
+                <li><a href="#lifecycle">Ciclo de vida do servidor</a></li>
+                <li><a href="#routes">Rotas &amp; respostas</a></li>
+                <li><a href="#polling">Polling</a></li>
+                <li><a href="#status">Constantes de status</a></li>
+                <li><a href="#together">Juntando tudo</a></li>
+            </ul>
+            <h3>Mais</h3>
+            <ul>
+                <li><a href="../libraries.html" class="back-link">← Todas as bibliotecas</a></li>
+            </ul>
+        </aside>
+
+        <div class="container">
+            <p class="breadcrumb"><a href="../documentation.html">Documentação</a> / <a href="../libraries.html">Bibliotecas</a> / vendor/http</p>
+            <h1 class="page-title">vendor/http <span class="vendor-badge">Vendor</span></h1>
+            <p class="page-subtitle">Um pequeno servidor HTTP via FFI para servir respostas de rotas estáticas a partir da Bern.</p>
+
+            <pre class="simple-code">import vendor/http/http</pre>
+            <div class="note">
+                <strong>Nota:</strong> Este módulo carrega um binário de plataforma de <code>lib/vendor/http</code> - <code>windows/bern_http.dll</code>, <code>macos/libbern_http.dylib</code> ou <code>linux/libbern_http.so</code>. O correto é escolhido automaticamente a partir de <code>get_host_machine()</code>.
+            </div>
+
+            <div class="doc-section" id="lifecycle">
+                <h2>Ciclo de vida do servidor</h2>
+
+                <div class="function-sig">http_server_start(porta) → ptr</div>
+                <p>Inicia um servidor ligado a <code>0.0.0.0</code> na porta dada; devolve um handle do servidor.</p>
+                <pre class="simple-code">server = http_server_start(8080)</pre>
+
+                <div class="function-sig">http_server_start_on(porta, host) → ptr</div>
+                <p>Inicia um servidor ligado a um endereço de host específico.</p>
+                <pre class="simple-code">server = http_server_start_on(8080, "127.0.0.1")</pre>
+
+                <div class="function-sig">http_server_running(server) → booleano</div>
+                <p>Se o servidor ainda está rodando.</p>
+                <pre class="simple-code">http_server_running(server)
+-- Saída: true</pre>
+
+                <div class="function-sig">http_server_stop(server) → booleano</div>
+                <p>Para um servidor em execução.</p>
+                <pre class="simple-code">http_server_stop(server)
+-- Saída: true</pre>
+            </div>
+
+            <div class="doc-section" id="routes">
+                <h2>Rotas &amp; respostas</h2>
+
+                <div class="function-sig">http_server_set_default(server, status, content_type, corpo) → booleano</div>
+                <p>Define a resposta padrão para qualquer rota não casada.</p>
+                <pre class="simple-code">http_server_set_default(server, 404, "text/plain; charset=utf-8", "Not found")
+-- Saída: true</pre>
+
+                <div class="function-sig">http_server_add_route(server, método, path, status, content_type, corpo) → booleano</div>
+                <p>O construtor de rota geral - controle total de método, status e content type.</p>
+                <pre class="simple-code">http_server_add_route(server, "GET", "/teapot", 418, "text/plain", "I'm a teapot")
+-- Saída: true</pre>
+
+                <div class="function-sig">http_server_get(server, path, corpo) → booleano</div>
+                <p>Adiciona uma rota GET que retorna <code>200</code> com corpo em texto puro.</p>
+                <pre class="simple-code">http_server_get(server, "/", "hello from bern http")
+-- Saída: true</pre>
+
+                <div class="function-sig">http_server_add_route_html(server, path, html) → booleano</div>
+                <p>Adiciona uma rota GET que retorna HTML.</p>
+                <pre class="simple-code">http_server_add_route_html(server, "/page", "<h1>Bern</h1>")
+-- Saída: true</pre>
+
+                <div class="function-sig">http_server_add_route_json(server, path, json) → booleano</div>
+                <p>Adiciona uma rota GET que retorna JSON.</p>
+                <pre class="simple-code">http_server_add_route_json(server, "/health", "{\"ok\":true}")
+-- Saída: true</pre>
+            </div>
+
+            <div class="doc-section" id="polling">
+                <h2>Polling</h2>
+
+                <div class="function-sig">http_server_poll(server, timeout_ms) → int</div>
+                <p>Roda um único tick de polling, esperando até <code>timeout_ms</code> por atividade. Use para dirigir seu próprio loop de eventos.</p>
+                <pre class="simple-code">http_server_poll(server, 50)</pre>
+
+                <div class="function-sig">http_server_serve_forever(server, poll_timeout_ms) → void</div>
+                <p>Continua o polling enquanto o servidor estiver rodando - a forma mais simples de "só servir".</p>
+                <pre class="simple-code">http_server_serve_forever(server, 50)</pre>
+            </div>
+
+            <div class="doc-section" id="status">
+                <h2>Constantes de status</h2>
+                <p>Constantes de conveniência para códigos de status HTTP comuns:</p>
+                <table class="lib-table">
+                    <tr><th>Constante</th><th>Valor</th></tr>
+                    <tr><td><code>HTTP_STATUS_OK</code></td><td>200</td></tr>
+                    <tr><td><code>HTTP_STATUS_CREATED</code></td><td>201</td></tr>
+                    <tr><td><code>HTTP_STATUS_NO_CONTENT</code></td><td>204</td></tr>
+                    <tr><td><code>HTTP_STATUS_BAD_REQUEST</code></td><td>400</td></tr>
+                    <tr><td><code>HTTP_STATUS_NOT_FOUND</code></td><td>404</td></tr>
+                    <tr><td><code>HTTP_STATUS_INTERNAL_ERROR</code></td><td>500</td></tr>
+                </table>
+            </div>
+
+            <div class="doc-section" id="together">
+                <h2>Juntando tudo</h2>
+                <p>Um servidor pequeno e completo: registrar algumas rotas de content types diferentes, definir um fallback e servir. Isso combina quase toda função do módulo:</p>
+                <div class="example-box">
+                    <h4>Um servidor estático com várias rotas</h4>
+                    <pre class="simple-code">import vendor/http/http
+
+server = http_server_start(8080)
+
+http_server_get(server, "/", "hello from bern http")
+http_server_add_route_html(server, "/page", "<h1>Bern</h1><p>It works!</p>")
+http_server_add_route_json(server, "/health", "{\"ok\":true}")
+http_server_add_route(server, "/teapot", 418, "text/plain", "I'm a teapot")
+http_server_set_default(server, HTTP_STATUS_NOT_FOUND, "text/plain", "Not found")
+
+-- bloqueia e atende requisições até o servidor parar
+http_server_serve_forever(server, 50)</pre>
+                </div>
+                <p>Se você precisa fazer outro trabalho entre as requisições, dirija o loop você mesmo com <code>http_server_poll</code>:</p>
+                <div class="example-box">
+                    <h4>Um loop de polling personalizado</h4>
+                    <pre class="simple-code">import vendor/http/http
+
+server = http_server_start(8080)
+http_server_get(server, "/", "tick")
+
+loop http_server_running(server) do
+    http_server_poll(server, 100)
+    -- ... rode tarefas de fundo aqui ...
+end</pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        Copyright © 2026 • Todos os direitos reservados • Feito com ❤️ por <a href="https://mirvox.xyz/">Miguel Aguiar</a>
+    </footer>
+</body>
+</html>

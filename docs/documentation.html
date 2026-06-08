@@ -151,7 +151,7 @@
             font-size: 2rem;
             margin-bottom: 1rem;
             padding-bottom: 0.5rem;
-            border-bottom: 2px solid var(--border);
+            border-bottom: 1px solid var(--border);
         }
 
         .doc-section h3 {
@@ -179,6 +179,15 @@
 
         .doc-section li {
             margin: 0.5rem 0;
+        }
+
+        .doc-section a {
+            color: var(--primary);
+            font-weight: 700;
+        }
+
+        .doc-section a:hover {
+            text-decoration: underline;
         }
 
         code {
@@ -215,8 +224,8 @@
         }
 
         .example-box {
-            background: #f0f4f8;
-            border: 1px solid #d0dae5;
+            background: #fafafa;
+            border: 1px solid var(--border);
             border-radius: 6px;
             padding: 1.5rem;
             margin: 1.5rem 0;
@@ -229,8 +238,8 @@
         }
 
         .function-sig {
-            background: #e8eaf6;
-            border-left: 4px solid var(--primary);
+            background: #f4f4f7;
+            border-left: 3px solid var(--accent);
             padding: 0.75rem 1rem;
             margin: 1rem 0;
             border-radius: 4px;
@@ -253,7 +262,7 @@
         }
 
         .lib-table th {
-            background: #e8eaf6;
+            background: #f4f4f7;
             color: var(--primary);
         }
 
@@ -288,21 +297,132 @@
             text-decoration: underline;
         }
 
-        @media (max-width: 1024px) {
-            .sidebar {
+        /* On wide screens the sidebar is always-open; the collapsible
+           "On this page" toggle only appears on narrow screens. */
+        @media (min-width: 1025px) {
+            .sidebar .toc > summary {
                 display: none;
+            }
+            .sidebar .toc-body {
+                display: block !important;
+            }
+        }
+
+        @media (max-width: 1024px) {
+            .layout {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                position: static;
+                width: 100%;
+                height: auto;
+                padding: 0.75rem 1.5rem;
+                border-right: none;
+                border-bottom: 1px solid var(--border);
+            }
+
+            .sidebar .toc > summary {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                cursor: pointer;
+                list-style: none;
+                font-weight: 600;
+                color: var(--primary);
+                padding: 0.5rem 0;
+                font-size: 1.05rem;
+            }
+
+            .sidebar .toc > summary::-webkit-details-marker {
+                display: none;
+            }
+
+            .sidebar .toc > summary::after {
+                content: "▾";
+                transition: transform 0.2s ease;
+            }
+
+            .sidebar .toc[open] > summary::after {
+                transform: rotate(180deg);
+            }
+
+            .sidebar .toc-body {
+                padding-top: 0.25rem;
+                padding-bottom: 0.5rem;
+            }
+
+            .sidebar h3:first-child {
+                margin-top: 0.5rem;
             }
         }
 
         @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 0.85rem;
+                padding: 0 1rem;
+            }
+
+            .logo img {
+                width: 64px !important;
+                margin-top: 0 !important;
+            }
+
             nav {
-                gap: 1rem;
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 0.5rem 1.1rem;
+            }
+
+            .doc-section h2 {
+                font-size: 1.6rem;
+            }
+
+            .lib-table {
+                display: block;
+                overflow-x: auto;
+                white-space: nowrap;
             }
             
             .container {
                 padding: 2rem 1rem;
             }
         }
+
+        .breadcrumb {
+            font-size: 0.9rem;
+            color: var(--text-light);
+            margin-bottom: 1.5rem;
+        }
+
+        .breadcrumb a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        .breadcrumb a:hover {
+            text-decoration: underline;
+        }
+
+        details.adv {
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: var(--code-bg);
+            padding: 0.6rem 1.1rem;
+            margin: 1.5rem 0;
+        }
+        details.adv > summary {
+            cursor: pointer;
+            color: var(--primary);
+            font-weight: 600;
+            list-style: none;
+            outline: none;
+        }
+        details.adv > summary::-webkit-details-marker { display: none; }
+        details.adv > summary::before { content: "\25B8\00a0"; }
+        details.adv[open] > summary::before { content: "\25BE\00a0"; }
+        details.adv[open] > summary { margin-bottom: 1rem; }
     </style>
 </head>
 <body>
@@ -310,11 +430,11 @@
         <div class="header-content">
             <a href="index.html" class="logo"><img src="images/cat.png" alt="Bern Logo" width="20%" style="margin-top: 10px;"></a>
             <nav>
+                <a href="#install">Install</a>
+                <a href="#repl">REPL</a>
                 <a href="#basics">Basics</a>
-                <a href="#functions">Functions</a>
-                <a href="#libraries">Libraries</a>
-                <a href="#pragmas">Pragmas</a>
-                <a href="examples.html">Learn Bern</a>
+                <a href="libraries.html">Libraries</a>
+                <!-- <a href="examples.html">Learn Bern</a> -->
                 <a href="changelog.html">Changelog</a>
                 <a href="pt-br/documentation.html" style="font-weight: 600;">🌐 PT-BR</a>
             </nav>
@@ -323,56 +443,109 @@
 
     <div class="layout">
         <aside class="sidebar">
-            <h3>Language Basics</h3>
+            <h3>Installing Bern</h3>
+            <ul>
+                <li><a href="#install">Installing Bern</a></li>
+            </ul>
+
+            <h3>Using the REPL</h3>
+            <ul>
+                <li><a href="#repl">The REPL</a></li>
+            </ul>
+
+            <h3>Basics of Bern</h3>
             <ul>
                 <li><a href="#basics">Basics</a></li>
+                <li><a href="#types">Types</a></li>
+                <li><a href="#operators">Operators</a></li>
                 <li><a href="#scope">Scope</a></li>
                 <li><a href="#conditionals">Conditionals</a></li>
-                <li><a href="#functions">Functions</a></li>
-                <li><a href="#pipe">Pipe Operator</a></li>
-                <li><a href="#words">Word Operators</a></li>
                 <li><a href="#loops">Loops</a></li>
                 <li><a href="#lists">Lists</a></li>
                 <li><a href="#sets">Sets</a></li>
                 <li><a href="#objects">Objects</a></li>
-                <li><a href="#adt">ADTs</a></li>
+                <li><a href="#functions">Functions</a></li>
+                <li><a href="#imports">Imports</a></li>
+                <li><a href="#input">User Input</a></li>
             </ul>
 
-            <h3>Standard Libraries</h3>
+            <h3>Slightly Advanced</h3>
             <ul>
-                <li><a href="#lib-core">core</a></li>
-                <li><a href="#lib-math">math</a></li>
-                <li><a href="#lib-strings">strings</a></li>
-                <li><a href="#lib-random">random</a></li>
-                <li><a href="#lib-assert">assert</a></li>
-                <li><a href="#lib-path">path</a></li>
-                <li><a href="#lib-url">url</a></li>
-                <li><a href="#lib-crypto">crypto</a></li>
-                <li><a href="#lib-json">json</a></li>
-                <li><a href="#lib-csv">vendor/csv</a></li>
-                <li><a href="#lib-http">vendor/http/http</a></li>
+                <li><a href="#adt">ADTs</a></li>
+                <li><a href="#errors-as-values">Errors as Values</a></li>
+                <li><a href="#globals">Global Functions</a></li>
             </ul>
 
             <h3>Other Features</h3>
             <ul>
-                <li><a href="#errors-as-values">Errors as Values</a></li>
-                <li><a href="#pragmas">Pragmas</a></li>
-                <li><a href="#imports">Imports</a></li>
-                <li><a href="#input">User Input</a></li>
-                <li><a href="#globals">Global Functions</a></li>
-                <li><a href="#repl">The REPL</a></li>
+                <li><a href="libraries.html">Libraries</a></li>
+                <li><a href="#c-bindings">C Bindings</a></li>
                 <li><a href="#bundle">Bundling to .exe</a></li>
+                <li><a href="#pragmas">Pragmas</a></li>
             </ul>
         </aside>
 
         <div class="container">
-            <h1 style="color: var(--primary); font-size: 2.5rem; margin-bottom: 0.5rem;">Bern Language Documentation</h1>
-            <p style="color: var(--text-light); font-size: 1.2rem; margin-bottom: 3rem;">A comprehensive guide to the Bern programming language and its standard libraries</p>
+            <p class="breadcrumb"><a href="index.html">Home</a> / Documentation</p>
+            <h1 style="color: var(--primary); font-size: 2.5rem; margin-bottom: 0.5rem;">Learn Bern</h1>
+            <p style="color: var(--text-light); font-size: 1.2rem; margin-bottom: 3rem;">Install it, open the REPL, and follow along - from your first expression to your own programs.</p>
 
  <!-- BASICS -->
+        <!-- ===================== INSTALLING BERN ===================== -->
+        <!-- INSTALLING BERN -->
+        <div class="doc-section" id="install">
+            <h2>Installing Bern</h2>
+            <p>Welcome to Bern! Getting it onto your machine takes a single line - pick the shell you use, paste it in, and you are ready to play.</p>
+            <h3>Windows (PowerShell)</h3>
+            <pre class="simple-code">iex (irm https://bern-lang.github.io/Bern/install/install_bern.ps1)</pre>
+            <h3>Linux &amp; macOS (Bash)</h3>
+            <pre class="simple-code">curl -fsSL https://bern-lang.github.io/Bern/install/install_bern.sh | bash</pre>
+            <p>To check it worked, open a terminal and type <code>bern</code> with no arguments. That drops you straight into the interactive prompt - which is exactly where we are headed next, and the friendliest way to learn the language.</p>
+            <div class="note"><strong>No strings attached:</strong> Bern is a single self-contained program. If you ever want it gone, just delete it - there are no system changes to undo.</div>
+        </div>
+
+        <!-- ===================== USING THE REPL ===================== -->
+        <div class="doc-section" id="repl">
+            <h2>The REPL</h2>
+            <p>The REPL is the best place to start - and the best place to keep coming back to. Run <code>bern</code> with no arguments and you get an interactive prompt that reads a line, evaluates it, and prints the result, instantly. There is nothing to set up and nothing to break: type something, see what happens, then try the next thing. Parse or runtime errors are simply printed, and the session keeps going.</p>
+            <p>Here is the whole idea in four lines - go ahead and type them in:</p>
+            <pre class="simple-code">[bern]: 1 + 2
+3
+[bern]: "Hello, " + "Bern!"
+"Hello, Bern!"</pre>
+            <p>Every example in this guide is a line you can paste straight into that prompt. As you read on, do exactly that - playing with each idea is the fastest way to make it stick.</p>
+
+            <h3>The <code>_</code> Variable</h3>
+            <p>The result of the last expression is bound to <code>_</code>, so you can build on it:</p>
+            <pre class="simple-code">[bern]: 1 + 2
+3
+[bern]: _ * 10
+30</pre>
+
+            <h3>Multi-line Blocks</h3>
+            <p>Block constructs (<code>def ... do ... end</code>, <code>loop ... do ... end</code>, and so on) are read across lines until they are complete, shown with a continuation prompt:</p>
+            <pre class="simple-code">[bern]: def addy(x, y) do
+    ...:     return x + y
+    ...: end
+[bern]: addy(3, 4)
+7</pre>
+
+            <h3>REPL Commands</h3>
+            <table class="lib-table">
+                <tr><th>Command</th><th>Action</th></tr>
+                <tr><td><code>:help</code>, <code>:h</code></td><td>Show the list of commands</td></tr>
+                <tr><td><code>:load &lt;file&gt;</code>, <code>:l</code></td><td>Load and run a <code>.brn</code> file into the current session</td></tr>
+                <tr><td><code>:reset</code></td><td>Clear local definitions</td></tr>
+                <tr><td><code>:quit</code>, <code>:q</code></td><td>Exit (or press Ctrl-D)</td></tr>
+            </table>
+            <p>Command history is available with the up/down arrows and is saved between sessions.</p>
+        </div>
+
+        <!-- ===================== BASICS OF BERN ===================== -->
         <div class="doc-section" id="basics">
             <h2>Basics</h2>
-            
+            <p>This is where the fun starts. Everything below is something you can type into the REPL right now and watch happen - so keep that prompt open and follow along. We will build up from values and variables to functions and your own little programs, one small idea at a time.</p>
+
             <h3>Literals</h3>
             <p>In Bern, literals are automatically interpreted and printed. You can write values directly and they'll be evaluated immediately:</p>
             
@@ -388,6 +561,21 @@ true</pre>
 double = 3.14
 helloworld = "Hello, World!"
 isActive = true</pre>
+
+            <h3>Arithmetic</h3>
+            <p>Numbers do exactly what you would expect. There are five arithmetic operators, and you can try every one of them in the REPL right now:</p>
+            <pre class="simple-code">7 + 2      -- 9    (add)
+7 - 2      -- 5    (subtract)
+7 * 2      -- 14   (multiply)
+7 / 2      -- 3    (divide)
+7 % 2      -- 1    (remainder, or "modulo")</pre>
+            <p>One thing to know about division: between two whole numbers it divides and drops the remainder, but a decimal anywhere keeps the fraction.</p>
+            <pre class="simple-code">7 / 2      -- 3     (integer division)
+7.0 / 2    -- 3.5   (a double makes it exact)</pre>
+            <p><code>*</code> and <code>/</code> bind tighter than <code>+</code> and <code>-</code>, just like in maths, and parentheses override that:</p>
+            <pre class="simple-code">2 + 3 * 4    -- 14   (the 3 * 4 happens first)
+(2 + 3) * 4  -- 20</pre>
+            <p>Every operator also has a plain-English name (<code>7 plus 2</code>, <code>7 times 2</code>) - see <a href="#operators">Operators</a> for the full set, including the pipe.</p>
 
             <h3>Evaluation</h3>
             <p>Like literals, variables can be called directly and will be properly evaluated. Simply write the variable name to see its value:</p>
@@ -407,19 +595,164 @@ integer
             </ul>
 
             <pre class="simple-code">typeof_integer = :: 2
--- Output: "Int"
+-- Output: "Integer"
 
 typeof_string = :: "hello"
--- Output: "String"
+-- Output: "List"   (a string is a list of characters)
 
-length_list = :> [1,2,3,4] 
+length_list = :> [1,2,3,4]
 -- Output: 4
 
 length_string = :> "hello"
 -- Output: 5</pre>
+
+            <p>See the <a href="#types">Types</a> section for the full list of values <code>::</code> can report.</p>
         </div>
 
-        <!-- SCOPE -->
+        <div class="doc-section" id="types">
+            <h2>Types</h2>
+
+            <p>Bern is <strong>dynamically typed</strong>: a variable can hold a value of any type, and types are checked as the program runs rather than declared up front. You never have to annotate a variable's type. Even so, it helps to know exactly which types exist, because the <code>::</code> (typeof) operator reports them by name and pattern matching reasons about them - and because <a href="#adt">ADTs</a> are built on top of them.</p>
+
+            <h3>Built-in Types</h3>
+            <p>Every value in Bern is one of the following. The <strong>typeof name</strong> column is the exact string that <code>::</code> returns for that value.</p>
+
+            <table class="lib-table">
+                <tr><th>Type</th><th>typeof name</th><th>Example</th><th>Description</th></tr>
+                <tr><td>Integer</td><td><code>"Integer"</code></td><td><code>2</code>, <code>-42</code>, <code>0</code></td><td>Whole numbers.</td></tr>
+                <tr><td>Double</td><td><code>"Double"</code></td><td><code>3.14</code>, <code>-2.5</code>, <code>1.0</code></td><td>Floating-point numbers.</td></tr>
+                <tr><td>Boolean</td><td><code>"Boolean"</code></td><td><code>true</code>, <code>false</code></td><td>Logical truth values.</td></tr>
+                <tr><td>Character</td><td><code>"Character"</code></td><td><code>'a'</code>, <code>'Z'</code></td><td>A single character, written with single quotes.</td></tr>
+                <tr><td>List</td><td><code>"List"</code></td><td><code>[1, 2, 3]</code>, <code>"hello"</code></td><td>Ordered collection. A <a href="#lists">string</a> is a list of characters, so it also reports <code>"List"</code>.</td></tr>
+                <tr><td>Set</td><td><code>"Set"</code></td><td><code>{1, 2, 3}</code></td><td>Unordered collection with no duplicates. See <a href="#sets">Sets</a>.</td></tr>
+                <tr><td>Object</td><td><code>"Object"</code></td><td><code>#{ key: "v" }#</code></td><td>Key-value map. See <a href="#objects">Objects</a>.</td></tr>
+                <tr><td>Function</td><td><code>"Function"</code></td><td><code>def add(x, y) -> x + y</code></td><td>A named function defined with <code>def</code>.</td></tr>
+                <tr><td>Lambda</td><td><code>"Lambda"</code></td><td><code>\x -> x + 1</code></td><td>An anonymous function. See <a href="#functions">Functions</a>.</td></tr>
+                <tr><td>NaN</td><td><code>"NaN"</code></td><td><code>0.0 / 0.0</code></td><td>"Not a Number" - an undefined numeric result.</td></tr>
+                <tr><td>Undefined</td><td><code>"Undefined"</code></td><td>unset variable</td><td>The absence of a value (e.g. an unbound name, or JSON <code>null</code>).</td></tr>
+                <tr><td>Error</td><td><code>"Error"</code></td><td><code>error("boom")</code></td><td>A runtime error carried as a value. See <a href="#errors-as-values">Errors as Values</a>.</td></tr>
+                <tr><td>ADT</td><td>its own name</td><td><code>Circle(5.0)</code></td><td>A user-defined value. Reports the type's own name, e.g. <code>"Shape"</code>. See <a href="#adt">ADTs</a>.</td></tr>
+            </table>
+
+            <h3>Inspecting a Value's Type</h3>
+            <p>Use <code>::</code> (or its word form <code>typeof</code>) to ask any value for its type at runtime. The result is a string, so you can compare it or branch on it:</p>
+
+            <pre class="simple-code">:: 42
+-- Output: "Integer"
+
+:: 3.14
+-- Output: "Double"
+
+:: true
+-- Output: "Boolean"
+
+:: 'a'
+-- Output: "Character"
+
+:: [1, 2, 3]
+-- Output: "List"
+
+:: {1, 2, 3}
+-- Output: "Set"
+
+:: #{ name: "Bern" }#
+-- Output: "Object"</pre>
+
+            <div class="note">
+                <strong>Note:</strong> A string is a list of characters, so <code>:: "hello"</code> reports <code>"List"</code>, not a separate string type. Likewise, integer and double patterns match across the divide - <code>5</code> matches <code>5.0</code> in a function clause.
+            </div>
+
+            <details class="adv">
+            <summary>Searching for the types you can use inside an ADT? Click here! <span class="v2badge">Bern 2.0</span></summary>
+            <p>When you declare an <a href="#adt">ADT</a>, each constructor field is annotated with a type. The names accepted in an <code>adt</code> declaration are written in their short form and are a separate vocabulary from the runtime <code>typeof</code> names above:</p>
+
+            <table class="lib-table">
+                <tr><th>In an <code>adt</code> declaration</th><th>Reported by <code>::</code> as</th><th>Meaning</th></tr>
+                <tr><td><code>Int</code></td><td><code>"Integer"</code></td><td>Whole number field.</td></tr>
+                <tr><td><code>Double</code></td><td><code>"Double"</code></td><td>Floating-point field.</td></tr>
+                <tr><td><code>Bool</code></td><td><code>"Boolean"</code></td><td>Boolean field.</td></tr>
+                <tr><td><code>Char</code></td><td><code>"Character"</code></td><td>Single-character field.</td></tr>
+                <tr><td><code>String</code></td><td><code>"List"</code></td><td>Text field (a list of characters).</td></tr>
+                <tr><td><code>List</code></td><td><code>"List"</code></td><td>List field.</td></tr>
+                <tr><td><code>Set</code></td><td><code>"Set"</code></td><td>Set field.</td></tr>
+                <tr><td><code>Auto</code> / <code>Any</code></td><td>the value's own type</td><td><span class="v2badge">Bern 2.1</span> Dynamic field: accepts a value of <em>any</em> type, detected automatically. A natural fit for a dynamically typed language.</td></tr>
+                <tr><td><em>any name</em></td><td>that name</td><td>Another ADT used as a field type (e.g. <code>Shape</code>).</td></tr>
+            </table>
+
+            <pre class="simple-code">adt Shape = Circle Double | Rectangle Double Double | Named String
+adt Tree  = Leaf Int | Node Tree Tree    -- ADTs can nest other ADTs
+adt Box   = Box Auto                     -- the field holds whatever type is passed</pre>
+
+            <p>Field types are used to check each constructor's arity when the file loads; they are not strictly enforced on the values at runtime, in keeping with Bern's dynamic nature. The <code>Auto</code> type makes that dynamism explicit: use it when a constructor field should accept any value.</p>
+            </details>
+
+            <details class="adv">
+            <summary>Want type-checked variables with the <code>typed</code> pragma? Click here! <span class="v2badge">Bern 2.1</span></summary>
+            <p>With the <a href="#pragmas"><code>typed</code></a> pragma enabled, you can annotate a variable with a type using <code>name :: Type = value</code>. The value is checked against the declared type when the binding runs; a mismatch is a hard error. This is opt-in - without the pragma, the syntax is not active and <code>::</code> keeps its usual meaning as the typeof operator.</p>
+
+            <pre class="simple-code">{--! typed !--}
+
+x :: Integer   = 10
+a :: Character = 'a'
+name :: String = "bern"
+pi :: Double   = 3.14
+ok :: Boolean  = true
+
+bad :: Integer = 'a'
+-- Error: type mismatch for 'bad': declared Integer but value is Character</pre>
+
+            <p>The declared type uses the canonical <code>typeof</code> names (<code>Integer</code>, <code>Double</code>, <code>Boolean</code>, <code>Character</code>, <code>String</code>, <code>List</code>, <code>Set</code>, <code>Object</code>), and a few familiar aliases are accepted too: <code>Int</code>, <code>Float</code>, <code>Char</code>, <code>Bool</code>, <code>Text</code>. An ADT type name (e.g. <code>Shape</code>) matches a value built from any of its constructors. The <code>Auto</code> (or <code>Any</code>) type accepts any value:</p>
+
+            <pre class="simple-code">{--! typed !--}
+
+anything :: Auto = 7
+anything :: Auto = "now a string"   -- Auto never complains
+
+adt Shape = Circle Double | Square Double
+sh :: Shape = Circle(1.0)           -- a Shape value is accepted</pre>
+            </details>
+        </div>
+
+        <div class="doc-section" id="operators">
+            <h2>Operators</h2>
+            <p>Beyond the symbols you already know, Bern gives most operations a written-out word form too, so a program can read like prose.</p>
+
+            <h3 id="words">Word Operators</h3>
+
+            <p>Every symbolic operator also has a written-word form, so programs can read like prose. The symbol and the word are interchangeable.</p>
+
+            <table class="lib-table">
+                <tr><th>Symbol</th><th>Word</th><th>Symbol</th><th>Word</th></tr>
+                <tr><td><code>+</code></td><td><code>plus</code></td><td><code>==</code></td><td><code>equals</code> (or <code>is</code>)</td></tr>
+                <tr><td><code>-</code></td><td><code>minus</code></td><td><code>!=</code></td><td><code>not-equals</code></td></tr>
+                <tr><td><code>*</code></td><td><code>times</code></td><td><code>&amp;&amp;</code></td><td><code>and</code></td></tr>
+                <tr><td><code>/</code></td><td><code>divided-by</code></td><td><code>||</code></td><td><code>or</code></td></tr>
+                <tr><td><code>%</code></td><td><code>modulo</code></td><td><code>!</code></td><td><code>not</code></td></tr>
+                <tr><td><code>&gt;</code></td><td><code>is-greater</code></td><td><code>&lt;&gt;</code></td><td><code>concat</code></td></tr>
+                <tr><td><code>&lt;</code></td><td><code>is-less</code></td><td><code>&lt;|</code></td><td><code>union</code></td></tr>
+                <tr><td><code>&gt;=</code></td><td><code>is-greater-or-equal</code></td><td><code>|&gt;</code></td><td><code>intersect</code></td></tr>
+                <tr><td><code>&lt;=</code></td><td><code>is-less-or-equal</code></td><td><code>&lt;/&gt;</code></td><td><code>difference</code></td></tr>
+                <tr><td><code>::</code></td><td><code>typeof</code></td><td><code>)|</code></td><td><code>and-do</code></td></tr>
+                <tr><td><code>:&gt;</code></td><td><code>length</code></td><td><code>=</code></td><td><code>be</code> (assignment)</td></tr>
+            </table>
+
+            <p>Loops also accept <code>in</code> as a synonym for <code>:</code> (and <code>for</code> as an alias for <code>loop</code>), and function and case bodies accept <code>returns</code> as a synonym for <code>-&gt;</code> / <code>=</code>.</p>
+
+            <pre class="simple-code">nums be [<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span>]
+
+<span class="number">3</span> is-greater <span class="number">2</span> and <span class="number">5</span> is-less-or-equal <span class="number">5</span>
+-- Output: true
+
+[<span class="number">1</span>, <span class="number">2</span>] concat [<span class="number">3</span>, <span class="number">4</span>]
+-- Output: [1, 2, 3, 4]
+
+<span class="keyword">def</span> <span class="function">classify</span>(n) <span class="keyword">when</span> n is-greater <span class="number">0</span> returns <span class="string">"positive"</span></pre>
+
+            <div class="note">
+                <strong>Note:</strong> The words use hyphens (<code>is-greater-or-equal</code>), and resolve the same way as their symbols, at the same precedence.
+            </div>
+        </div>
+
         <div class="doc-section" id="scope">
             <h2>Scope</h2>
 
@@ -477,7 +810,6 @@ print g               -- Output: 1  (the global is found first)</pre>
             </div>
         </div>
 
-        <!-- CONDITIONALS -->
         <div class="doc-section" id="conditionals">
             <h2>Conditionals</h2>
             
@@ -532,212 +864,6 @@ end</pre>
 -- Output: false   (the right side never runs)</pre>
         </div>
 
-        <!-- FUNCTIONS -->
-        <div class="doc-section" id="functions">
-            <h2>Functions</h2>
-            
-            <p>Bern functions are powerful and flexible, supporting pattern matching, inline arrow syntax, and block bodies with explicit returns.</p>
-
-            <h3>Simple Function Definition</h3>
-            <p>For one-line functions, use the arrow syntax <code>def name(params) -> expr</code>:</p>
-            
-            <pre class="simple-code">def add(x, y) -> x + y
-add(2, 3)
--- Output: 5
-
-def square(x) -> x * x
-square(4)
--- Output: 16</pre>
-
-            <h3>Pattern Matching</h3>
-            <p>Define multiple clauses for a function. Bern will use the first matching pattern:</p>
-            
-            <pre class="simple-code">def sign(0) -> "zero"
-def sign(n) -> "positive"
-
-sign(0)
--- Output: "zero"
-
-sign(42)
--- Output: "positive"</pre>
-
-            <h3>Wildcards and Literal Matching</h3>
-            <p>Use <code>_</code> to ignore parameters, or match specific literal values:</p>
-            
-            <pre class="simple-code">def greet("Alice") -> "Hi, Alice!"
-def greet(_) -> "Hello, someone else!"
-
-greet("Alice")
--- Output: "Hi, Alice!"
-
-greet("Bob")
--- Output: "Hello, someone else!"</pre>
-
-            <h3>Block-Bodied Functions</h3>
-            <p>For complex functions, use <code>do ... end</code> blocks with explicit <code>return</code> statements:</p>
-            
-            <pre class="simple-code">def sumList(xs) do
-    total = 0
-    loop n : xs do
-        total = total + n
-    end
-    return total
-end
-
-sumList([1,2,3])
--- Output: 6</pre>
-
-            <h3>Lambda Functions</h3>
-            <p>Anonymous functions use backslash syntax and can be assigned to variables or passed as arguments:</p>
-            
-            <pre class="simple-code">inc = \x -> x + 1
-pairSwap = \a, b -> [b, a]
-
-inc(10)
--- Output: 11
-
-pairSwap(1, 2)
--- Output: [2, 1]</pre>
-
-            <h3>Higher-Order Functions</h3>
-            <p>Functions can accept other functions as parameters:</p>
-            
-            <pre class="simple-code">def applyTwice(f, x) -> f(f(x))
-
-applyTwice(\n -> n * 2, 5)
--- Output: 20 (5 * 2 * 2)</pre>
-
-            <h3>Guards (<code>when</code>)</h3>
-            <p>A clause matches only when its patterns match <em>and</em> its <code>when</code> guard evaluates to <code>true</code>. If the guard is false, evaluation falls through to the next clause. Guards work on function clauses, lambdas, and <code>case</code> branches.</p>
-
-            <pre class="simple-code">def classify(n) when n > 0 -> "positive"
-def classify(0)            -> "zero"
-def classify(n)            -> "negative"
-
-classify(7)
--- Output: "positive"
-classify(-3)
--- Output: "negative"
-
--- Guards in a case expression
-def size(n) -> case n is x when x > 100 = "big" | x when x > 10 = "medium" | _ = "small" end
-size(50)
--- Output: "medium"
-
--- Guards on a lambda
-check_pos = \x when x > 0 -> "yes"
-check_pos(4)
--- Output: "yes"</pre>
-
-            <h3>Negative Literal Patterns</h3>
-            <p>Negative integers and doubles can be matched directly as literal patterns:</p>
-            <pre class="simple-code">def sign(-1) -> "minus one"
-def sign(_)  -> "other"
-
-sign(-1)
--- Output: "minus one"</pre>
-
-            <h3>Repeated Variables in Patterns</h3>
-            <p>When the same variable name appears more than once in a pattern, the matched values must be equal for the clause to apply:</p>
-            <pre class="simple-code">def same(x, x) -> "equal"
-def same(_, _) -> "different"
-
-same(3, 3)
--- Output: "equal"
-same(3, 4)
--- Output: "different"</pre>
-
-            <div class="note">
-                <strong>Note:</strong> Numeric patterns match across the integer/double divide: <code>def isFive(5)</code> also matches <code>5.0</code>.
-            </div>
-
-            <h3>Auto-Currying <span class="v2badge">Bern 2.0</span></h3>
-            <p>Calling a function with fewer arguments than it expects returns a partial application that waits for the rest. Disable it per file with the <code>no-curry</code> pragma.</p>
-            <pre class="simple-code">def add(x, y) -> x + y
-
-add2 = add(2)
-add2(10)
--- Output: 12
-
-add(2)(40)
--- Output: 42</pre>
-
-            <h3>Exhaustive Matching <span class="v2badge">Bern 2.0</span></h3>
-            <p>A function whose clauses cannot cover every possible input is reported when the file loads, so partial functions don't fail silently at runtime. Add the missing clause, or opt out per file with the <code>partial</code> pragma.</p>
-            <pre class="simple-code">def head([h|_]) -> h
--- Error: function 'head' is not exhaustive (no clause for [])
-
-def head([h|_]) -> h
-def head([]) -> error("head: empty list")
--- OK</pre>
-        </div>
-
-        <!-- PIPE OPERATOR -->
-        <div class="doc-section" id="pipe">
-            <h2>Pipe Operator</h2>
-
-            <p>The <code>)|</code> operator threads a value into a function as its <strong>first</strong> argument, letting you read data transformations left to right. <code>x )| f</code> is the same as <code>f(x)</code>, and <code>x )| f(a, b)</code> is the same as <code>f(x, a, b)</code>.</p>
-
-            <pre class="simple-code">[3, 1, 2] )| reverse
--- Output: [2, 1, 3]   (same as reverse([3, 1, 2]))
-
-[1, 2, 3, 4] )| filter(\x -> x > 2)
--- Output: [3, 4]      (same as filter([1, 2, 3, 4], \x -> x > 2))</pre>
-
-            <h3>Chaining</h3>
-            <p>The operator is left-associative, so pipes chain into a pipeline:</p>
-            <pre class="simple-code">[1, 2, 3, 4] )| filter(\x -> x % 2 == 0) )| map(\x -> x * 10)
--- Output: [20, 40]</pre>
-
-            <h3>Precedence and Lambdas</h3>
-            <p>The pipe binds looser than arithmetic, and you can pipe directly into a lambda:</p>
-            <pre class="simple-code">2 + 3 )| (\n -> n == 5)
--- Output: true   (2 + 3 is evaluated first)</pre>
-
-            <div class="note">
-                <strong>Tip:</strong> Pipelines work best with collection-first functions such as <code>map</code> and <code>filter</code>, where the piped collection naturally becomes the first argument.
-            </div>
-        </div>
-
-        <!-- WORD OPERATORS -->
-        <div class="doc-section" id="words">
-            <h2>Word Operators</h2>
-
-            <p>Every symbolic operator also has a written-word form, so programs can read like prose. The symbol and the word are interchangeable.</p>
-
-            <table class="lib-table">
-                <tr><th>Symbol</th><th>Word</th><th>Symbol</th><th>Word</th></tr>
-                <tr><td><code>+</code></td><td><code>plus</code></td><td><code>==</code></td><td><code>equals</code> (or <code>is</code>)</td></tr>
-                <tr><td><code>-</code></td><td><code>minus</code></td><td><code>!=</code></td><td><code>not-equals</code></td></tr>
-                <tr><td><code>*</code></td><td><code>times</code></td><td><code>&amp;&amp;</code></td><td><code>and</code></td></tr>
-                <tr><td><code>/</code></td><td><code>divided-by</code></td><td><code>||</code></td><td><code>or</code></td></tr>
-                <tr><td><code>%</code></td><td><code>modulo</code></td><td><code>!</code></td><td><code>not</code></td></tr>
-                <tr><td><code>&gt;</code></td><td><code>is-greater</code></td><td><code>&lt;&gt;</code></td><td><code>concat</code></td></tr>
-                <tr><td><code>&lt;</code></td><td><code>is-less</code></td><td><code>&lt;|</code></td><td><code>union</code></td></tr>
-                <tr><td><code>&gt;=</code></td><td><code>is-greater-or-equal</code></td><td><code>|&gt;</code></td><td><code>intersect</code></td></tr>
-                <tr><td><code>&lt;=</code></td><td><code>is-less-or-equal</code></td><td><code>&lt;/&gt;</code></td><td><code>difference</code></td></tr>
-                <tr><td><code>::</code></td><td><code>typeof</code></td><td><code>)|</code></td><td><code>and-do</code></td></tr>
-                <tr><td><code>:&gt;</code></td><td><code>length</code></td><td><code>=</code></td><td><code>be</code> (assignment)</td></tr>
-            </table>
-
-            <p>Loops also accept <code>in</code> as a synonym for <code>:</code> (and <code>for</code> as an alias for <code>loop</code>), and function and case bodies accept <code>returns</code> as a synonym for <code>-&gt;</code> / <code>=</code>.</p>
-
-            <pre class="simple-code">nums be [<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span>]
-
-<span class="number">3</span> is-greater <span class="number">2</span> and <span class="number">5</span> is-less-or-equal <span class="number">5</span>
--- Output: true
-
-[<span class="number">1</span>, <span class="number">2</span>] concat [<span class="number">3</span>, <span class="number">4</span>]
--- Output: [1, 2, 3, 4]
-
-<span class="keyword">def</span> <span class="function">classify</span>(n) <span class="keyword">when</span> n is-greater <span class="number">0</span> returns <span class="string">"positive"</span></pre>
-
-            <div class="note">
-                <strong>Note:</strong> The words use hyphens (<code>is-greater-or-equal</code>), and resolve the same way as their symbols, at the same precedence.
-            </div>
-        </div>
-
-        <!-- LOOPS -->
         <div class="doc-section" id="loops">
             <h2>Loops</h2>
 
@@ -803,7 +929,6 @@ end
 -- "Char: n at index: 3"</pre>
         </div>
 
-        <!-- LISTS -->
         <div class="doc-section" id="lists">
             <h2>Lists</h2>
             
@@ -958,7 +1083,6 @@ big[1]
             </div>
         </div>
 
-        <!-- SETS -->
         <div class="doc-section" id="sets">
             <h2>Sets</h2>
             
@@ -1019,7 +1143,6 @@ numbers_set[2]
             </div>
         </div>
 
-        <!-- OBJECTS -->
         <div class="doc-section" id="objects">
             <h2>Objects</h2>
             
@@ -1073,7 +1196,299 @@ person["address"]["city"]
             </div>
         </div>
 
-        <!-- ADTs -->
+        <div class="doc-section" id="functions">
+            <h2>Functions</h2>
+            
+            <p>Bern functions are powerful and flexible, supporting pattern matching, inline arrow syntax, and block bodies with explicit returns.</p>
+
+            <h3>Simple Function Definition</h3>
+            <p>For one-line functions, use the arrow syntax <code>def name(params) -> expr</code>:</p>
+            
+            <pre class="simple-code">def add(x, y) -> x + y
+add(2, 3)
+-- Output: 5
+
+def square(x) -> x * x
+square(4)
+-- Output: 16</pre>
+
+            <h3>Pattern Matching</h3>
+            <p>Define multiple clauses for a function. Bern will use the first matching pattern:</p>
+            
+            <pre class="simple-code">def sign(0) -> "zero"
+def sign(n) -> "positive"
+
+sign(0)
+-- Output: "zero"
+
+sign(42)
+-- Output: "positive"</pre>
+
+            <h3>Wildcards and Literal Matching</h3>
+            <p>Use <code>_</code> to ignore parameters, or match specific literal values:</p>
+            
+            <pre class="simple-code">def greet("Alice") -> "Hi, Alice!"
+def greet(_) -> "Hello, someone else!"
+
+greet("Alice")
+-- Output: "Hi, Alice!"
+
+greet("Bob")
+-- Output: "Hello, someone else!"</pre>
+
+            <h3>Block-Bodied Functions</h3>
+            <p>For complex functions, use <code>do ... end</code> blocks with explicit <code>return</code> statements:</p>
+            
+            <pre class="simple-code">def sumList(xs) do
+    total = 0
+    loop n : xs do
+        total = total + n
+    end
+    return total
+end
+
+sumList([1,2,3])
+-- Output: 6</pre>
+
+            <h3>Lambda Functions</h3>
+            <p>Anonymous functions use backslash syntax and can be assigned to variables or passed as arguments:</p>
+            
+            <pre class="simple-code">inc = \x -> x + 1
+pairSwap = \a, b -> [b, a]
+
+inc(10)
+-- Output: 11
+
+pairSwap(1, 2)
+-- Output: [2, 1]</pre>
+
+            <h3>Higher-Order Functions</h3>
+            <p>Functions can accept other functions as parameters:</p>
+            
+            <pre class="simple-code">def applyTwice(f, x) -> f(f(x))
+
+applyTwice(\n -> n * 2, 5)
+-- Output: 20 (5 * 2 * 2)</pre>
+
+            <h3>Guards (<code>when</code>)</h3>
+            <p>A clause matches only when its patterns match <em>and</em> its <code>when</code> guard evaluates to <code>true</code>. If the guard is false, evaluation falls through to the next clause. Guards work on function clauses, lambdas, and <code>case</code> branches.</p>
+
+            <pre class="simple-code">def classify(n) when n > 0 -> "positive"
+def classify(0)            -> "zero"
+def classify(n)            -> "negative"
+
+classify(7)
+-- Output: "positive"
+classify(-3)
+-- Output: "negative"
+
+-- Guards in a case expression
+def size(n) -> case n is x when x > 100 = "big" | x when x > 10 = "medium" | _ = "small" end
+size(50)
+-- Output: "medium"
+
+-- Guards on a lambda
+check_pos = \x when x > 0 -> "yes"
+check_pos(4)
+-- Output: "yes"</pre>
+
+            <h3>Negative Literal Patterns</h3>
+            <p>Negative integers and doubles can be matched directly as literal patterns:</p>
+            <pre class="simple-code">def sign(-1) -> "minus one"
+def sign(_)  -> "other"
+
+sign(-1)
+-- Output: "minus one"</pre>
+
+            <h3>Repeated Variables in Patterns</h3>
+            <p>When the same variable name appears more than once in a pattern, the matched values must be equal for the clause to apply:</p>
+            <pre class="simple-code">def same(x, x) -> "equal"
+def same(_, _) -> "different"
+
+same(3, 3)
+-- Output: "equal"
+same(3, 4)
+-- Output: "different"</pre>
+
+            <div class="note">
+                <strong>Note:</strong> Numeric patterns match across the integer/double divide: <code>def isFive(5)</code> also matches <code>5.0</code>.
+            </div>
+
+            <h3>Auto-Currying <span class="v2badge">Bern 2.0</span></h3>
+            <p>Calling a function with fewer arguments than it expects returns a partial application that waits for the rest. Disable it per file with the <code>no-curry</code> pragma.</p>
+            <pre class="simple-code">def add(x, y) -> x + y
+
+add2 = add(2)
+add2(10)
+-- Output: 12
+
+add(2)(40)
+-- Output: 42</pre>
+
+            <h3>Exhaustive Matching <span class="v2badge">Bern 2.0</span></h3>
+            <p>A function whose clauses cannot cover every possible input is reported when the file loads, so partial functions don't fail silently at runtime. Add the missing clause, or opt out per file with the <code>partial</code> pragma.</p>
+            <pre class="simple-code">def head([h|_]) -> h
+-- Error: function 'head' is not exhaustive (no clause for [])
+
+def head([h|_]) -> h
+def head([]) -> error("head: empty list")
+-- OK</pre>
+            <h3 id="pipe">Pipe Operator</h3>
+            <p>The <code>)|</code> operator threads a value into a function as its <strong>first</strong> argument, letting you read data transformations left to right. <code>x )| f</code> is the same as <code>f(x)</code>, and <code>x )| f(a, b)</code> is the same as <code>f(x, a, b)</code>.</p>
+            <pre class="simple-code">[3, 1, 2] )| reverse
+-- Output: [2, 1, 3]   (same as reverse([3, 1, 2]))
+
+[1, 2, 3, 4] )| filter(\x -> x > 2)
+-- Output: [3, 4]      (same as filter([1, 2, 3, 4], \x -> x > 2))</pre>
+            <h4>Chaining</h4>
+            <p>The operator is left-associative, so pipes chain into a pipeline:</p>
+            <pre class="simple-code">[1, 2, 3, 4] )| filter(\x -> x % 2 == 0) )| map(\x -> x * 10)
+-- Output: [20, 40]</pre>
+            <h4>Precedence and Lambdas</h4>
+            <p>The pipe binds looser than arithmetic, and you can pipe directly into a lambda:</p>
+            <pre class="simple-code">2 + 3 )| (\n -> n == 5)
+-- Output: true   (2 + 3 is evaluated first)</pre>
+            <div class="note">
+                <strong>Tip:</strong> Pipelines work best with collection-first functions such as <code>map</code> and <code>filter</code>, where the piped collection naturally becomes the first argument.
+            </div>
+
+            <h3 id="custom-operators">Custom Operators <span class="v2badge">Bern 2.1</span></h3>
+
+            <p>You can define your own infix operators - both <strong>symbolic</strong> ones like <code>^</code> and <strong>word</strong> ones like <code>dot</code>. A custom operator is just a two-argument function whose name happens to be a symbol or a word, so pattern matching, guards, currying, and use as a plain function all work exactly as they do for any other function.</p>
+
+            <h4>Defining an operator</h4>
+            <p>Write the definition the way you will call it - the operands on either side of the operator, wrapped in parentheses after <code>def</code>:</p>
+            <pre class="simple-code">def (x ^ 0) -> 1
+def (x ^ y) -> x * (x ^ (y - 1))
+
+2 ^ 10
+-- Output: 1024</pre>
+            <p>Each <code>def (lhs op rhs)</code> is one clause, so you get multiple clauses, literal patterns, and <code>when</code> guards just like a named function:</p>
+            <pre class="simple-code">def (n ~? 0)            -> "zero"
+def (n ~? m) when m > 0 -> "positive"
+def (n ~? m)            -> "negative"
+
+5 ~? (-3)
+-- Output: "negative"</pre>
+
+            <h4>Fixity: precedence and associativity</h4>
+            <p>When you write an expression <em>without</em> parentheses, two things decide how it groups. You set them with an optional <code>infix</code> line, written in plain English:</p>
+            <pre class="simple-code">infix ^ groups right, binds tighter than *</pre>
+
+            <p><strong>Precedence</strong> ("binds tighter") is who grabs its operands first - the way <code>*</code> goes before <code>+</code> in maths. You position your operator relative to one you already know:</p>
+            <ul>
+                <li><code>binds tighter than &lt;op&gt;</code> - higher precedence than <code>&lt;op&gt;</code></li>
+                <li><code>binds looser than &lt;op&gt;</code> - lower precedence than <code>&lt;op&gt;</code></li>
+                <li><code>binds like &lt;op&gt;</code> - about the same as <code>&lt;op&gt;</code></li>
+            </ul>
+            <p>The anchor <code>&lt;op&gt;</code> can be any built-in operator (<code>+ - * / % == &lt; &gt; &amp;&amp; ||</code> …) or another operator you defined above.</p>
+
+            <p><strong>Associativity</strong> ("groups") decides which side groups first when the <em>same</em> operator repeats:</p>
+            <table class="lib-table">
+                <tr><th>You write</th><th><code>groups left</code> →</th><th><code>groups right</code> →</th></tr>
+                <tr><td><code>a ~ b ~ c</code></td><td><code>(a ~ b) ~ c</code></td><td><code>a ~ (b ~ c)</code></td></tr>
+            </table>
+            <ul>
+                <li><code>groups left</code> - what most operators want (like <code>-</code>: <code>10 - 3 - 2</code> is <code>(10 - 3) - 2</code>).</li>
+                <li><code>groups right</code> - what power wants (<code>2 ^ 2 ^ 3</code> is <code>2 ^ (2 ^ 3)</code>).</li>
+                <li><code>groups none</code> - repeating it is an error; you must parenthesise (good for comparisons).</li>
+            </ul>
+
+            <div class="note">
+                <strong>Both clauses are optional.</strong> Skip the whole <code>infix</code> line and a new operator defaults to <code>groups left, binds like *</code>, so simple cases need only their <code>def</code> clauses.
+            </div>
+
+            <h4>Operators as plain functions</h4>
+            <p>A <strong>symbolic</strong> operator becomes an ordinary value by wrapping it in parentheses, Haskell-style, and supports sections:</p>
+            <pre class="simple-code">(^)(2, 3)             -- 8   (prefix call)
+pow = (^)             -- store the operator in a variable
+double = (^)(2)       -- curried: \y -> 2 ^ y
+
+map([1, 2, 3], (^ 2))   -- [1, 4, 9]   right section: \x -> x ^ 2
+map([1, 2, 3], (2 ^))   -- [2, 4, 8]   left section:  \x -> 2 ^ x</pre>
+            <p>A <strong>word</strong> operator needs none of this - its name is already an identifier, so it works both ways out of the box:</p>
+            <pre class="simple-code">infix dot groups left, binds like *
+def (a dot b) -> sum(zipWith(a, b, \p, q -> p * q))
+
+[1, 2, 3] dot [4, 5, 6]     -- 32   (infix)
+dot([1, 2, 3], [4, 5, 6])   -- 32   (prefix - it is just a function)</pre>
+
+            <h4>Sharing operators across files</h4>
+            <p>Operators propagate through <code>import</code> exactly like the functions they are. Define an operator once in a library and every file that imports it can use it, infix and all:</p>
+            <div class="example-box">
+                <h4>lib/mymath.brn</h4>
+                <pre class="simple-code">infix ^ groups right, binds tighter than *
+def (x ^ 0) -> 1
+def (x ^ y) -> x * (x ^ (y - 1))</pre>
+                <h4>main.brn</h4>
+                <pre class="simple-code">import mymath
+2 ^ 10
+-- Output: 1024</pre>
+            </div>
+
+            <div class="note">
+                <strong>Symbolic operator names</strong> are any run of operator characters - <code>! # $ % &amp; * + - / : &lt; = &gt; ? @ ^ | ~</code> - that is not already a built-in operator (<code>+</code>, <code>*</code>, <code>==</code>, <code>&lt;|</code>, …) or a reserved symbol. So <code>^</code>, <code>&lt;|&gt;</code>, <code>&gt;&gt;=</code> and <code>&lt;$&gt;</code> all work, and a custom operator never clashes with a built-in. Word operators may be any identifier that is not already a keyword or a built-in word operator.
+            </div>
+        </div>
+
+        <div class="doc-section" id="imports">
+            <h2>Imports</h2>
+            
+            <p>Bern allows importing libraries to extend functionality. Use the <code>import</code> keyword to load standard libraries or custom modules.</p>
+
+            <h3>Importing the Core Library</h3>
+            <pre class="simple-code">import core</pre>
+
+            <h3>Importing with an alias</h3>
+            <pre class="simple-code">import core as my_core</pre>
+
+            <h3>Core Library Functions</h3>
+            <p>Once imported, you can use functions like <code>map</code>, <code>filter</code>, and type conversions:</p>
+            
+            <pre class="simple-code">map([1,2,3,4,5], \x -> x + 2)
+-- Output: [3,4,5,6,7]
+
+def isEven(x) -> x % 2 == 0
+filter([1,2,3,4,5,6,7,8,9,10], isEven)
+-- Output: [2,4,6,8,10]</pre>
+
+            <p>In the case of aliases, you should specify the alias, followed by a semicollon and the name of the given:</p>
+            <pre class="simple-code">import core as c
+c:map([1,2,3], \x -> x * 2)
+-- Output: [2,4,6]</pre>
+            <h3>Type Conversion</h3>
+            <p>The core library provides conversion functions for handling input:</p>
+            
+            <pre class="simple-code">import core
+age_text = input("Type your age: ")
+age = to_int(age_text)
+"Your age in 5 years: " + (age + 5)</pre>
+        </div>
+
+        <div class="doc-section" id="input">
+            <h2>User Input</h2>
+            
+            <p>Capture user input with the <code>input()</code> function, similar to Python.</p>
+
+            <h3>Basic Input</h3>
+            <pre class="simple-code">name = input("Type your name: ")
+name
+-- Displays whatever the user typed</pre>
+
+            <h3>Converting Input</h3>
+            <p>By default, <code>input()</code> returns text. Convert to other types using core library functions:</p>
+            
+            <pre class="simple-code">import core
+age_text = input("Type your age: ")
+age = to_int(age_text)
+"You'll be " + (age + 10) + " in 10 years"</pre>
+
+            <div class="note">
+                <strong>Ready for more?</strong> You now know enough to write real programs - and one that asks for <code>input()</code> makes a great first file to keep. Save your code in a file ending in <code>.brn</code> and run it with <code>bern myfile.brn</code> (or load it into the REPL with <code>:load myfile.brn</code>). From here the guide gets <em>slightly</em> more advanced - take it at your own pace, and keep that REPL handy.
+            </div>
+        </div>
+
+        <!-- ===================== SLIGHTLY ADVANCED ===================== -->
         <div class="doc-section" id="adt">
             <h2>Algebraic Data Types (ADTs)</h2>
             
@@ -1084,7 +1499,18 @@ person["address"]["city"]
             
             <pre class="simple-code">adt Shape = Circle Double | Rectangle Double Double</pre>
 
-            <p>Each constructor can have zero or more fields of specific types.</p>
+            <p>Each constructor can have zero or more fields of specific types. See <a href="#types">Types in ADT Declarations</a> for the full list of field-type names you can use (<code>Int</code>, <code>Double</code>, <code>Bool</code>, <code>Char</code>, <code>String</code>, <code>List</code>, <code>Set</code>, <code>Auto</code>, or another ADT).</p>
+
+            <h3>Multi-line Declarations <span class="v2badge">Bern 2.1</span></h3>
+            <p>A declaration with many constructors can be split across several lines, one constructor per line, in the Haskell style. Put the <code>|</code> at the start of each continuation line:</p>
+
+            <pre class="simple-code">adt Expression = Num Double
+    | Bool Bool
+    | Add Expression Expression
+    | Sub Expression Expression
+    | If  Expression Expression Expression</pre>
+
+            <p>This is purely cosmetic - the single-line and multi-line forms are equivalent, and you can mix both styles freely.</p>
 
             <h3>Creating Instances</h3>
             <p>Call constructors like functions to create instances:</p>
@@ -1127,647 +1553,42 @@ safeDivide(5, 0)
             </div>
         </div>
 
-
-            <!-- LIBRARY REFERENCE -->
-            <div class="doc-section" id="libraries">
-                <h2>Standard Library Reference</h2>
-                <p>Bern comes with several standard libraries and bundled vendor modules. Import standard libraries with <code>import library_name</code> and vendor modules with full paths like <code>import vendor/csv</code>.</p>
-
-                <!-- CORE LIBRARY -->
-                <div id="lib-core" style="margin-top: 3rem;">
-                    <h3>core - Core Standard Library</h3>
-                    <p>The foundational library providing list operations, functional programming utilities, and type conversions.</p>
-                    
-                    <pre class="simple-code">import core</pre>
-
-                    <h4>List Operations</h4>
-                    
-                    <div class="function-sig">map(list, function) → list</div>
-                    <p>Apply a function to each element of a list.</p>
-                    <pre class="simple-code">map([1,2,3], \x -> x * 2)
--- Output: [2,4,6]</pre>
-
-                    <div class="function-sig">filter(list, predicate) → list</div>
-                    <p>Keep only elements where predicate returns true.</p>
-                    <pre class="simple-code">filter([1,2,3,4,5], \x -> x % 2 == 0)
--- Output: [2,4]</pre>
-
-                    <div class="function-sig">foldl(list, accumulator, function) → value</div>
-                    <p>Reduce a list from left to right.</p>
-                    <pre class="simple-code">foldl([1,2,3], 0, \acc, x -> acc + x)
--- Output: 6</pre>
-
-                    <div class="function-sig">foldr(list, accumulator, function) → value</div>
-                    <p>Reduce a list from right to left.</p>
-
-                    <h4>Aggregate Functions</h4>
-                    
-                    <div class="function-sig">sum(list) → number</div>
-                    <p>Sum all elements in a list.</p>
-                    <pre class="simple-code">sum([1,2,3,4])
--- Output: 10</pre>
-
-                    <div class="function-sig">product(list) → number</div>
-                    <p>Multiply all elements in a list.</p>
-
-                    <div class="function-sig">min(list) → number</div>
-                    <p>Find the minimum value in a list.</p>
-
-                    <div class="function-sig">max(list) → number</div>
-                    <p>Find the maximum value in a list.</p>
-
-                    <h4>List Manipulation</h4>
-                    
-                    <div class="function-sig">reverse(collection) → collection</div>
-                    <p>Reverse a list or set. Automatically detects type.</p>
-                    <pre class="simple-code">reverse([1,2,3])
--- Output: [3,2,1]</pre>
-
-                    <div class="function-sig">take(n, list) → list</div>
-                    <p>Take first n elements from a list.</p>
-
-                    <div class="function-sig">drop(n, list) → list</div>
-                    <p>Drop first n elements from a list.</p>
-
-                    <div class="function-sig">head(list) → element</div>
-                    <p>Get the first element of a list.</p>
-
-                    <div class="function-sig">tail(list) → list</div>
-                    <p>Get all elements except the first.</p>
-
-                    <h4>Predicates</h4>
-                    
-                    <div class="function-sig">isEmpty(list) → boolean</div>
-                    <p>Check if a list is empty.</p>
-
-                    <div class="function-sig">any(list, predicate) → boolean</div>
-                    <p>Check if any element satisfies the predicate.</p>
-
-                    <div class="function-sig">all(list, predicate) → boolean</div>
-                    <p>Check if all elements satisfy the predicate.</p>
-
-                    <div class="function-sig">find(list, predicate) → element | false</div>
-                    <p>Return first element matching predicate, or false if none found.</p>
-
-                    <h4>Combining Lists</h4>
-                    
-                    <div class="function-sig">zip(list1, list2) → list</div>
-                    <p>Combine two lists into pairs.</p>
-                    <pre class="simple-code">zip([1,2,3], ['a','b','c'])
--- Output: [[1,'a'], [2,'b'], [3,'c']]</pre>
-
-                    <div class="function-sig">zipWith(list1, list2, function) → list</div>
-                    <p>Combine two lists using a function.</p>
-
-                    <h4>Utility Functions</h4>
-                    
-                    <div class="function-sig">typeOf(value) → string</div>
-                    <p>Get the type of a value (abstraction for <code>::</code>).</p>
-
-                    <div class="function-sig">length(value) → int</div>
-                    <p>Get length of string, list, or set (abstraction for <code>:></code>).</p>
-
-                    <div class="function-sig">index_of(collection, target) → int</div>
-                    <p>Find the index of an element in a list or set. Returns -1 if not found.</p>
-
-                    <div class="function-sig">to_int(string) → int</div>
-                    <p>Convert a string to an integer.</p>
-                    <pre class="simple-code">to_int("42")
--- Output: 42</pre>
-
-                    <div class="function-sig">int_to_double(int) → double</div>
-                    <p>Convert an integer to a double.</p>
-                </div>
-
-                <!-- MATH LIBRARY -->
-                <div id="lib-math" style="margin-top: 3rem;">
-                    <h3>math - Mathematical Functions</h3>
-                    <p>Comprehensive math library inspired by C's math.h, providing constants, basic operations, and transcendental functions.</p>
-                    
-                    <pre class="simple-code">import math</pre>
-
-                    <h4>Constants</h4>
-                    <ul>
-                        <li><code>pi</code> = 3.141592653589793</li>
-                        <li><code>tau</code> = 6.283185307179586 (2π)</li>
-                        <li><code>e</code> = 2.718281828459045</li>
-                    </ul>
-
-                    <h4>Basic Operations</h4>
-                    
-                    <div class="function-sig">abs(x) → number</div>
-                    <p>Absolute value of a number.</p>
-
-                    <div class="function-sig">fabs(x) → double</div>
-                    <p>Alias for abs (mirrors C's fabs).</p>
-
-                    <div class="function-sig">fmin(a, b) → double</div>
-                    <p>Return the smaller of two numbers.</p>
-
-                    <div class="function-sig">fmax(a, b) → double</div>
-                    <p>Return the larger of two numbers.</p>
-
-                    <div class="function-sig">clamp(x, lo, hi) → number</div>
-                    <p>Constrain x to the range [lo, hi].</p>
-
-                    <div class="function-sig">fmod(x, y) → number</div>
-                    <p>Floating-point remainder (C's fmod).</p>
-
-                    <h4>Power and Root Functions</h4>
-                    
-                    <div class="function-sig">pow(base, exponent) → number</div>
-                    <p>Raise base to the power of exponent. Uses integer exponentiation by squaring.</p>
-                    <pre class="simple-code">pow(2, 8)
--- Output: 256</pre>
-
-                    <div class="function-sig">sqrt(x) → double</div>
-                    <p>Square root using Newton-Raphson method.</p>
-
-                    <div class="function-sig">hypot(a, b) → double</div>
-                    <p>Hypotenuse length: √(a² + b²)</p>
-
-                    <h4>Exponential and Logarithmic</h4>
-                    
-                    <div class="function-sig">exp(x) → double</div>
-                    <p>Exponential function e^x using Taylor series.</p>
-
-                    <div class="function-sig">log(x) → double</div>
-                    <p>Natural logarithm (base e) using Newton's method.</p>
-
-                    <div class="function-sig">log10(x) → double</div>
-                    <p>Base-10 logarithm.</p>
-
-                    <h4>Trigonometric Functions</h4>
-                    
-                    <div class="function-sig">sin(radians) → double</div>
-                    <p>Sine of angle in radians.</p>
-
-                    <div class="function-sig">cos(radians) → double</div>
-                    <p>Cosine of angle in radians.</p>
-
-                    <div class="function-sig">tan(radians) → double</div>
-                    <p>Tangent of angle in radians.</p>
-
-                    <div class="function-sig">atan(z) → double</div>
-                    <p>Inverse tangent.</p>
-
-                    <div class="function-sig">atan2(y, x) → double</div>
-                    <p>Two-argument arctangent respecting quadrants.</p>
-
-                    <h4>Angle Conversion</h4>
-                    
-                    <div class="function-sig">toRadians(degrees) → double</div>
-                    <p>Convert degrees to radians.</p>
-
-                    <div class="function-sig">toDegrees(radians) → double</div>
-                    <p>Convert radians to degrees.</p>
-                </div>
-
-                <!-- STRINGS LIBRARY -->
-                <div id="lib-strings" style="margin-top: 3rem;">
-                    <h3>strings - String Manipulation</h3>
-                    <p>Comprehensive string processing utilities for common text operations.</p>
-                    
-                    <pre class="simple-code">import strings</pre>
-
-                    <h4>String Extraction</h4>
-                    
-                    <div class="function-sig">substring(string, start, end) → string</div>
-                    <p>Extract a portion of a string from start to end index.</p>
-                    <pre class="simple-code">substring("Hello", 1, 4)
--- Output: "ell"</pre>
-
-                    <div class="function-sig">char_at(string, index) → char</div>
-                    <p>Get character at specific index.</p>
-
-                    <h4>String Splitting and Joining</h4>
-                    
-                    <div class="function-sig">split(string, delimiter) → list</div>
-                    <p>Split a string by delimiter into a list of strings.</p>
-                    <pre class="simple-code">split("a,b,c", ",")
--- Output: ["a", "b", "c"]</pre>
-
-                    <h4>Case Conversion</h4>
-                    
-                    <div class="function-sig">to_upper(string) → string</div>
-                    <p>Convert string to uppercase.</p>
-
-                    <div class="function-sig">to_lower(string) → string</div>
-                    <p>Convert string to lowercase.</p>
-
-                    <div class="function-sig">char_to_upper(char) → char</div>
-                    <p>Convert single character to uppercase.</p>
-
-                    <div class="function-sig">char_to_lower(char) → char</div>
-                    <p>Convert single character to lowercase.</p>
-
-                    <h4>String Modification</h4>
-                    
-                    <div class="function-sig">trim(string) → string</div>
-                    <p>Remove leading and trailing whitespace, newlines, and tabs.</p>
-                    <pre class="simple-code">trim("  hello  ")
--- Output: "hello"</pre>
-
-                    <div class="function-sig">replace(string, old, new) → string</div>
-                    <p>Replace all occurrences of old substring with new substring.</p>
-                    <pre class="simple-code">replace("hello world", "world", "Bern")
--- Output: "hello Bern"</pre>
-
-                    <h4>String Searching</h4>
-                    
-                    <div class="function-sig">contains(string, substring) → boolean</div>
-                    <p>Check if string contains substring.</p>
-
-                    <div class="function-sig">starts_with(string, prefix) → boolean</div>
-                    <p>Check if string starts with prefix.</p>
-
-                    <div class="function-sig">ends_with(string, suffix) → boolean</div>
-                    <p>Check if string ends with suffix.</p>
-                </div>
-
-                <!-- RANDOM LIBRARY -->
-                <div id="lib-random" style="margin-top: 3rem;">
-                    <h3>random - Random Number Generation</h3>
-                    <p>Cross-platform random number generation using foreign function interface to system libraries.</p>
-                    <div class="note">
-                    <strong>Note:</strong> Only available in Bern versions 0.1.2 and above. 
-                    </div>
-
-                    <pre class="simple-code">import random</pre>
-
-                    <div class="note">
-                        <strong>Note:</strong> The random library automatically detects your operating system and uses the appropriate C library (msvcrt.dll on Windows, libc.so.6 on Unix-like systems).
-                    </div>
-
-                    <h4>Random Number Generation</h4>
-                    
-                    <div class="function-sig">get_random_int() → int</div>
-                    <p>Generate a random integer.</p>
-                    <pre class="simple-code">get_random_int()
--- Output: (random integer)</pre>
-
-                    <div class="function-sig">get_random_double() → double</div>
-                    <p>Generate a random double between 0 and 1.</p>
-
-                    <div class="function-sig">get_random_number() → number</div>
-                    <p>Generate either a random int or random double (randomly chosen).</p>
-
-                    <h4>Random Selection</h4>
-                    
-                    <div class="function-sig">random_choice(list) → element</div>
-                    <p>Return a random element from a list.</p>
-                    <pre class="simple-code">random_choice(["apple", "banana", "cherry"])
--- Output: (random fruit)</pre>
-
-                    <h4>Random Strings</h4>
-                    
-                    <div class="function-sig">get_random_string(length) → string</div>
-                    <p>Generate a random alphanumeric string of specified length.</p>
-                    <pre class="simple-code">get_random_string(10)
--- Output: "aB3xK9mP2q" (example)</pre>
-                </div>
-
-                <!-- ASSERT LIBRARY -->
-                <div id="lib-assert" style="margin-top: 3rem;">
-                    <h3>assert - Testing Utilities</h3>
-                    <p>Simple assertion functions for writing tests in Bern.</p>
-                    
-                    <pre class="simple-code">import assert</pre>
-
-                    <h4>Assertion Functions</h4>
-                    
-                    <div class="function-sig">assert_equals(name, got, expected) → string</div>
-                    <p>Assert that two values are equal. Returns "PASS" or "FAIL" with test name.</p>
-                    <pre class="simple-code">assert_equals("Addition test", 2 + 2, 4)
--- Output: "Addition test PASS"
-
-assert_equals("Wrong test", 2 + 2, 5)
--- Output: "Wrong test FAIL"</pre>
-
-                    <div class="function-sig">assert_approx(name, got, expected, tolerance) → string</div>
-                    <p>Assert that two numbers are approximately equal within a tolerance.</p>
-                    <pre class="simple-code">assert_approx("Pi test", 3.14159, 3.14, 0.01)
--- Output: "Pi test PASS"</pre>
-
-                    <div class="function-sig">approx_eq(a, b, tolerance) → boolean</div>
-                    <p>Check if two numbers are approximately equal. Helper function for assert_approx.</p>
-                </div>
-
-                <!-- PATH LIBRARY -->
-                <div id="lib-path" style="margin-top: 3rem;">
-                    <h3>path - Filesystem Path Utilities</h3>
-                    <p>Utilities for joining, normalizing, and inspecting filesystem paths.</p>
-
-                    <pre class="simple-code">import path</pre>
-
-                    <h4>Path Building</h4>
-
-                    <div class="function-sig">path_join(left, right) → string</div>
-                    <p>Join two path segments with a single separator.</p>
-                    <pre class="simple-code">path_join("a/", "/b")
--- Output: "a/b"</pre>
-
-                    <div class="function-sig">path_join_many(parts) → string</div>
-                    <p>Join a list of path segments in order.</p>
-                    <pre class="simple-code">path_join_many(["a", "b", "c"])
--- Output: "a/b/c"</pre>
-
-                    <h4>Path Inspection</h4>
-
-                    <div class="function-sig">path_is_absolute(path) → boolean</div>
-                    <p>Check if a path is absolute (supports Unix and drive-prefixed paths).</p>
-
-                    <div class="function-sig">path_basename(path) → string</div>
-                    <p>Return the last segment of a path.</p>
-
-                    <div class="function-sig">path_dirname(path) → string</div>
-                    <p>Return the parent directory path.</p>
-
-                    <div class="function-sig">path_extname(path) → string</div>
-                    <p>Return extension including leading dot, or empty string.</p>
-
-                    <div class="function-sig">path_stem(path) → string</div>
-                    <p>Return basename without extension.</p>
-
-                    <h4>Normalization</h4>
-
-                    <div class="function-sig">path_normalize(path) → string</div>
-                    <p>Resolve redundant separators and dot segments like <code>.</code> and <code>..</code>.</p>
-                    <pre class="simple-code">path_normalize("a/./b/../c")
--- Output: "a/c"
-
-path_normalize("/a//b/../c")
--- Output: "/a/c"</pre>
-                </div>
-
-                <!-- URL LIBRARY -->
-                <div id="lib-url" style="margin-top: 3rem;">
-                    <h3>url - URL Encoding and Parsing</h3>
-                    <p>Helpers for URL encoding, decoding, query processing, and full URL parsing/building.</p>
-
-                    <pre class="simple-code">import url</pre>
-
-                    <h4>Component Encoding</h4>
-
-                    <div class="function-sig">url_encode_component(text) → string</div>
-                    <p>Percent-encode a URL component.</p>
-                    <pre class="simple-code">url_encode_component("a b&c")
--- Output: "a%20b%26c"</pre>
-
-                    <div class="function-sig">url_decode_component(text) → string</div>
-                    <p>Decode a percent-encoded URL component.</p>
-
-                    <h4>Query Utilities</h4>
-
-                    <div class="function-sig">build_query(pairs) → string</div>
-                    <p>Build query text from key/value pairs.</p>
-                    <pre class="simple-code">build_query([["a", "1"], ["name", "bern lang"]])
--- Output: "a=1&name=bern%20lang"</pre>
-
-                    <div class="function-sig">parse_query(query) → object</div>
-                    <p>Parse query string into an object of decoded key/value pairs.</p>
-
-                    <h4>Full URL Operations</h4>
-
-                    <div class="function-sig">parse_url(url_text) → object</div>
-                    <p>Parse URL into <code>scheme</code>, <code>host</code>, <code>port</code>, <code>path</code>, <code>query</code>, and <code>fragment</code>.</p>
-                    <pre class="simple-code">parsed = parse_url("http://example.com:8080/docs/api?x=1#top")
-parsed["host"]
--- Output: "example.com"</pre>
-
-                    <div class="function-sig">build_url(scheme, host, port, path, query, fragment) → string</div>
-                    <p>Build a URL from components (default ports are omitted when applicable).</p>
-                    <pre class="simple-code">build_url("https", "example.com", 443, "/hello", "a=1", "frag")
--- Output: "https://example.com/hello?a=1#frag"</pre>
-                </div>
-
-                <!-- CRYPTO LIBRARY -->
-                <div id="lib-crypto" style="margin-top: 3rem;">
-                    <h3>crypto - Token and Hash Utilities</h3>
-                    <p>Pure-Bern helpers for token generation, checksums, and UUID-like identifiers.</p>
-                    <div class="note">
-                        <strong>Note:</strong> These helpers are useful for IDs/checksums, but are not a replacement for modern audited cryptographic algorithms.
-                    </div>
-
-                    <pre class="simple-code">import crypto</pre>
-
-                    <h4>Random Utilities</h4>
-
-                    <div class="function-sig">crypto_random_token(length) → string</div>
-                    <p>Generate a random token string with the given length.</p>
-
-                    <div class="function-sig">crypto_random_hex(byte_count) → string</div>
-                    <p>Generate random hex text (2 characters per requested byte).</p>
-                    <pre class="simple-code">crypto_random_hex(8)
--- Output: (16 hex chars)</pre>
-
-                    <h4>Hashing and Comparison</h4>
-
-                    <div class="function-sig">crypto_checksum32(text) → int</div>
-                    <p>Compute a 32-bit checksum for text.</p>
-
-                    <div class="function-sig">crypto_hash32_hex(text) → string</div>
-                    <p>Checksum represented as an 8-character hexadecimal string.</p>
-
-                    <div class="function-sig">crypto_secure_compare(a, b) → boolean</div>
-                    <p>Compare two strings in fixed-length iteration style to reduce timing leakage.</p>
-
-                    <h4>UUID-Like IDs</h4>
-
-                    <div class="function-sig">crypto_uuid_v4_like() → string</div>
-                    <p>Create a random UUID v4-like identifier string.</p>
-                    <pre class="simple-code">uuid = crypto_uuid_v4_like()
--- Output: "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx"</pre>
-                </div>
-
-                <!-- CSV MODULE -->
-                <div id="lib-json" style="margin-top: 3rem;">
-                    <h3>json - JSON Parsing and Serialization</h3>
-                    <p>Parse JSON text into Bern values and serialize Bern values back to JSON.</p>
-
-                    <pre class="simple-code">import json</pre>
-
-                    <h4>Value Mapping</h4>
-                    <table class="lib-table">
-                        <tr><th>JSON</th><th>Bern value</th></tr>
-                        <tr><td>object</td><td>Object (<code>#{ ... }#</code>)</td></tr>
-                        <tr><td>array</td><td>Set, with duplicate grouping (see below)</td></tr>
-                        <tr><td>string</td><td>string</td></tr>
-                        <tr><td>number</td><td>Integer (no fraction/exponent) or Double</td></tr>
-                        <tr><td>true / false</td><td>Boolean</td></tr>
-                        <tr><td>null</td><td>Undefined</td></tr>
-                    </table>
-
-                    <h4>Parsing</h4>
-                    <div class="function-sig">json_parse(text) → value</div>
-                    <p>Parse a JSON document into a Bern value.</p>
-                    <pre class="simple-code">person = json_parse("{\"name\": \"Bern\", \"version\": 3}")
-person["name"]
--- Output: "Bern"
-person["version"]
--- Output: 3</pre>
-
-                    <div class="function-sig">is_null(value) → boolean</div>
-                    <p>Test whether a value is a parsed JSON <code>null</code> (i.e. <code>Undefined</code>).</p>
-                    <pre class="simple-code">is_null(json_parse("null"))
--- Output: true</pre>
-
-                    <h4>Arrays and Duplicate Grouping</h4>
-                    <p>A JSON array becomes a <strong>Set</strong>. Because sets are made of distinct elements, a value that appears more than once collapses into a homogeneous sub-list of its copies. This keeps set theory intact while preserving multiplicity. Nested arrays stay Sets, so a List inside the set unambiguously means "grouped duplicates".</p>
-                    <pre class="simple-code">json_parse("[1, \"a\", 34.2, \"a\", \"banana\"]")
--- Output: {1, ["a", "a"], 34.2, "banana"}</pre>
-
-                    <h4>Serialization</h4>
-                    <div class="function-sig">json_stringify(value) → string</div>
-                    <p>Serialize a Bern value to a JSON string. Object fields are enumerated with the built-in <code>keys()</code>, and grouped duplicates expand back into repeated array elements.</p>
-                    <pre class="simple-code">json_stringify(json_parse("{\"items\": [1, 2, 3], \"ok\": true}"))
--- Output: {"items":[1,2,3],"ok":true}
-
-json_stringify(json_parse("[7, 7, 7]"))
--- Output: [7,7,7]</pre>
-
-                    <div class="note">
-                        <strong>Note:</strong> Since arrays map to unordered Sets, element order is not guaranteed to survive a round trip.
-                    </div>
-                </div>
-
-                <div id="lib-csv" style="margin-top: 3rem;">
-                    <h3>vendor/csv - CSV Parsing and Writing</h3>
-                    <p>Bundled module for reading and writing CSV data from strings or files.</p>
-
-                    <pre class="simple-code">import vendor/csv</pre>
-
-                    <h4>Reading and Parsing</h4>
-
-                    <div class="function-sig">parse_csv(content, delimiter, has_header, skip_empty_lines) → object | rows</div>
-                    <p>Parse CSV text. With headers enabled, returns objects keyed by header names.</p>
-                    <pre class="simple-code">csv = "name,age\nAna,30\nBob,25"
-rows = parse_csv(csv)
-rows["0"]["name"]
--- Output: "Ana"</pre>
-
-                    <div class="function-sig">read_csv(file_name, delimiter, has_header, skip_empty_lines) → object | rows</div>
-                    <p>Read a CSV file and parse it in one step.</p>
-
-                    <div class="function-sig">parse_csv_rows(content, delimiter, skip_empty_lines) → rows</div>
-                    <p>Parse raw rows without converting to header-keyed objects.</p>
-
-                    <h4>Writing</h4>
-
-                    <div class="function-sig">write_csv_from_list(headers, data_list, file_name, delimiter) → void</div>
-                    <p>Write a list-of-lists dataset to CSV.</p>
-
-                    <div class="function-sig">write_csv_from_objects(headers, data_object, file_name, delimiter) → void</div>
-                    <p>Write an indexed object of rows to CSV using specified header order.</p>
-                </div>
-
-                <!-- HTTP MODULE -->
-                <div id="lib-http" style="margin-top: 3rem;">
-                    <h3>vendor/http/http - Lightweight HTTP Server</h3>
-                    <p>FFI-backed HTTP server module for static route responses from Bern.</p>
-                    <div class="note">
-                        <strong>Note:</strong> Requires the platform binary in <code>lib/vendor/http</code> (for example <code>linux/libbern_http.so</code> or <code>windows/bern_http.dll</code>).
-                    </div>
-
-                    <pre class="simple-code">import vendor/http/http</pre>
-
-                    <h4>Server Lifecycle</h4>
-
-                    <div class="function-sig">http_server_start(port) → ptr</div>
-                    <p>Start a server bound to <code>0.0.0.0</code>.</p>
-
-                    <div class="function-sig">http_server_start_on(port, host) → ptr</div>
-                    <p>Start a server on a specific host address.</p>
-
-                    <div class="function-sig">http_server_stop(server) → boolean</div>
-                    <p>Stop a running server.</p>
-
-                    <div class="function-sig">http_server_running(server) → boolean</div>
-                    <p>Check whether server is still running.</p>
-
-                    <h4>Routes and Responses</h4>
-
-                    <div class="function-sig">http_server_set_default(server, status, content_type, body) → boolean</div>
-                    <p>Set fallback response for unmatched routes.</p>
-
-                    <div class="function-sig">http_server_get(server, path, body) → boolean</div>
-                    <p>Add a simple GET route with plain-text response.</p>
-
-                    <div class="function-sig">http_server_add_route_html(server, path, html) → boolean</div>
-                    <p>Add a GET route with HTML response.</p>
-
-                    <div class="function-sig">http_server_add_route_json(server, path, json) → boolean</div>
-                    <p>Add a GET route with JSON response.</p>
-
-                    <div class="function-sig">http_server_poll(server, timeout_ms) → int</div>
-                    <p>Run one poll tick; useful for controlled event loops.</p>
-
-                    <div class="function-sig">http_server_serve_forever(server, poll_timeout_ms) → void</div>
-                    <p>Keep polling while the server is running.</p>
-
-                    <pre class="simple-code">server = http_server_start(8080)
-http_server_get(server, "/", "hello from bern http")
-http_server_add_route_json(server, "/health", "{\"ok\":true}")
-http_server_serve_forever(server, 50)</pre>
-                </div>
+        <div class="doc-section" id="errors-as-values">
+            <h2>Errors as Values <span class="v2badge">Bern 2.0</span></h2>
+            <p>By default, a runtime error no longer crashes the program. Instead it becomes a first-class <strong>error value</strong> that propagates through expressions and can be inspected. The program keeps running.</p>
+
+            <pre class="simple-code">import core
+
+bad = [1, 2, 3][99]      -- out of bounds
+is_error(bad)
+-- Output: true
+
+"the program keeps running"
+-- Output: "the program keeps running"</pre>
+
+            <p>This was implemented to let Bern be more like other languages, such as Go or Odin. That said I do believe that you should really be using Monads and ADTs for error handling!</p>
+            <h3>Raising and testing errors</h3>
+           
+            <p>You can use the following functions defined in <code>core</code> for better error handling:</p>
+            <div class="function-sig">error(message) → error value</div>
+            <p>Create a recoverable error value.</p>
+            <div class="function-sig">is_error(value) → boolean</div>
+            <p>Test whether a value is an error.</p>
+            <pre class="simple-code">def safe_head([]) -> error("empty list")
+def safe_head([h|_]) -> h
+
+result = safe_head([])
+if is_error(result) then
+    "no head"
+else
+    result
+end</pre>
+
+            <div class="note">
+                <strong>Note:</strong> Use the <code>abort-on-error</code> pragma to restore the classic crash-on-error behaviour.
             </div>
-            
-        <!-- IMPORTS -->
-        <div class="doc-section" id="imports">
-            <h2>Imports</h2>
-            
-            <p>Bern allows importing libraries to extend functionality. Use the <code>import</code> keyword to load standard libraries or custom modules.</p>
-
-            <h3>Importing the Core Library</h3>
-            <pre class="simple-code">import core</pre>
-
-            <h3>Importing with an alias</h3>
-            <pre class="simple-code">import core as my_core</pre>
-
-            <h3>Core Library Functions</h3>
-            <p>Once imported, you can use functions like <code>map</code>, <code>filter</code>, and type conversions:</p>
-            
-            <pre class="simple-code">map([1,2,3,4,5], \x -> x + 2)
--- Output: [3,4,5,6,7]
-
-def isEven(x) -> x % 2 == 0
-filter([1,2,3,4,5,6,7,8,9,10], isEven)
--- Output: [2,4,6,8,10]</pre>
-
-            <p>In the case of aliases, you should specify the alias, followed by a semicollon and the name of the given:</p>
-            <pre class="simple-code">import core as c
-c:map([1,2,3], \x -> x * 2)
--- Output: [2,4,6]</pre>
-            <h3>Type Conversion</h3>
-            <p>The core library provides conversion functions for handling input:</p>
-            
-            <pre class="simple-code">import core
-age_text = input("Type your age: ")
-age = to_int(age_text)
-"Your age in 5 years: " + (age + 5)</pre>
         </div>
 
-        <!-- INPUT -->
-        <div class="doc-section" id="input">
-            <h2>User Input</h2>
-            
-            <p>Capture user input with the <code>input()</code> function, similar to Python.</p>
-
-            <h3>Basic Input</h3>
-            <pre class="simple-code">name = input("Type your name: ")
-name
--- Displays whatever the user typed</pre>
-
-            <h3>Converting Input</h3>
-            <p>By default, <code>input()</code> returns text. Convert to other types using core library functions:</p>
-            
-            <pre class="simple-code">import core
-age_text = input("Type your age: ")
-age = to_int(age_text)
-"You'll be " + (age + 10) + " in 10 years"</pre>
-        </div>
-
-        <!-- GLOBAL FUNCTIONS -->
         <div class="doc-section" id="globals">
             <h2>Global Functions</h2>
             
@@ -1809,7 +1630,34 @@ keys(obj)
 -- Output: ["name", "version"]</pre>
         </div>
 
-     <div class="doc-section" id="globals">
+        <!-- ===================== OTHER FEATURES ===================== -->
+            <div class="doc-section" id="libraries">
+                <h2>Standard Library Reference</h2>
+                <p>Bern ships with a full standard library plus bundled vendor modules. Each library now has its own page - with a complete function reference and worked examples, in English and Portuguese.</p>
+                <p style="font-size: 1.1rem;"><a href="libraries.html" style="color: var(--primary); font-weight: 600;">→ Browse all libraries</a></p>
+                <p>Standard libraries are imported by name (<code>import math</code>); vendor modules use their path (<code>import vendor/csv</code>).</p>
+                <h3>Standard library</h3>
+                <ul>
+                    <li><a href="libs/core.html">core</a> - list operations, folds, higher-order helpers, conversions</li>
+                    <li><a href="libs/math.html">math</a> - constants, powers, roots, logs, trigonometry</li>
+                    <li><a href="libs/strings.html">strings</a> - slice, split, join, case conversion, search</li>
+                    <li><a href="libs/random.html">random</a> - random numbers, choices, strings</li>
+                    <li><a href="libs/assert.html">assert</a> - assertion helpers for tests</li>
+                    <li><a href="libs/path.html">path</a> - join, normalize, inspect filesystem paths</li>
+                    <li><a href="libs/url.html">url</a> - encoding, query strings, URL parsing/building</li>
+                    <li><a href="libs/crypto.html">crypto</a> - tokens, checksums, UUID-like IDs</li>
+                    <li><a href="libs/json.html">json</a> - parse and serialize JSON</li>
+                </ul>
+                <h3>Vendor modules</h3>
+                <ul>
+                    <li><a href="libs/csv.html">vendor/csv</a> - read and write CSV data</li>
+                    <li><a href="libs/http.html">vendor/http</a> - lightweight HTTP server</li>
+                    <li><a href="libs/bernparsec.html">vendor/bernparsec</a> - parser-combinator library</li>
+                    <li><a href="libs/raylib.html">vendor/raylib</a> - raylib 5.5 bindings: windowing, drawing, input, audio</li>
+                </ul>
+            </div>
+
+     <div class="doc-section" id="c-bindings">
             <h2>C Bindings</h2>
             <div class="note">
                 <strong>Note:</strong> Only available in Bern versions 0.1.2 and above. 
@@ -1831,38 +1679,6 @@ end</pre>
 
         </div>
 
-        <!-- REPL -->
-        <div class="doc-section" id="repl">
-            <h2>The REPL</h2>
-            <p>Running <code>bern</code> with no arguments starts an interactive read-eval-print loop. The result of each expression is printed automatically, and parse or runtime errors are reported without ending the session.</p>
-
-            <h3>The <code>_</code> Variable</h3>
-            <p>The result of the last expression is bound to <code>_</code>, so you can build on it:</p>
-            <pre class="simple-code">[bern]: 1 + 2
-3
-[bern]: _ * 10
-30</pre>
-
-            <h3>Multi-line Blocks</h3>
-            <p>Block constructs (<code>def ... do ... end</code>, <code>loop ... do ... end</code>, and so on) are read across lines until they are complete, shown with a continuation prompt:</p>
-            <pre class="simple-code">[bern]: def addy(x, y) do
-    ...:     return x + y
-    ...: end
-[bern]: addy(3, 4)
-7</pre>
-
-            <h3>REPL Commands</h3>
-            <table class="lib-table">
-                <tr><th>Command</th><th>Action</th></tr>
-                <tr><td><code>:help</code>, <code>:h</code></td><td>Show the list of commands</td></tr>
-                <tr><td><code>:load &lt;file&gt;</code>, <code>:l</code></td><td>Load and run a <code>.brn</code> file into the current session</td></tr>
-                <tr><td><code>:reset</code></td><td>Clear local definitions</td></tr>
-                <tr><td><code>:quit</code>, <code>:q</code></td><td>Exit (or press Ctrl-D)</td></tr>
-            </table>
-            <p>Command history is available with the up/down arrows and is saved between sessions.</p>
-        </div>
-
-        <!-- BUNDLING -->
         <div class="doc-section" id="bundle">
             <h2>Bundling to .exe</h2>
             <p>The <code>build</code> command packages a script into a single, self-contained executable. It scans the script's <code>import</code> statements (transitively) and embeds those library files alongside the script, so the resulting program runs even where no <code>lib/</code> folder is present.</p>
@@ -1882,49 +1698,13 @@ bern build app.brn -o myprogram.exe
             </div>
         </div>
 
-        <!-- ERRORS AS VALUES -->
-        <div class="doc-section" id="errors-as-values">
-            <h2>Errors as Values <span class="v2badge">Bern 2.0</span></h2>
-            <p>By default, a runtime error no longer crashes the program. Instead it becomes a first-class <strong>error value</strong> that propagates through expressions and can be inspected. The program keeps running.</p>
-
-            <pre class="simple-code">import core
-
-bad = [1, 2, 3][99]      -- out of bounds
-is_error(bad)
--- Output: true
-
-"the program keeps running"
--- Output: "the program keeps running"</pre>
-
-            <p>This was implemented to let Bern be more like other languages, such as Go or Odin. That said I do believe that you should really be using Monads and ADTs for error handling!</p>
-            <h3>Raising and testing errors</h3>
-           
-            <p>You can use the following functions defined in <code>core</code> for better error handling:</p>
-            <div class="function-sig">error(message) → error value</div>
-            <p>Create a recoverable error value.</p>
-            <div class="function-sig">is_error(value) → boolean</div>
-            <p>Test whether a value is an error.</p>
-            <pre class="simple-code">def safe_head([]) -> error("empty list")
-def safe_head([h|_]) -> h
-
-result = safe_head([])
-if is_error(result) then
-    "no head"
-else
-    result
-end</pre>
-
-            <div class="note">
-                <strong>Note:</strong> Use the <code>abort-on-error</code> pragma to restore the classic crash-on-error behaviour.
-            </div>
-        </div>
-
-        <!-- PRAGMAS -->
         <div class="doc-section" id="pragmas">
             <h2>Pragmas <span class="v2badge">Bern 2.0</span></h2>
             <p>Pragmas are file-level directives that tune how Bern behaves. Write them as a magic comment, usually at the top of a file:</p>
             <pre class="simple-code">{--! strict-types !--}
 {--! immutable !--}</pre>
+
+            <p style="font-size: 1.1rem;">The table below is the quick reference. For an explanation, example, and use-case of every pragma, see the <a href="pragmas.html" style="color: var(--primary); font-weight: 600;">→ Pragmas page</a>.</p>
 
             <table class="lib-table">
                 <tr><th>Pragma</th><th>Effect</th></tr>
@@ -1943,8 +1723,11 @@ end</pre>
                 <tr><td><code>abort-on-error</code></td><td>crash on runtime errors instead of producing error values</td></tr>
                 <tr><td><code>partial</code></td><td>allow non-exhaustive functions</td></tr>
                 <tr><td><code>no-written-operators</code></td><td>switch off the written-word operators, freeing names like <code>length</code> and <code>plus</code> for use as variables</td></tr>
+                <tr><td><code>typed</code></td><td><span class="v2badge">Bern 2.1</span> enable type-annotated variable declarations, <code>name :: Type = value</code>, checked at runtime (see <a href="#types">Typed Variable Declarations</a>)</td></tr>
             </table>
         </div>
+
+
     </div>
     </div>
 

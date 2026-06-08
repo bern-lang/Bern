@@ -1,0 +1,41 @@
+import vendor/bernparsec
+import assert
+
+"BernParsec friendly-alias tests"
+
+-- Primitives
+assert_equals("literalChar", quickParse(literalChar('a'), "abc"), 'a')
+assert_equals("text", quickParse(text("hello"), "hello!"), "hello")
+assert_equals("charIn", quickParse(charIn("xyz"), "y!"), 'y')
+assert_equals("succeed", quickParse(succeed(7), "anything"), 7)
+
+-- Character classes
+assert_equals("digit", quickParse(digit(), "5x"), '5')
+assert_equals("letter", quickParse(letter(), "Qz"), 'Q')
+
+-- Repetition
+assert_equals("zeroOrMore", quickParse(zeroOrMore(digit()), "123abc"), ['1', '2', '3'])
+assert_equals("oneOrMore", quickParse(oneOrMore(letter()), "abc9"), ['a', 'b', 'c'])
+assert_equals("separatedBy", quickParse(separatedBy(digits(), literalChar(',')), "1,2,33"), [1, 2, 33])
+assert_equals("repeatUntil", quickParse(repeatUntil(letter(), literalChar('!')), "abc!"), ['a', 'b', 'c'])
+
+-- Sequencing
+assert_equals("keepLeft", quickParse(keepLeft(text("ok"), endOfInput()), "ok"), "ok")
+assert_equals("keepRight", quickParse(keepRight(literalChar('#'), digits()), "#42"), 42)
+assert_equals("mapResult", quickParse(mapResult(digits(), \n -> n * 10), "5"), 50)
+
+-- Choice
+assert_equals("firstOf", quickParse(firstOf([text("cat"), text("car")]), "carpet"), "car")
+assert_equals("orTry", quickParse(orTry(text("yes"), text("no")), "no"), "no")
+
+-- Numbers / lexing / brackets
+assert_equals("integerNumber", quickParse(integerNumber(), "-42"), -42)
+assert_equals("decimalNumber", quickParse(decimalNumber(), "12.5x"), 12.5)
+assert_equals("inParens", quickParse(inParens(digits()), "(7)"), 7)
+
+-- Look-ahead and recursion (deferred)
+assert_equals("peek leaves input", quickParse(peek(text("abc")), "abcdef"), "abc")
+def nested() -> orTry(digits(), inParens(deferred(nested)))
+assert_equals("deferred recursion", quickParse(keepLeft(deferred(nested), endOfInput()), "(((9)))"), 9)
+
+"All alias tests passed"

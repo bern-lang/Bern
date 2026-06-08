@@ -1,0 +1,4 @@
+import vendor/raylib/raylib
+"raylib import OK"
+RL_RED
+RL_RAYWHITE

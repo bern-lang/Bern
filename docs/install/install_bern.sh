@@ -17,8 +17,8 @@ readonly INSTALL_DIR="/opt/bern"
 
 # Defaults, overridden by the manifest when reachable (see resolve_manifest).
 REPO="bern-lang/Bern"
-ZIP_NAME="Bern-2.0.0-linux.zip"
-VERSION="2.0.0"
+ZIP_NAME="Bern-2.1.0-linux.zip"
+VERSION="2.1.0"
 INSTALLER_LATEST=""
 
 # Colors

@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>crypto - Bibliotecas Bern</title>
+    <link rel="icon" type="image/png" href="../../images/cat.png">
+    <link rel="stylesheet" href="../../lib.css">
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <a href="../index.html" class="logo"><img src="../../images/cat.png" alt="Bern Logo" width="20%" style="margin-top: 10px;"></a>
+            <nav>
+                <a href="../documentation.html">Linguagem</a>
+                <a href="../libraries.html">Bibliotecas</a>
+                <a href="../changelog.html">Mudanças</a>
+                <a href="../../libs/crypto.html" style="font-weight: 600;">🌐 EN</a>
+            </nav>
+        </div>
+    </header>
+
+    <div class="layout">
+        <aside class="sidebar">
+            <h3>crypto</h3>
+            <ul>
+                <li><a href="#random">Utilitários aleatórios</a></li>
+                <li><a href="#hash">Hashing &amp; comparação</a></li>
+                <li><a href="#uuid">IDs estilo UUID</a></li>
+                <li><a href="#together">Juntando tudo</a></li>
+            </ul>
+            <h3>Mais</h3>
+            <ul>
+                <li><a href="../libraries.html" class="back-link">← Todas as bibliotecas</a></li>
+            </ul>
+        </aside>
+
+        <div class="container">
+            <p class="breadcrumb"><a href="../documentation.html">Documentação</a> / <a href="../libraries.html">Bibliotecas</a> / crypto</p>
+            <h1 class="page-title">crypto</h1>
+            <p class="page-subtitle">Geração de tokens, checksums e identificadores estilo UUID em Bern puro.</p>
+
+            <pre class="simple-code">import crypto</pre>
+            <div class="note">
+                <strong>Nota:</strong> Esses auxiliares são úteis para IDs e checksums, mas <strong>não</strong> substituem criptografia moderna auditada (AES, SHA-2, ed25519, …). Não os use para proteger segredos.
+            </div>
+
+            <div class="doc-section" id="random">
+                <h2>Utilitários aleatórios</h2>
+
+                <div class="function-sig">crypto_random_token(comprimento) → string</div>
+                <p>Um token alfanumérico aleatório do comprimento dado.</p>
+                <pre class="simple-code">crypto_random_token(12)
+-- Saída: "a8Kx2Mq0Zb1p"   (exemplo)</pre>
+
+                <div class="function-sig">crypto_random_hex(num_bytes) → string</div>
+                <p>Texto hexadecimal aleatório, dois caracteres por byte pedido.</p>
+                <pre class="simple-code">crypto_random_hex(8)
+-- Saída: (16 chars hex, ex.: "3f0a9c12bb47de08")</pre>
+            </div>
+
+            <div class="doc-section" id="hash">
+                <h2>Hashing &amp; comparação</h2>
+
+                <div class="function-sig">crypto_checksum32(texto) → int</div>
+                <p>Um checksum de 32 bits estilo Adler do texto.</p>
+                <pre class="simple-code">crypto_checksum32("bern")
+-- Saída: (um inteiro de 32 bits)</pre>
+
+                <div class="function-sig">crypto_hash32_hex(texto) → string</div>
+                <p>O checksum renderizado como uma string hex de 8 caracteres - útil como impressão digital curta do conteúdo.</p>
+                <pre class="simple-code">crypto_hash32_hex("bern")
+-- Saída: (8 chars hex)
+crypto_hash32_hex("bern") == crypto_hash32_hex("bern")
+-- Saída: true   (mesma entrada → mesmo hash)</pre>
+
+                <div class="function-sig">crypto_secure_compare(a, b) → booleano</div>
+                <p>Compara duas strings com varredura de comprimento fixo para reduzir vazamento de tempo.</p>
+                <pre class="simple-code">crypto_secure_compare("token123", "token123")
+-- Saída: true
+crypto_secure_compare("token123", "token124")
+-- Saída: false</pre>
+            </div>
+
+            <div class="doc-section" id="uuid">
+                <h2>IDs estilo UUID</h2>
+
+                <div class="function-sig">crypto_uuid_v4_like() → string</div>
+                <p>Um identificador aleatório no formato de um UUID v4.</p>
+                <pre class="simple-code">crypto_uuid_v4_like()
+-- Saída: "3f1a9c20-8b4e-4d77-9a2c-1e5f0b7c3d92"   (exemplo)</pre>
+            </div>
+
+            <div class="doc-section" id="together">
+                <h2>Juntando tudo</h2>
+                <p>Um padrão comum é emitir um ID junto com uma impressão digital e depois verificá-lo com uma comparação de tempo constante:</p>
+                <div class="example-box">
+                    <h4>Emitindo e verificando um token assinado</h4>
+                    <pre class="simple-code">import crypto
+
+-- emitir
+id    = crypto_uuid_v4_like()
+token = crypto_random_token(16)
+sig   = crypto_hash32_hex(id + token)
+
+-- ...depois, verificar um par (id, token) apresentado
+def verify(id, token, sig) -> crypto_secure_compare(crypto_hash32_hex(id + token), sig)
+
+verify(id, token, sig)
+-- Saída: true
+
+verify(id, "token-errado", sig)
+-- Saída: false</pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        Copyright © 2026 • Todos os direitos reservados • Feito com ❤️ por <a href="https://mirvox.xyz/">Miguel Aguiar</a>
+    </footer>
+</body>
+</html>

@@ -6,11 +6,11 @@
     "sh": "https://bern-lang.github.io/Bern/install/install_bern.sh"
   },
   "bern": {
-    "version": "2.0.0",
-    "released": "2026-06-05",
+    "version": "2.1.0",
+    "released": "2026-06-08",
     "repo": "bern-lang/Bern",
-    "windows": { "zip": "Bern-2.0.0-win.zip", "exe": "Bern.exe" },
-    "linux": { "zip": "Bern-2.0.0-linux.zip", "bin": "Bern" }
+    "windows": { "zip": "Bern-2.1.0-win.zip", "exe": "Bern.exe" },
+    "linux": { "zip": "Bern-2.1.0-linux.zip", "bin": "Bern" }
   },
   "changelog": "https://bern-lang.github.io/Bern/changelog.html"
 }

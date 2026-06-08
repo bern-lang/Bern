@@ -48,6 +48,9 @@ def clamp(x, lo, hi) -> fmin(fmax(x, lo), hi)
 -- Floating-point remainder (C's fmod)
 def fmod(x, y) -> x % y
 
+-- (^): Operator for exponentiation
+def (x ^ y) -> pow(x, y)
+
 -- Integer exponentiation by squaring. Negative exponents return reciprocals.
 -- Note: exp is expected to be an integer; fractional exponents will give an approximation.
 def pow(_, 0) -> 1

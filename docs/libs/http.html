@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>vendor/http - Bern Libraries</title>
+    <link rel="icon" type="image/png" href="../images/cat.png">
+    <link rel="stylesheet" href="../lib.css">
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <a href="../index.html" class="logo"><img src="../images/cat.png" alt="Bern Logo" width="20%" style="margin-top: 10px;"></a>
+            <nav>
+                <a href="../documentation.html">Language</a>
+                <a href="../libraries.html">Libraries</a>
+                <!-- <a href="../examples.html">Learn Bern</a> -->
+                <a href="../changelog.html">Changelog</a>
+                <a href="../pt-br/libs/http.html" style="font-weight: 600;">🌐 PT-BR</a>
+            </nav>
+        </div>
+    </header>
+
+    <div class="layout">
+        <aside class="sidebar">
+            <h3>vendor/http</h3>
+            <ul>
+                <li><a href="#lifecycle">Server lifecycle</a></li>
+                <li><a href="#routes">Routes &amp; responses</a></li>
+                <li><a href="#polling">Polling</a></li>
+                <li><a href="#status">Status constants</a></li>
+                <li><a href="#together">Putting it together</a></li>
+            </ul>
+            <h3>More</h3>
+            <ul>
+                <li><a href="../libraries.html" class="back-link">← All libraries</a></li>
+            </ul>
+        </aside>
+
+        <div class="container">
+            <p class="breadcrumb"><a href="../documentation.html">Documentation</a> / <a href="../libraries.html">Libraries</a> / vendor/http</p>
+            <h1 class="page-title">vendor/http <span class="vendor-badge">Vendor</span></h1>
+            <p class="page-subtitle">A small FFI-backed HTTP server for serving static route responses from Bern.</p>
+
+            <pre class="simple-code">import vendor/http/http</pre>
+            <div class="note">
+                <strong>Note:</strong> This module loads a platform binary from <code>lib/vendor/http</code> - <code>windows/bern_http.dll</code>, <code>macos/libbern_http.dylib</code>, or <code>linux/libbern_http.so</code>. The right one is picked automatically from <code>get_host_machine()</code>.
+            </div>
+
+            <div class="doc-section" id="lifecycle">
+                <h2>Server lifecycle</h2>
+
+                <div class="function-sig">http_server_start(port) → ptr</div>
+                <p>Start a server bound to <code>0.0.0.0</code> on the given port; returns a server handle.</p>
+                <pre class="simple-code">server = http_server_start(8080)</pre>
+
+                <div class="function-sig">http_server_start_on(port, host) → ptr</div>
+                <p>Start a server bound to a specific host address.</p>
+                <pre class="simple-code">server = http_server_start_on(8080, "127.0.0.1")</pre>
+
+                <div class="function-sig">http_server_running(server) → boolean</div>
+                <p>Whether the server is still running.</p>
+                <pre class="simple-code">http_server_running(server)
+-- Output: true</pre>
+
+                <div class="function-sig">http_server_stop(server) → boolean</div>
+                <p>Stop a running server.</p>
+                <pre class="simple-code">http_server_stop(server)
+-- Output: true</pre>
+            </div>
+
+            <div class="doc-section" id="routes">
+                <h2>Routes &amp; responses</h2>
+
+                <div class="function-sig">http_server_set_default(server, status, content_type, body) → boolean</div>
+                <p>Set the fallback response for any unmatched route.</p>
+                <pre class="simple-code">http_server_set_default(server, 404, "text/plain; charset=utf-8", "Not found")
+-- Output: true</pre>
+
+                <div class="function-sig">http_server_add_route(server, method, path, status, content_type, body) → boolean</div>
+                <p>The general route builder - full control over method, status, and content type.</p>
+                <pre class="simple-code">http_server_add_route(server, "GET", "/teapot", 418, "text/plain", "I'm a teapot")
+-- Output: true</pre>
+
+                <div class="function-sig">http_server_get(server, path, body) → boolean</div>
+                <p>Add a GET route returning <code>200</code> with a plain-text body.</p>
+                <pre class="simple-code">http_server_get(server, "/", "hello from bern http")
+-- Output: true</pre>
+
+                <div class="function-sig">http_server_add_route_html(server, path, html) → boolean</div>
+                <p>Add a GET route returning HTML.</p>
+                <pre class="simple-code">http_server_add_route_html(server, "/page", "<h1>Bern</h1>")
+-- Output: true</pre>
+
+                <div class="function-sig">http_server_add_route_json(server, path, json) → boolean</div>
+                <p>Add a GET route returning JSON.</p>
+                <pre class="simple-code">http_server_add_route_json(server, "/health", "{\"ok\":true}")
+-- Output: true</pre>
+            </div>
+
+            <div class="doc-section" id="polling">
+                <h2>Polling</h2>
+
+                <div class="function-sig">http_server_poll(server, timeout_ms) → int</div>
+                <p>Run a single poll tick, waiting up to <code>timeout_ms</code> for activity. Use it to drive your own event loop.</p>
+                <pre class="simple-code">http_server_poll(server, 50)</pre>
+
+                <div class="function-sig">http_server_serve_forever(server, poll_timeout_ms) → void</div>
+                <p>Keep polling for as long as the server is running - the simplest way to "just serve".</p>
+                <pre class="simple-code">http_server_serve_forever(server, 50)</pre>
+            </div>
+
+            <div class="doc-section" id="status">
+                <h2>Status constants</h2>
+                <p>Convenience constants for common HTTP status codes:</p>
+                <table class="lib-table">
+                    <tr><th>Constant</th><th>Value</th></tr>
+                    <tr><td><code>HTTP_STATUS_OK</code></td><td>200</td></tr>
+                    <tr><td><code>HTTP_STATUS_CREATED</code></td><td>201</td></tr>
+                    <tr><td><code>HTTP_STATUS_NO_CONTENT</code></td><td>204</td></tr>
+                    <tr><td><code>HTTP_STATUS_BAD_REQUEST</code></td><td>400</td></tr>
+                    <tr><td><code>HTTP_STATUS_NOT_FOUND</code></td><td>404</td></tr>
+                    <tr><td><code>HTTP_STATUS_INTERNAL_ERROR</code></td><td>500</td></tr>
+                </table>
+            </div>
+
+            <div class="doc-section" id="together">
+                <h2>Putting it together</h2>
+                <p>A complete tiny server: register a few routes of different content types, set a fallback, then serve. This combines almost every function in the module:</p>
+                <div class="example-box">
+                    <h4>A multi-route static server</h4>
+                    <pre class="simple-code">import vendor/http/http
+
+server = http_server_start(8080)
+
+http_server_get(server, "/", "hello from bern http")
+http_server_add_route_html(server, "/page", "<h1>Bern</h1><p>It works!</p>")
+http_server_add_route_json(server, "/health", "{\"ok\":true}")
+http_server_add_route(server, "/teapot", 418, "text/plain", "I'm a teapot")
+http_server_set_default(server, HTTP_STATUS_NOT_FOUND, "text/plain", "Not found")
+
+-- block and handle requests until the server stops
+http_server_serve_forever(server, 50)</pre>
+                </div>
+                <p>If you need to do other work between requests, drive the loop yourself with <code>http_server_poll</code>:</p>
+                <div class="example-box">
+                    <h4>A custom poll loop</h4>
+                    <pre class="simple-code">import vendor/http/http
+
+server = http_server_start(8080)
+http_server_get(server, "/", "tick")
+
+loop http_server_running(server) do
+    http_server_poll(server, 100)
+    -- ... run background tasks here ...
+end</pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        Copyright © 2026 • All rights reserved • Built with ❤️ by <a href="https://mirvox.xyz/">Miguel Aguiar</a>
+    </footer>
+</body>
+</html>

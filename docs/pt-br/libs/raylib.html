@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>vendor/raylib - Bibliotecas Bern</title>
+    <link rel="icon" type="image/png" href="../../images/cat.png">
+    <link rel="stylesheet" href="../../lib.css">
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <a href="../index.html" class="logo"><img src="../../images/cat.png" alt="Bern Logo" width="20%" style="margin-top: 10px;"></a>
+            <nav>
+                <a href="../documentation.html">Linguagem</a>
+                <a href="../libraries.html">Bibliotecas</a>
+                <a href="../changelog.html">Mudanças</a>
+                <a href="../../libs/raylib.html" style="font-weight: 600;">🌐 EN</a>
+            </nav>
+        </div>
+    </header>
+
+    <div class="layout">
+        <aside class="sidebar">
+            <h3>vendor/raylib</h3>
+            <ul>
+                <li><a href="#types">Tipos &amp; cores</a></li>
+                <li><a href="#window">Janela</a></li>
+                <li><a href="#frame">O laço de quadros</a></li>
+                <li><a href="#input">Entrada</a></li>
+                <li><a href="#shapes">Formas &amp; texto</a></li>
+                <li><a href="#audio">Áudio</a></li>
+                <li><a href="#together">Juntando tudo</a></li>
+            </ul>
+            <h3>Mais</h3>
+            <ul>
+                <li><a href="../libraries.html" class="back-link">← Todas as bibliotecas</a></li>
+            </ul>
+        </aside>
+
+        <div class="container">
+            <p class="breadcrumb"><a href="../documentation.html">Documentação</a> / <a href="../libraries.html">Bibliotecas</a> / vendor/raylib</p>
+            <h1 class="page-title">vendor/raylib <span class="vendor-badge">Vendor</span></h1>
+            <p class="page-subtitle">Bindings para a <a href="https://www.raylib.com">raylib 5.5</a> — janelas, desenho 2D/3D, entrada e áudio, direto sobre o FFI da Bern.</p>
+
+            <pre class="simple-code">import vendor/raylib/raylib</pre>
+            <p>O módulo carrega a biblioteca compartilhada da raylib empacotada para a sua plataforma (Windows <code>.dll</code>, Linux <code>.so</code>, macOS <code>.dylib</code>) e expõe as funções C da raylib com os nomes originais. Se você conhece o <a href="https://www.raylib.com/cheatsheet/cheatsheet.html">cheatsheet da raylib</a>, já conhece a API: <code>InitWindow</code>, <code>BeginDrawing</code>, <code>DrawText</code> e as demais são chamadas exatamente como você espera, com o handle da biblioteca já conectado para você.</p>
+            <p>Por enquanto, só as funções listadas aqui estão disponíveis; o conjunto cobre janelas, o laço de quadros, entrada, formas básicas, texto e áudio. Construtores e enums vêm como valores Bern, então você raramente lida com inteiros crus.</p>
+
+            <div class="doc-section" id="types">
+                <h2>Tipos &amp; cores</h2>
+                <p>As principais structs da raylib são modeladas como ADTs da Bern. Construa-as com seus construtores e passe-as direto para as chamadas de desenho.</p>
+
+                <div class="function-sig">Color(r, g, b, a) → Color</div>
+                <p>Uma cor RGBA, cada canal um byte (0–255). Um conjunto completo de cores nomeadas vem como constantes.</p>
+                <pre class="simple-code">sky   = Color(102, 191, 255, 255)
+faded = Color(0, 0, 0, 128)        -- preto 50% transparente
+
+-- ou use as embutidas
+RL_RAYWHITE   RL_BLACK   RL_RED   RL_GREEN   RL_BLUE
+RL_GOLD       RL_LIME    RL_SKYBLUE   RL_VIOLET   RL_MAGENTA</pre>
+
+                <div class="function-sig">Vector2(x, y) → Vector &nbsp;·&nbsp; Vector3(x, y, z) → Vector</div>
+                <p>Vetores 2D e 3D (floats de 32 bits, por compatibilidade com C). <code>Rectangle(x, y, width, height)</code> descreve uma caixa alinhada aos eixos.</p>
+                <pre class="simple-code">pos  = Vector2(400.0, 225.0)
+size = Rectangle(0.0, 0.0, 120.0, 40.0)</pre>
+
+                <div class="function-sig">enums: KeyboardKey, MouseButton, ConfigFlag, …</div>
+                <p>As constantes nomeadas são agrupadas em objetos, então você lê uma tecla ou flag pelo nome em vez de decorar números. Indexe com ponto ou com chave.</p>
+                <pre class="simple-code">KeyboardKey.SPACE        -- 32
+MouseButton.LEFT         -- 0
+ConfigFlag.MSAA_4X_HINT  -- 32
+
+-- também: CameraProjection, BlendMode, Gesture, TraceLogLevel,
+-- PixelFormat, GamepadButton, MouseCursor, e mais.</pre>
+                <p class="feat">Constantes úteis: <code>RL_VERSION</code> (<code>"5.5"</code>), <code>RL_PI</code>, <code>RL_DEG2RAD</code>, <code>RL_RAD2DEG</code>.</p>
+            </div>
+
+            <div class="doc-section" id="window">
+                <h2>Janela</h2>
+
+                <div class="function-sig">InitWindow(width, height, title) → void</div>
+                <p>Cria a janela e o contexto OpenGL. Chame uma vez, antes de qualquer desenho.</p>
+                <pre class="simple-code">InitWindow(800, 450, "Bern + raylib")</pre>
+
+                <div class="function-sig">WindowShouldClose() → bool</div>
+                <p>Verdadeiro quando o usuário fecha a janela ou pressiona a tecla de saída — a condição natural para o laço principal.</p>
+
+                <div class="function-sig">CloseWindow() → void</div>
+                <p>Encerra a janela e libera os recursos. Chame por último.</p>
+
+                <p>Os outros auxiliares de janela seguem os nomes C diretamente:</p>
+                <pre class="simple-code">SetConfigFlags(ConfigFlag.MSAA_4X_HINT)   -- antes de InitWindow
+SetWindowTitle("Novo título")
+SetWindowSize(1024, 600)
+SetWindowPosition(100, 100)
+GetScreenWidth()      GetScreenHeight()
+IsWindowReady()       IsWindowResized()
+ToggleFullscreen()    MaximizeWindow()    MinimizeWindow()</pre>
+            </div>
+
+            <div class="doc-section" id="frame">
+                <h2>O laço de quadros</h2>
+                <p>Cada quadro é delimitado por <code>BeginDrawing()</code> / <code>EndDrawing()</code>. Limpe o fundo, emita as chamadas de desenho e encerre o quadro para apresentá-lo.</p>
+
+                <div class="function-sig">BeginDrawing() → void &nbsp;·&nbsp; EndDrawing() → void</div>
+                <div class="function-sig">ClearBackground(color) → void</div>
+                <p>Preenche todo o framebuffer com uma única cor, normalmente a primeira coisa dentro de <code>BeginDrawing</code>.</p>
+
+                <div class="function-sig">SetTargetFPS(fps) → void</div>
+                <p>Limita o laço a uma taxa de quadros alvo. Companheiras: <code>GetFPS()</code>, <code>GetFrameTime()</code> (segundos desde o último quadro), <code>GetTime()</code> (segundos desde o início).</p>
+                <pre class="simple-code">BeginDrawing()
+ClearBackground(RL_RAYWHITE)
+DrawText("olá", 20, 20, 20, RL_DARKGRAY)
+EndDrawing()</pre>
+            </div>
+
+            <div class="doc-section" id="input">
+                <h2>Entrada</h2>
+                <p>As funções de polling leem o estado atual da entrada uma vez por quadro. Teclas e botões recebem os valores nomeados dos enums.</p>
+
+                <div class="function-sig">IsKeyDown(key) → bool &nbsp;·&nbsp; IsKeyPressed(key) → bool</div>
+                <p><code>Down</code> é estar pressionada neste quadro; <code>Pressed</code> dispara só no quadro em que a tecla desceu. Também <code>IsKeyReleased</code>, <code>IsKeyUp</code> e <code>GetKeyPressed()</code> para entrada de texto.</p>
+                <pre class="simple-code">if IsKeyDown(KeyboardKey.RIGHT) then
+    x = x + 4
+end</pre>
+
+                <div class="function-sig">GetMouseX() → int &nbsp;·&nbsp; GetMouseY() → int</div>
+                <div class="function-sig">IsMouseButtonPressed(button) → bool</div>
+                <p>Além de <code>IsMouseButtonDown</code>, <code>GetMouseWheelMove()</code>, <code>SetMouseCursor(MouseCursor.POINTING_HAND)</code>.</p>
+                <pre class="simple-code">if IsMouseButtonPressed(MouseButton.LEFT) then
+    click_at(GetMouseX(), GetMouseY())
+end</pre>
+
+                <div class="function-sig">gamepad &amp; toque</div>
+                <p><code>IsGamepadAvailable(0)</code>, <code>IsGamepadButtonDown(0, GamepadButton.RIGHT_FACE_DOWN)</code>, <code>GetGamepadAxisMovement(0, GamepadAxis.LEFT_X)</code>; <code>GetTouchX()</code> / <code>GetTouchY()</code> / <code>GetTouchPointCount()</code> para toque.</p>
+            </div>
+
+            <div class="doc-section" id="shapes">
+                <h2>Formas &amp; texto</h2>
+
+                <div class="function-sig">DrawRectangle(x, y, width, height, color) → void</div>
+                <div class="function-sig">DrawCircle(centerX, centerY, radius, color) → void</div>
+                <div class="function-sig">DrawLine(startX, startY, endX, endY, color) → void</div>
+                <p>As primitivas 2D básicas. Variantes em contorno (<code>DrawRectangleLines</code>, <code>DrawCircleLines</code>), gradientes (<code>DrawRectangleGradientV</code>/<code>H</code>), <code>DrawEllipse</code> e <code>DrawPixel</code> também estão disponíveis.</p>
+                <pre class="simple-code">DrawRectangle(20, 20, 120, 60, RL_SKYBLUE)
+DrawCircle(400, 225, 40.0, RL_RED)
+DrawLine(0, 0, 800, 450, RL_GRAY)</pre>
+
+                <div class="function-sig">DrawText(text, x, y, fontSize, color) → void</div>
+                <p>Desenha uma string com a fonte embutida. <code>MeasureText(text, fontSize)</code> retorna a largura em pixels, e <code>DrawFPS(x, y)</code> desenha um contador de quadros ao vivo.</p>
+
+                <div class="function-sig">colisão</div>
+                <p><code>CheckCollisionPointRec(point, rect)</code> e <code>CheckCollisionPointCircle(point, center, radius)</code> respondem testes simples de acerto — úteis para botões e estados de hover.</p>
+            </div>
+
+            <div class="doc-section" id="audio">
+                <h2>Áudio</h2>
+                <p>Abra o dispositivo de áudio uma vez, depois carregue e toque sons (one-shots) ou streams de música (faixas longas que você atualiza a cada quadro).</p>
+                <pre class="simple-code">InitAudioDevice()
+
+shot = LoadSound("blip.wav")
+PlaySound(shot)
+
+song = LoadMusicStream("theme.ogg")
+PlayMusicStream(song)
+-- dentro do laço: UpdateMusicStream(song)
+
+-- no encerramento
+UnloadSound(shot)
+UnloadMusicStream(song)
+CloseAudioDevice()</pre>
+                <p>Sons: <code>PauseSound</code>, <code>ResumeSound</code>, <code>StopSound</code>, <code>SetSoundVolume</code>, <code>SetSoundPitch</code>. Música: <code>SeekMusicStream</code>, <code>SetMusicVolume</code>, <code>GetMusicTimeLength</code>, <code>GetMusicTimePlayed</code>.</p>
+            </div>
+
+            <div class="doc-section" id="together">
+                <h2>Juntando tudo</h2>
+                <p>A clássica "primeira janela" da raylib — abrir uma janela, rodar o laço de quadros até o usuário fechá-la e desenhar uma linha de texto no meio.</p>
+                <div class="example-box">
+                    <h4>Sua primeira janela</h4>
+                    <pre class="simple-code">import vendor/raylib/raylib
+
+InitWindow(800, 450, "Bern + raylib")
+SetTargetFPS(60)
+
+for !WindowShouldClose() do
+    BeginDrawing()
+    ClearBackground(RL_RAYWHITE)
+    DrawText("Parabéns! Você criou sua primeira janela!", 190, 200, 20, RL_LIGHTGRAY)
+    EndDrawing()
+end
+
+CloseWindow()</pre>
+                </div>
+                <p>E um pequeno esboço interativo: um quadrado que você move com as setas, redesenhado a cada quadro.</p>
+                <div class="example-box">
+                    <h4>Um quadrado que se move</h4>
+                    <pre class="simple-code">import vendor/raylib/raylib
+
+InitWindow(800, 450, "me mova")
+SetTargetFPS(60)
+
+x = 400
+y = 225
+
+for !WindowShouldClose() do
+    if IsKeyDown(KeyboardKey.RIGHT) then x = x + 4 end
+    if IsKeyDown(KeyboardKey.LEFT)  then x = x - 4 end
+    if IsKeyDown(KeyboardKey.DOWN)  then y = y + 4 end
+    if IsKeyDown(KeyboardKey.UP)    then y = y - 4 end
+
+    BeginDrawing()
+    ClearBackground(RL_RAYWHITE)
+    DrawRectangle(x, y, 40, 40, RL_MAROON)
+    DrawText("setas para mover", 20, 20, 20, RL_GRAY)
+    EndDrawing()
+end
+
+CloseWindow()</pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        Copyright © 2026 • Todos os direitos reservados • Feito com ❤️ por <a href="https://mirvox.xyz/">Miguel Aguiar</a>
+    </footer>
+</body>
+</html>

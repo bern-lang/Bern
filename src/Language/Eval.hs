@@ -89,8 +89,9 @@ import Language.Ast
 import Data.Hashtable.Hashtable
 import Language.Helpers
 import System.Info (os)
-import Parsing.Parser (parseBernFile)
+import Parsing.Parser (parseBernFile, scanOperators, scanImports)
 import Language.PragmaState (pragmaSetRef)
+import Language.OperatorState (addOperatorSpecs)
 import Text.Megaparsec (errorBundlePretty, sourcePosPretty, SourcePos, ParseErrorBundle, bundleErrors, bundlePosState, errorOffset, parseErrorTextPretty, PosState(pstateSourcePos))
 import Text.Megaparsec.Stream (reachOffset)
 import Text.Megaparsec.Pos (sourceName, sourceLine, sourceColumn, unPos)
@@ -256,7 +257,7 @@ knownPragmas =
     [ "impure-lists", "impure-sets", "strict-types", "strict-arithmetic"
     , "immutable", "no-eval", "show-types", "safe-index", "no-undefined"
     , "start-on-one", "main", "strict-imports", "no-curry", "abort-on-error"
-    , "partial", "no-written-operators" ]
+    , "partial", "no-written-operators", "typed" ]
 
 -- Structural keywords: always part of Bern's syntax, so they can never be used
 -- as a variable name.
@@ -291,6 +292,56 @@ reservedAssignError mpos name
     | otherwise = mkEvalErrorHint mpos
         ("cannot assign to '" ++ name ++ "': it is a reserved keyword")
         "rename the variable -- this name is part of Bern's syntax"
+
+-- Typed bindings (the `typed` pragma) ----------------------------------------
+-- A declared type name is matched against a value's runtime type. We accept the
+-- canonical names reported by `getValueType` (Integer, Double, Character,
+-- Boolean, ...) as well as a few familiar aliases (Int, Float, Char, Bool), and
+-- treat String/Text as "a list whose elements are all characters" -- which is
+-- how Bern represents text. Any other name is taken literally, so an ADT type
+-- (e.g. `Shape`) is matched against the value's own constructor type.
+
+-- Fold an alias onto the canonical type name used by getValueType.
+canonicalTypeName :: String -> String
+canonicalTypeName ty = case ty of
+    "Int"     -> "Integer"
+    "Float"   -> "Double"
+    "Char"    -> "Character"
+    "Bool"    -> "Boolean"
+    "Str"     -> "String"
+    other     -> other
+
+-- Does `val` satisfy the declared type `ty`? This covers scalars, collections,
+-- and String/Text. ADT types need the table (a value only knows its constructor,
+-- not its type), so they are handled separately by `adtValueMatchesType`.
+valueMatchesType :: String -> Value -> Bool
+valueMatchesType ty val =
+    case canonicalTypeName ty of
+        "Auto"   -> True              -- dynamic: accept whatever type was passed
+        "Any"    -> True              -- synonym for Auto
+        "String" -> isTextValue val
+        "Text"   -> isTextValue val
+        expected -> getValueType val == expected
+  where
+    isTextValue (List vs _) = all isChar vs
+    isTextValue _           = False
+    isChar (Character _)    = True
+    isChar _                = False
+
+-- Table key recording which ADT type a constructor belongs to (registered when
+-- the ADT is defined, see AlgebraicTypeDef). Used to match a declared ADT type
+-- name (e.g. `Shape`) against a value built from one of its constructors.
+adtCtorTypeKey :: String -> String
+adtCtorTypeKey ctorName = "__bern_adt_ctor_type_" ++ ctorName
+
+-- An ADT value carries its constructor name (e.g. "Circle"); resolve that to its
+-- declaring type and check it against the declared type name (e.g. "Shape").
+adtValueMatchesType :: Hashtable String Value -> String -> Value -> Bool
+adtValueMatchesType tbl ty (AlgebraicDataType ctorName _) =
+    case lookupHashtable tbl (adtCtorTypeKey ctorName) of
+        Just tv -> valueToString tv == Just ty
+        Nothing -> False
+adtValueMatchesType _ _ _ = False
 
 -- | Scan a source string for `{--! name !--}` pragmas and apply each one.
 applyPragmas :: String -> IO ()
@@ -519,6 +570,7 @@ collectImportSymbols cmd = nub (filter (not . isMetaSymbolName) (go cmd))
     go (Concat c1 c2) = go c1 ++ go c2
     go (FunctionDef name _) = [name]
     go (Assign name _) = [name]
+    go (TypedAssign name _ _) = [name]
     go (GlobalAssign name _) = [name]
     go (AlgebraicTypeDef (ADTDef _ typeName constructors)) =
         typeName : [ctorName | ADTConstructor ctorName _ <- constructors]
@@ -689,6 +741,29 @@ interpretCommand mpos (Assign name expr) table
         case evalValue expr table of
             Right v -> return (insertHashtable table name v)
             Left err -> die err
+
+-- A type-annotated binding (`name :: Type = expr`), enabled by the `typed`
+-- pragma. It behaves exactly like Assign once the value is in hand, but first
+-- checks that the value's runtime type matches the declared one; a mismatch is a
+-- hard error (like a reserved-name assignment), so typed files fail loudly.
+interpretCommand mpos (TypedAssign name tyName expr) table
+    | isReservedName name =
+        die (reservedAssignError mpos name)
+    | pragmaOn "immutable" () && isBound name table =
+        die (mkEvalErrorHint mpos
+            ("cannot reassign '" ++ name ++ "'")
+            "the immutable pragma forbids reassigning an existing variable")
+    | otherwise =
+        case evalValue expr table of
+            Left err -> die err
+            Right v
+                | valueMatchesType tyName v
+                    || adtValueMatchesType table tyName v -> return (insertHashtable table name v)
+                | otherwise -> die (mkEvalErrorHint mpos
+                    ("type mismatch for '" ++ name ++ "': declared " ++ tyName
+                        ++ " but value is " ++ getValueType v)
+                    ("make the value a " ++ canonicalTypeName tyName
+                        ++ ", or change the declared type"))
 
 interpretCommand mpos (GlobalAssign name expr) table
     | isReservedName name =
@@ -876,7 +951,14 @@ interpretCommand mpos (AlgebraicTypeDef (ADTDef isIterative typeName constructor
                                           insertHashtable tbl (iterableCtorKey ctorName) (Boolean isIterative))
                                        tableWithCtors
                                        constructors
-    
+    -- Record which type each constructor belongs to, so the `typed` pragma can
+    -- match a declared ADT type name (e.g. `Shape`) against a value built from
+    -- one of its constructors (e.g. `Circle(1.0)`).
+    let tableWithCtorTypes = foldl (\tbl (ADTConstructor ctorName _) ->
+                                      insertHashtable tbl (adtCtorTypeKey ctorName) (stringToValue typeName))
+                                   tableWithIterableFlags
+                                   constructors
+
     case constructors of
         [ADTConstructor _ fieldTypes] -> do
             let fieldTypeNames = map typeToString fieldTypes
@@ -884,7 +966,7 @@ interpretCommand mpos (AlgebraicTypeDef (ADTDef isIterative typeName constructor
             FFI.registerStruct layout
         _ -> return () 
     
-    return tableWithIterableFlags
+    return tableWithCtorTypes
   where
     iterableCtorKey :: String -> String
     iterableCtorKey ctorName = "__bern_iterable_adt_ctor_" ++ ctorName
@@ -903,6 +985,7 @@ interpretCommand mpos (AlgebraicTypeDef (ADTDef isIterative typeName constructor
     typeToString (TCustom "Short") = "Short"
     typeToString (TCustom "UShort") = "UShort"
     typeToString (TCustom name) = name
+    typeToString TAuto = "Auto"
     
     createStructLayout :: String -> [String] -> FFI.StructLayout
     createStructLayout name types =
@@ -938,39 +1021,16 @@ interpretCommand mpos (Import moduleName mAlias) table = do
     let qualifier = case mAlias of
             Just alias -> alias
             Nothing    -> moduleName
-    let installLibPath = installDir </> "lib" </> moduleName ++ ".brn"
-    let localLibPath = "lib" </> moduleName ++ ".brn"
-    let localPath = moduleName ++ ".brn"
 
-    -- A self-contained (bundled) executable sets BERN_LIB_PATH to a directory
-    -- holding the embedded lib files, so imports resolve there first without
-    -- depending on the working directory.
-    mBundleDir <- lookupEnv "BERN_LIB_PATH"
-    let bundleLibPath = case mBundleDir of
-                          Just d  -> d </> "lib" </> moduleName ++ ".brn"
-                          Nothing -> ""
-    bundleLibExists <- if null bundleLibPath then return False else doesFileExist bundleLibPath
+    mPath <- resolveModulePath moduleName
 
-    localLibExists <- doesFileExist localLibPath
-    localExists <- doesFileExist localPath
-    installLibExists <- doesFileExist installLibPath
-
-    let path = if bundleLibExists
-               then bundleLibPath
-               else if localLibExists
-               then localLibPath
-               else if installLibExists
-                    then installLibPath
-                    else if localExists
-                         then localPath
-                         else ""
-
-    if null path
-        then die (mkEvalErrorHint mpos
+    case mPath of
+        Nothing -> die (mkEvalErrorHint mpos
             ("module '" ++ moduleName ++ "' not found")
             ("searched in: ./lib/, ./, and " ++ installDir </> "lib/"))
-        else do
+        Just path -> do
             contents <- readFile path
+            addOperatorSpecs (scanOperators contents)  -- register the module's own operators before parsing it
             case parseBernFile path contents of
                 Left err -> do
                     putStrLn $ errorBundlePretty err
@@ -1047,7 +1107,50 @@ tryLoadFromLibs (libPath:rest) funcName argTypes retType = do
     case result of
         Right wrapper -> return $ Right wrapper
         Left _ -> tryLoadFromLibs rest funcName argTypes retType
-        
+
+-- Resolve a module name to a file path using the same search order as `import`:
+-- a bundle dir (BERN_LIB_PATH), ./lib/, the install lib dir, then ./.
+resolveModulePath :: String -> IO (Maybe FilePath)
+resolveModulePath moduleName = do
+    execPath <- getExecutablePath
+    let installDir = takeDirectory execPath
+        installLibPath = installDir </> "lib" </> moduleName ++ ".brn"
+        localLibPath   = "lib" </> moduleName ++ ".brn"
+        localPath      = moduleName ++ ".brn"
+    mBundleDir <- lookupEnv "BERN_LIB_PATH"
+    let bundleLibPath = case mBundleDir of
+                          Just d  -> d </> "lib" </> moduleName ++ ".brn"
+                          Nothing -> ""
+    let firstExisting [] = return Nothing
+        firstExisting (p:ps)
+            | null p    = firstExisting ps
+            | otherwise = do e <- doesFileExist p
+                             if e then return (Just p) else firstExisting ps
+    firstExisting [bundleLibPath, localLibPath, installLibPath, localPath]
+
+-- Register every user-defined operator reachable from a source file BEFORE it is
+-- parsed: the file's own operators, plus those of every module it imports,
+-- transitively. This is what lets an operator declared in a library (e.g. core)
+-- be used, infix, in any file that imports it -- operators propagate like the
+-- functions they desugar to. Missing modules are ignored here (the importer will
+-- report the error properly when it actually runs the `import`).
+preloadOperators :: String -> IO ()
+preloadOperators src = do
+    addOperatorSpecs (scanOperators src)
+    visit [] (scanImports src)
+  where
+    visit _ [] = return ()
+    visit seen (m:ms)
+        | m `elem` seen = visit seen ms
+        | otherwise = do
+            mp <- resolveModulePath m
+            case mp of
+                Nothing -> visit (m:seen) ms
+                Just p  -> do
+                    contents <- readFile p
+                    addOperatorSpecs (scanOperators contents)
+                    visit (m:seen) (ms ++ scanImports contents)
+
 -- Apply a function or lambda value to arguments
 {-
 English:

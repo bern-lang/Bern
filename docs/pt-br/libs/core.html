@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>core - Bibliotecas Bern</title>
+    <link rel="icon" type="image/png" href="../../images/cat.png">
+    <link rel="stylesheet" href="../../lib.css">
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <a href="../index.html" class="logo"><img src="../../images/cat.png" alt="Bern Logo" width="20%" style="margin-top: 10px;"></a>
+            <nav>
+                <a href="../documentation.html">Linguagem</a>
+                <a href="../libraries.html">Bibliotecas</a>
+                <a href="../changelog.html">Mudanças</a>
+                <a href="../../libs/core.html" style="font-weight: 600;">🌐 EN</a>
+            </nav>
+        </div>
+    </header>
+
+    <div class="layout">
+        <aside class="sidebar">
+            <h3>core</h3>
+            <ul>
+                <li><a href="#transform">Transformando listas</a></li>
+                <li><a href="#fold">Folds &amp; agregação</a></li>
+                <li><a href="#slice">Fatiamento &amp; acesso</a></li>
+                <li><a href="#predicates">Predicados &amp; busca</a></li>
+                <li><a href="#combine">Combinando listas</a></li>
+                <li><a href="#hof">Auxiliares de função</a></li>
+                <li><a href="#convert">Conversões &amp; introspecção</a></li>
+                <li><a href="#together">Juntando tudo</a></li>
+            </ul>
+            <h3>Mais</h3>
+            <ul>
+                <li><a href="../libraries.html" class="back-link">← Todas as bibliotecas</a></li>
+            </ul>
+        </aside>
+
+        <div class="container">
+            <p class="breadcrumb"><a href="../documentation.html">Documentação</a> / <a href="../libraries.html">Bibliotecas</a> / core</p>
+            <h1 class="page-title">core</h1>
+            <p class="page-subtitle">A biblioteca fundamental: operações de lista, folds, auxiliares de ordem superior e conversões de tipo.</p>
+
+            <pre class="simple-code">import core</pre>
+            <p>A maioria dos programas começa por aqui. O <code>core</code> é escrito na própria Bern, então toda função abaixo é uma função Bern comum que você pode ler em <code>lib/core.brn</code>. Funções que percorrem uma lista a recebem como <strong>primeiro</strong> argumento, o que combina naturalmente com o <a href="../documentation.html#pipe">operador pipe</a> <code>)|</code>.</p>
+
+            <div class="doc-section" id="transform">
+                <h2>Transformando listas</h2>
+
+                <div class="function-sig">map(lista, função) → lista</div>
+                <p>Aplica uma função a cada elemento, devolvendo uma nova lista com os resultados.</p>
+                <pre class="simple-code">map([1, 2, 3], \x -> x * 2)
+-- Saída: [2, 4, 6]</pre>
+
+                <div class="function-sig">filter(lista, predicado) → lista</div>
+                <p>Mantém apenas os elementos para os quais o predicado retorna <code>true</code>.</p>
+                <pre class="simple-code">filter([1, 2, 3, 4, 5], \x -> x % 2 == 0)
+-- Saída: [2, 4]</pre>
+
+                <div class="function-sig">reverse(coleção) → coleção</div>
+                <p>Inverte uma lista ou um conjunto; o tipo é detectado automaticamente.</p>
+                <pre class="simple-code">reverse([1, 2, 3])
+-- Saída: [3, 2, 1]
+
+reverse({1, 2, 3})
+-- Saída: {3, 2, 1}</pre>
+
+                <div class="function-sig">append(lista, cauda) → lista</div>
+                <p>Concatena <code>cauda</code> ao fim de <code>lista</code> (o mesmo efeito de <code>&lt;&gt;</code>, na forma de função).</p>
+                <pre class="simple-code">append([1, 2], [3, 4])
+-- Saída: [1, 2, 3, 4]</pre>
+
+                <div class="function-sig">range(início, fim) → lista</div>
+                <p>Constrói uma lista inclusiva de inteiros - um invólucro de função para a sintaxe <code>[início..fim]</code>.</p>
+                <pre class="simple-code">range(1, 5)
+-- Saída: [1, 2, 3, 4, 5]</pre>
+            </div>
+
+            <div class="doc-section" id="fold">
+                <h2>Folds &amp; agregação</h2>
+
+                <div class="function-sig">foldl(lista, acumulador, função) → valor</div>
+                <p>Reduz a lista da esquerda para a direita. A função recebe <code>(acumulador, elemento)</code>.</p>
+                <pre class="simple-code">foldl([1, 2, 3], 0, \acc, x -> acc + x)
+-- Saída: 6</pre>
+
+                <div class="function-sig">foldr(lista, acumulador, função) → valor</div>
+                <p>Reduz a lista da direita para a esquerda. A função recebe <code>(elemento, acumulador)</code>, sendo a escolha natural quando você quer reconstruir uma lista a partir da direita.</p>
+                <pre class="simple-code">foldr([1, 2, 3], [], \x, acc -> [x * 10] <> acc)
+-- Saída: [10, 20, 30]</pre>
+
+                <div class="function-sig">sum(lista) → número</div>
+                <p>Soma todos os elementos.</p>
+                <pre class="simple-code">sum([1, 2, 3, 4])
+-- Saída: 10</pre>
+
+                <div class="function-sig">product(lista) → número</div>
+                <p>Multiplica todos os elementos.</p>
+                <pre class="simple-code">product([1, 2, 3, 4])
+-- Saída: 24</pre>
+
+                <div class="function-sig">min(lista) → valor</div>
+                <p>O menor elemento. Gera erro em lista vazia.</p>
+                <pre class="simple-code">min([4, 1, 7, 3])
+-- Saída: 1</pre>
+
+                <div class="function-sig">max(lista) → valor</div>
+                <p>O maior elemento. Gera erro em lista vazia.</p>
+                <pre class="simple-code">max([4, 1, 7, 3])
+-- Saída: 7</pre>
+            </div>
+
+            <div class="doc-section" id="slice">
+                <h2>Fatiamento &amp; acesso</h2>
+
+                <div class="function-sig">take(n, lista) → lista</div>
+                <p>Os primeiros <code>n</code> elementos (ou a lista inteira, se ela for menor).</p>
+                <pre class="simple-code">take(2, [10, 20, 30, 40])
+-- Saída: [10, 20]</pre>
+
+                <div class="function-sig">drop(n, lista) → lista</div>
+                <p>Tudo, exceto os primeiros <code>n</code> elementos.</p>
+                <pre class="simple-code">drop(2, [10, 20, 30, 40])
+-- Saída: [30, 40]</pre>
+
+                <div class="function-sig">head(lista) → elemento</div>
+                <p>O primeiro elemento. Retorna um <a href="../documentation.html#errors-as-values">valor de erro</a> em lista vazia.</p>
+                <pre class="simple-code">head([10, 20, 30])
+-- Saída: 10</pre>
+
+                <div class="function-sig">tail(lista) → lista</div>
+                <p>Tudo, exceto o primeiro elemento.</p>
+                <pre class="simple-code">tail([10, 20, 30])
+-- Saída: [20, 30]</pre>
+            </div>
+
+            <div class="doc-section" id="predicates">
+                <h2>Predicados &amp; busca</h2>
+
+                <div class="function-sig">isEmpty(lista) → booleano</div>
+                <p>Se a lista não tem elementos.</p>
+                <pre class="simple-code">isEmpty([])
+-- Saída: true
+isEmpty([1])
+-- Saída: false</pre>
+
+                <div class="function-sig">any(lista, predicado) → booleano</div>
+                <p><em>Pelo menos um</em> elemento satisfaz o predicado?</p>
+                <pre class="simple-code">any([1, 3, 5, 6], \x -> x % 2 == 0)
+-- Saída: true</pre>
+
+                <div class="function-sig">all(lista, predicado) → booleano</div>
+                <p><em>Todos</em> os elementos satisfazem o predicado?</p>
+                <pre class="simple-code">all([2, 4, 6], \x -> x % 2 == 0)
+-- Saída: true</pre>
+
+                <div class="function-sig">find(lista, predicado) → elemento | false</div>
+                <p>O primeiro elemento que casa, ou <code>false</code> quando nenhum casa.</p>
+                <pre class="simple-code">find([1, 2, 3, 4], \x -> x > 2)
+-- Saída: 3
+find([1, 2], \x -> x > 9)
+-- Saída: false</pre>
+
+                <div class="function-sig">index_of(coleção, alvo) → int</div>
+                <p>O índice de <code>alvo</code> em uma lista ou conjunto, ou <code>-1</code> se ausente.</p>
+                <pre class="simple-code">index_of(['a', 'b', 'c'], 'b')
+-- Saída: 1
+index_of([1, 2, 3], 9)
+-- Saída: -1</pre>
+            </div>
+
+            <div class="doc-section" id="combine">
+                <h2>Combinando listas</h2>
+
+                <div class="function-sig">zip(lista1, lista2) → lista</div>
+                <p>Pareia elementos por posição; para na lista mais curta.</p>
+                <pre class="simple-code">zip([1, 2, 3], ['a', 'b', 'c'])
+-- Saída: [[1, 'a'], [2, 'b'], [3, 'c']]</pre>
+
+                <div class="function-sig">zipWith(lista1, lista2, função) → lista</div>
+                <p>Combina elementos por posição usando uma função de dois argumentos.</p>
+                <pre class="simple-code">zipWith([1, 2, 3], [10, 20, 30], \a, b -> a + b)
+-- Saída: [11, 22, 33]</pre>
+            </div>
+
+            <div class="doc-section" id="hof">
+                <h2>Auxiliares de função</h2>
+
+                <div class="function-sig">compose(f, g, x) → valor</div>
+                <p>Aplica <code>g</code> e depois <code>f</code>: <code>compose(f, g, x)</code> é <code>f(g(x))</code>.</p>
+                <pre class="simple-code">compose(\x -> x + 1, \x -> x * 2, 5)
+-- Saída: 11   (5 * 2, depois + 1)</pre>
+
+                <div class="function-sig">id(x) → x</div>
+                <p>A função identidade - devolve seu argumento sem mudar. Útil como padrão ou marcador.</p>
+                <pre class="simple-code">id(42)
+-- Saída: 42</pre>
+
+                <div class="function-sig">const(x, _) → x</div>
+                <p>Sempre devolve o primeiro argumento e ignora o segundo.</p>
+                <pre class="simple-code">const(7, "ignorado")
+-- Saída: 7</pre>
+
+                <div class="function-sig">flip(f, x, y) → valor</div>
+                <p>Chama uma função de dois argumentos com os argumentos trocados.</p>
+                <pre class="simple-code">flip(\a, b -> a - b, 3, 10)
+-- Saída: 7   (10 - 3)</pre>
+            </div>
+
+            <div class="doc-section" id="convert">
+                <h2>Conversões &amp; introspecção</h2>
+
+                <div class="function-sig">to_int(string) → int</div>
+                <p>Converte uma string de dígitos em um inteiro.</p>
+                <pre class="simple-code">to_int("42")
+-- Saída: 42</pre>
+
+                <div class="function-sig">int_to_double(int) → double</div>
+                <p>Amplia um inteiro para um double.</p>
+                <pre class="simple-code">int_to_double(5)
+-- Saída: 5.0</pre>
+
+                <div class="function-sig">char_to_digit(char) → int</div>
+                <p>Transforma um caractere de dígito em seu valor numérico (erro em não-dígito).</p>
+                <pre class="simple-code">char_to_digit('7')
+-- Saída: 7</pre>
+
+                <div class="function-sig">typeOf(valor) → string</div>
+                <p>O tipo de um valor como string - a forma de função do operador <code>::</code>.</p>
+                <pre class="simple-code">typeOf([1, 2, 3])
+-- Saída: "List"</pre>
+
+                <div class="function-sig">length(valor) → int</div>
+                <p>O comprimento de uma string, lista ou conjunto - a forma de função do operador <code>:&gt;</code>.</p>
+                <pre class="simple-code">length("hello")
+-- Saída: 5</pre>
+
+                <div class="function-sig">is_error(valor) → booleano</div>
+                <p>Se um valor é um <a href="../documentation.html#errors-as-values">valor de erro</a> recuperável.</p>
+                <pre class="simple-code">is_error([1, 2, 3][99])
+-- Saída: true</pre>
+
+                <div class="function-sig">print(valor) → valor</div>
+                <p>Imprime um valor explicitamente (literais imprimem sozinhos, mas <code>print</code> é útil sob o pragma <code>no-eval</code>). Devolve o valor.</p>
+                <pre class="simple-code">print("hello")
+-- Saída: "hello"</pre>
+            </div>
+
+            <div class="doc-section" id="together">
+                <h2>Juntando tudo</h2>
+                <p>As funções se compõem naturalmente. Aqui várias são encadeadas com o operador pipe para transformar uma lista de preços no total dos itens com desconto:</p>
+                <div class="example-box">
+                    <h4>Um pequeno pipeline de dados</h4>
+                    <pre class="simple-code">import core
+
+prices = [12, 40, 7, 25, 3, 60]
+
+-- mantém os acessíveis, aplica 10% de desconto e soma
+total = prices
+    )| filter(\p -> p <= 40)
+    )| map(\p -> p - (p / 10))
+    )| sum
+
+total
+-- Saída: 76   (12+40+7+25 = 84, menos 10% por item)</pre>
+                </div>
+                <p>E um resumo clássico baseado em fold que reúne <code>zip</code>, <code>foldl</code> e <code>max</code>:</p>
+                <div class="example-box">
+                    <h4>Rotulando a maior pontuação</h4>
+                    <pre class="simple-code">import core
+
+names  = ["Ana", "Bob", "Cia"]
+scores = [88, 95, 73]
+
+pairs = zip(names, scores)
+-- [["Ana", 88], ["Bob", 95], ["Cia", 73]]
+
+best = max(scores)
+winner = find(pairs, \pair -> pair[1] == best)
+winner[0] + " venceu com " + best
+-- Saída: "Bob venceu com 95"</pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        Copyright © 2026 • Todos os direitos reservados • Feito com ❤️ por <a href="https://mirvox.xyz/">Miguel Aguiar</a>
+    </footer>
+</body>
+</html>

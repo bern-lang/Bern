@@ -1,0 +1,51 @@
+import core
+import assert
+
+"User-defined infix operator tests"
+
+-- Symbolic operator, explicit fixity: right-assoc, tighter than *
+infix ^ groups right, binds tighter than *
+
+def (x ^ 0) -> 1
+def (x ^ y) -> x * (x ^ (y - 1))
+
+assert_equals("pow 2^10", 2 ^ 10, 1024)
+assert_equals("^ binds tighter than *", 2 * 3 ^ 2, 18)        -- 2 * (3^2) = 18
+assert_equals("^ groups right", 2 ^ 1 ^ 2, 2)                 -- 2 ^ (1^2) = 2 (left would be 4)
+
+-- Operator as a plain function value (Haskell-style (^))
+assert_equals("prefix call (^)(2,3)", (^)(2, 3), 8)
+pow = (^)
+assert_equals("operator stored in a variable", pow(2, 5), 32)
+
+-- Currying through the operator value
+double_pow = (^)(2)
+assert_equals("curried operator", double_pow(4), 16)
+
+-- Sections
+assert_equals("right section (^ 2)", map([1, 2, 3], (^ 2)), [1, 4, 9])
+assert_equals("left section (2 ^)",  map([1, 2, 3], (2 ^)), [2, 4, 8])
+
+-- Word operator, explicit fixity
+infix dot groups left, binds like *
+
+def (a dot b) -> sum(zipWith(a, b, \x, y -> x * y))
+
+assert_equals("word op infix", [1, 2, 3] dot [4, 5, 6], 32)
+assert_equals("word op as function", dot([1, 2, 3], [4, 5, 6]), 32)
+
+-- Default fixity (no infix line): groups left, binds like *
+def (a @@ b) -> a + b
+
+assert_equals("default-fixity operator", 10 @@ 5, 15)
+
+-- Guards work on operator clauses
+def (n ~? 0) -> "zero"
+def (n ~? m) when m > 0 -> "positive"
+def (n ~? m) -> "negative"
+
+assert_equals("guard zero", 5 ~? 0, "zero")
+assert_equals("guard positive", 5 ~? 3, "positive")
+assert_equals("guard negative", 5 ~? (-3), "negative")
+
+"All infix operator tests passed"

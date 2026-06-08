@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>random - Bibliotecas Bern</title>
+    <link rel="icon" type="image/png" href="../../images/cat.png">
+    <link rel="stylesheet" href="../../lib.css">
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <a href="../index.html" class="logo"><img src="../../images/cat.png" alt="Bern Logo" width="20%" style="margin-top: 10px;"></a>
+            <nav>
+                <a href="../documentation.html">Linguagem</a>
+                <a href="../libraries.html">Bibliotecas</a>
+                <a href="../changelog.html">Mudanças</a>
+                <a href="../../libs/random.html" style="font-weight: 600;">🌐 EN</a>
+            </nav>
+        </div>
+    </header>
+
+    <div class="layout">
+        <aside class="sidebar">
+            <h3>random</h3>
+            <ul>
+                <li><a href="#numbers">Números aleatórios</a></li>
+                <li><a href="#selection">Seleção aleatória</a></li>
+                <li><a href="#strings">Strings aleatórias</a></li>
+                <li><a href="#together">Juntando tudo</a></li>
+            </ul>
+            <h3>Mais</h3>
+            <ul>
+                <li><a href="../libraries.html" class="back-link">← Todas as bibliotecas</a></li>
+            </ul>
+        </aside>
+
+        <div class="container">
+            <p class="breadcrumb"><a href="../documentation.html">Documentação</a> / <a href="../libraries.html">Bibliotecas</a> / random</p>
+            <h1 class="page-title">random</h1>
+            <p class="page-subtitle">Inteiros, doubles, escolhas e strings aleatórias via biblioteca C do sistema.</p>
+
+            <pre class="simple-code">import random</pre>
+            <div class="note">
+                <strong>Nota:</strong> Disponível no Bern 0.1.2 e acima. A biblioteca detecta o SO automaticamente e vincula a biblioteca C apropriada (<code>msvcrt.dll</code> no Windows, <code>libc.so.6</code> em sistemas tipo Unix), semeando o gerador uma vez na importação.
+            </div>
+
+            <div class="doc-section" id="numbers">
+                <h2>Números aleatórios</h2>
+
+                <div class="function-sig">get_random_int() → int</div>
+                <p>Um inteiro aleatório não-negativo do <code>rand()</code> do runtime C.</p>
+                <pre class="simple-code">get_random_int()
+-- Saída: (algum inteiro aleatório)
+
+-- uma rolagem de dado em [1, 6]
+1 + (get_random_int() % 6)
+-- Saída: (1 a 6)</pre>
+
+                <div class="function-sig">get_random_double() → double</div>
+                <p>Um double aleatório no intervalo [0, 1).</p>
+                <pre class="simple-code">get_random_double()
+-- Saída: (ex.: 0.4172...)</pre>
+
+                <div class="function-sig">get_random_number() → número</div>
+                <p>Um int aleatório ou um double aleatório, escolhido ao acaso.</p>
+                <pre class="simple-code">get_random_number()
+-- Saída: (um int ou um double)</pre>
+            </div>
+
+            <div class="doc-section" id="selection">
+                <h2>Seleção aleatória</h2>
+
+                <div class="function-sig">random_choice(lista) → elemento</div>
+                <p>Um elemento uniformemente aleatório de uma lista (ou conjunto).</p>
+                <pre class="simple-code">random_choice(["maçã", "banana", "cereja"])
+-- Saída: (uma das três)</pre>
+            </div>
+
+            <div class="doc-section" id="strings">
+                <h2>Strings aleatórias</h2>
+
+                <div class="function-sig">get_random_string(comprimento) → string</div>
+                <p>Uma string alfanumérica aleatória do comprimento pedido.</p>
+                <pre class="simple-code">get_random_string(10)
+-- Saída: "aB3xK9mP2q"   (exemplo)</pre>
+            </div>
+
+            <div class="doc-section" id="together">
+                <h2>Juntando tudo</h2>
+                <p>Combine seleção e geração de números para construir um gerador de dados de exemplo:</p>
+                <div class="example-box">
+                    <h4>Gerando um registro de usuário aleatório</h4>
+                    <pre class="simple-code">import random
+import strings
+
+first_names = ["Ana", "Bob", "Cia", "Dan"]
+
+def random_user() do
+    name = random_choice(first_names)
+    age  = 18 + (get_random_int() % 50)
+    id   = get_random_string(6)
+    return name + " (" + from_int(age) + ") #" + id
+end
+
+random_user()
+-- Saída: "Cia (34) #k2Mx9q"   (exemplo)</pre>
+                </div>
+                <p>Ou sorteie repetidamente um índice aleatório - aqui escolhendo três amostras:</p>
+                <div class="example-box">
+                    <h4>Sorteando várias amostras</h4>
+                    <pre class="simple-code">import core
+import random
+
+deck = [1..52]
+hand = map([1..3], \_ -> random_choice(deck))
+hand
+-- Saída: [27, 4, 51]   (exemplo)</pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        Copyright © 2026 • Todos os direitos reservados • Feito com ❤️ por <a href="https://mirvox.xyz/">Miguel Aguiar</a>
+    </footer>
+</body>
+</html>

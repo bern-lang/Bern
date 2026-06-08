@@ -1,0 +1,19 @@
+import core
+import vendor/bernparsec
+import assert
+
+"BernParsec operator tests"
+assert_equals("<$> map", quickParse(char_to_digit <$> digitChar(), "7"), 7)
+assert_equals("<|> choice", quickParse(string("yes") <|> string("no"), "no"), "no")
+assert_equals("*> keep right", quickParse(char('$') *> decimal(), "$50"), 50)
+assert_equals("<* keep left", quickParse(decimal() <* char('%'), "75%"), 75)
+repeated = digitChar() >>= \d -> count(char_to_digit(d), letterChar())
+assert_equals(">>= bind", quickParse(repeated, "3abc"), ['a','b','c'])
+assert_equals("<?> label runs", quickParse(digitChar() <?> "a digit", "5"), '5')
+num = lexeme(signed(decimal()))
+pair = (\x, y -> [x, y]) <$> (num <* symbol(",")) <*> num
+assert_equals("<*> applicative", quickParse(inBrackets(pair), "[ 3, 4 ]"), [3, 4])
+p = char('a') *> char('b') <|> char('c')
+assert_equals("prec *> tighter than <|> (ab)", quickParse(p, "ab"), 'b')
+assert_equals("prec <|> fallback (c)", quickParse(p, "c"), 'c')
+"All operator tests passed"

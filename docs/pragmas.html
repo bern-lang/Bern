@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pragmas - Bern</title>
+    <link rel="icon" type="image/png" href="images/cat.png">
+    <link rel="stylesheet" href="lib.css">
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <a href="index.html" class="logo"><img src="images/cat.png" alt="Bern Logo" width="20%" style="margin-top: 10px;"></a>
+            <nav>
+                <a href="documentation.html">Language</a>
+                <a href="libraries.html">Libraries</a>
+                <a href="pragmas.html">Pragmas</a>
+                <!-- <a href="examples.html">Learn Bern</a> -->
+                <a href="changelog.html">Changelog</a>
+                <a href="pt-br/pragmas.html" style="font-weight: 600;">🌐 PT-BR</a>
+            </nav>
+        </div>
+    </header>
+
+    <div class="layout">
+        <aside class="sidebar">
+            <h3>Pragmas</h3>
+            <ul>
+                <li><a href="#about">What is a pragma?</a></li>
+                <li><a href="#collections">Collections</a></li>
+                <li><a href="#types">Types</a></li>
+                <li><a href="#numbers">Numbers &amp; indexing</a></li>
+                <li><a href="#variables">Variables &amp; names</a></li>
+                <li><a href="#errors">Errors &amp; functions</a></li>
+                <li><a href="#output">Output &amp; entry point</a></li>
+            </ul>
+            <h3>More</h3>
+            <ul>
+                <li><a href="documentation.html" class="back-link">← Language docs</a></li>
+            </ul>
+        </aside>
+
+        <div class="container">
+            <p class="breadcrumb"><a href="documentation.html">Documentation</a> / Pragmas</p>
+            <h1 class="page-title">Pragmas <span class="v2badge">Bern 2.0</span></h1>
+            <p class="page-subtitle">File-level directives that tune how Bern behaves - opt into stricter or looser rules, one file at a time.</p>
+
+            <div class="doc-section" id="about">
+                <h2>What is a pragma?</h2>
+                <p>A pragma is a <strong>magic comment</strong> that flips the interpreter into a stricter or looser mode. Write it near the top of a file, one per line:</p>
+                <pre class="simple-code">{--! strict-types !--}
+{--! immutable !--}</pre>
+
+                <p>Pragmas are <strong>file-scoped</strong>, not global. The pragma set always belongs to the file whose code is <em>currently running</em>: every function remembers the pragmas of the file that defined it, so a library that declares <code>{--! impure-lists !--}</code> gets impure lists inside its own code without forcing them on the program that imports it - and vice-versa.</p>
+
+                <div class="note">
+                    <strong>Unknown names are ignored with a warning.</strong> Misspell a pragma and Bern prints <code>Warning: unknown pragma '…'</code> and carries on, so a typo never silently changes behaviour.
+                </div>
+
+                <p>The whole set is summarised in the table below; the sections after it explain each one with an example and when to reach for it.</p>
+
+                <table class="lib-table">
+                    <tr><th>Pragma</th><th>Effect</th></tr>
+                    <tr><td><a href="#impure-lists"><code>impure-lists</code></a></td><td>lists may hold mixed element types</td></tr>
+                    <tr><td><a href="#impure-sets"><code>impure-sets</code></a></td><td>set operations keep duplicates</td></tr>
+                    <tr><td><a href="#strict-types"><code>strict-types</code></a></td><td>forbid implicit string/number coercion</td></tr>
+                    <tr><td><a href="#typed"><code>typed</code></a></td><td><span class="v2badge">Bern 2.1</span> enable type-annotated variable declarations</td></tr>
+                    <tr><td><a href="#strict-arithmetic"><code>strict-arithmetic</code></a></td><td>division by zero is an error, not <code>NaN</code></td></tr>
+                    <tr><td><a href="#safe-index"><code>safe-index</code></a></td><td>out-of-bounds indexing returns <code>undefined</code></td></tr>
+                    <tr><td><a href="#start-on-one"><code>start-on-one</code></a></td><td>indexing starts at 1</td></tr>
+                    <tr><td><a href="#immutable"><code>immutable</code></a></td><td>reassigning an existing variable is an error</td></tr>
+                    <tr><td><a href="#no-undefined"><code>no-undefined</code></a></td><td>reading an unbound variable is an error</td></tr>
+                    <tr><td><a href="#no-written-operators"><code>no-written-operators</code></a></td><td>free written-word operator names for variables</td></tr>
+                    <tr><td><a href="#abort-on-error"><code>abort-on-error</code></a></td><td>crash on runtime errors instead of error values</td></tr>
+                    <tr><td><a href="#partial"><code>partial</code></a></td><td>allow non-exhaustive functions</td></tr>
+                    <tr><td><a href="#no-curry"><code>no-curry</code></a></td><td>disable auto-currying</td></tr>
+                    <tr><td><a href="#no-eval"><code>no-eval</code></a></td><td>bare expressions don't auto-print</td></tr>
+                    <tr><td><a href="#show-types"><code>show-types</code></a></td><td>auto-printed values show their type</td></tr>
+                    <tr><td><a href="#main"><code>main</code></a></td><td>run <code>main()</code> after the file loads</td></tr>
+                </table>
+            </div>
+
+            <!-- COLLECTIONS -->
+            <div class="doc-section" id="collections">
+                <h2>Collections</h2>
+
+                <div class="function-sig" id="impure-lists">{--! impure-lists !--}</div>
+                <p>By default a list is <strong>homogeneous</strong>: every element must share a type, and mixing them is an error. This pragma lifts that rule so a list can hold values of different types.</p>
+                <pre class="simple-code">-- Without the pragma:
+[1, "two", 3.0]
+-- Error: list elements must have the same type
+
+-- With {--! impure-lists !--}:
+mixed = [1, "two", 3.0]
+:> mixed          -- 3
+mixed[0]          -- 1</pre>
+                <p><strong>Use it when</strong> you are modelling rows of mixed data - a CSV record, a JSON-like tuple, or a heterogeneous payload - and the one-type rule gets in the way.</p>
+
+                <div class="function-sig" id="impure-sets">{--! impure-sets !--}</div>
+                <p>Set operations normally remove duplicates. This pragma makes union keep every occurrence, turning sets into multisets for the duration of the file.</p>
+                <pre class="simple-code">-- Without the pragma:
+{1, 2, 3} &lt;| {2, 3, 4}     -- {1, 2, 3, 4}  (4 elements)
+
+-- With {--! impure-sets !--}:
+combined = {1, 2, 3} &lt;| {2, 3, 4}
+:> combined                 -- 6  (duplicates kept)</pre>
+                <p><strong>Use it when</strong> you actually want bag/multiset semantics - counting occurrences or concatenating without the automatic dedup.</p>
+            </div>
+
+            <!-- TYPES -->
+            <div class="doc-section" id="types">
+                <h2>Types</h2>
+
+                <div class="function-sig" id="strict-types">{--! strict-types !--}</div>
+                <p>Bern is happy to coerce across types - adding a number to a string stringifies the number, for instance. This pragma forbids that implicit coercion, so a mix of types is an error you have to resolve explicitly.</p>
+                <pre class="simple-code">-- Without the pragma:
+"answer: " + 42       -- "answer: 42"
+
+-- With {--! strict-types !--}:
+"answer: " + 42       -- Error: the strict-types pragma forbids implicit coercion
+"answer: " + to_str(42)   -- "answer: 42"  (convert on purpose)</pre>
+                <p><strong>Use it when</strong> you want accidental string/number mixing to surface as an error instead of a silently stringified value.</p>
+
+                <div class="function-sig" id="typed">{--! typed !--} <span class="v2badge">Bern 2.1</span></div>
+                <p>Enables type-annotated variable declarations with <code>name :: Type = value</code>. The value is checked against the declared type when the binding runs; a mismatch is a hard error. Without the pragma the syntax is inactive and <code>::</code> keeps its usual meaning as the typeof operator.</p>
+                <pre class="simple-code">{--! typed !--}
+
+x :: Integer   = 10
+a :: Character = 'a'
+name :: String = "bern"
+
+bad :: Integer = 'a'
+-- Error: type mismatch for 'bad': declared Integer but value is Character</pre>
+                <p>The declared type accepts the canonical <code>typeof</code> names (<code>Integer</code>, <code>Double</code>, <code>Boolean</code>, <code>Character</code>, <code>String</code>, <code>List</code>, <code>Set</code>, <code>Object</code>), the aliases <code>Int</code>, <code>Float</code>, <code>Char</code>, <code>Bool</code>, <code>Text</code>, any ADT type name, and <code>Auto</code> / <code>Any</code> for "accept whatever type is passed".</p>
+                <p><strong>Use it when</strong> a few key variables carry an invariant worth documenting and enforcing, while the rest of the file stays dynamically typed. See the <a href="documentation.html#types">Types</a> section for the full reference.</p>
+            </div>
+
+            <!-- NUMBERS & INDEXING -->
+            <div class="doc-section" id="numbers">
+                <h2>Numbers &amp; indexing</h2>
+
+                <div class="function-sig" id="strict-arithmetic">{--! strict-arithmetic !--}</div>
+                <p>Division by zero normally yields <code>NaN</code> ("not a number"), which then quietly poisons later arithmetic. This pragma turns it into an immediate error instead.</p>
+                <pre class="simple-code">-- Without the pragma:
+1 / 0       -- NaN
+
+-- With {--! strict-arithmetic !--}:
+1 / 0       -- Error: division by zero</pre>
+                <p><strong>Use it when</strong> a stray division by zero should stop the program at the source rather than spreading a <code>NaN</code> through the results.</p>
+
+                <div class="function-sig" id="safe-index">{--! safe-index !--}</div>
+                <p>Indexing past the end of a list or string is normally an error. With this pragma an out-of-bounds index returns <code>undefined</code> instead, so a lookup never fails.</p>
+                <pre class="simple-code">-- Without the pragma:
+[1, 2, 3][99]     -- Error (an error value)
+
+-- With {--! safe-index !--}:
+[1, 2, 3][99]     -- undefined</pre>
+                <p><strong>Use it when</strong> you want forgiving lookups - probing optional positions and treating "missing" as <code>undefined</code> rather than handling an error.</p>
+
+                <div class="function-sig" id="start-on-one">{--! start-on-one !--}</div>
+                <p>Bern indexes from 0 by default. This pragma shifts indexing to start at 1, so the first element is at position 1.</p>
+                <pre class="simple-code">-- Without the pragma:
+[10, 20, 30][0]   -- 10
+
+-- With {--! start-on-one !--}:
+[10, 20, 30][1]   -- 10</pre>
+                <p><strong>Use it when</strong> you are porting 1-based code or working in a domain (matrices, line numbers, spreadsheets) where 1-based indexing reads more naturally.</p>
+            </div>
+
+            <!-- VARIABLES & NAMES -->
+            <div class="doc-section" id="variables">
+                <h2>Variables &amp; names</h2>
+
+                <div class="function-sig" id="immutable">{--! immutable !--}</div>
+                <p>By default a variable can be reassigned freely. This pragma makes reassigning an <em>existing</em> name an error - every binding is write-once.</p>
+                <pre class="simple-code">{--! immutable !--}
+
+x = 1
+x = 2
+-- Error: cannot reassign 'x' (the immutable pragma forbids it)</pre>
+                <p><strong>Use it when</strong> you want constants to stay constant and to catch accidental shadowing or re-use of a name.</p>
+
+                <div class="function-sig" id="no-undefined">{--! no-undefined !--}</div>
+                <p>Reading a name that was never assigned normally produces <code>undefined</code>. This pragma turns that into an error, so an unbound variable is caught immediately.</p>
+                <pre class="simple-code">-- Without the pragma:
+print(typo_name)    -- undefined
+
+-- With {--! no-undefined !--}:
+print(typo_name)    -- Error: 'typo_name' is not defined</pre>
+                <p><strong>Use it when</strong> you want misspelled or forgotten variables to fail loudly instead of slipping through as <code>undefined</code>.</p>
+
+                <div class="function-sig" id="no-written-operators">{--! no-written-operators !--}</div>
+                <p>Bern accepts written-word operators (<code>plus</code>, <code>minus</code>, <code>and</code>, <code>or</code>, <code>length</code>, <code>not</code>, …) as aliases for the symbolic ones, which reserves those names. This pragma switches the word operators off, freeing the names for use as ordinary variables.</p>
+                <pre class="simple-code">-- Without the pragma:
+length = 5          -- Error: 'length' is a written-word operator
+
+-- With {--! no-written-operators !--}:
+length = 5          -- fine; use :> for size instead of the word `length`
+plus = 10           -- also fine</pre>
+                <p><strong>Use it when</strong> a name like <code>length</code>, <code>and</code>, or <code>plus</code> is the natural variable name for your data and you don't need the English-word operator spellings.</p>
+            </div>
+
+            <!-- ERRORS & FUNCTIONS -->
+            <div class="doc-section" id="errors">
+                <h2>Errors &amp; functions</h2>
+
+                <div class="function-sig" id="abort-on-error">{--! abort-on-error !--}</div>
+                <p>By default a runtime error becomes a <em>value</em> you can inspect with <code>is_error</code>, and the program keeps running (errors-as-values). This pragma restores the classic behaviour: an error crashes the program on the spot.</p>
+                <pre class="simple-code">-- Without the pragma:
+result = head([])
+is_error(result)    -- true; the program continues
+
+-- With {--! abort-on-error !--}:
+head([])            -- crashes immediately with the error</pre>
+                <p><strong>Use it when</strong> you would rather fail fast - a script where an error should stop everything, not quietly flow on as a value.</p>
+
+                <div class="function-sig" id="partial">{--! partial !--}</div>
+                <p>A single-argument function whose clauses don't cover every case is normally rejected as non-exhaustive. This pragma allows such partial functions; calling an uncovered case is still an error at runtime.</p>
+                <pre class="simple-code">-- Without the pragma:
+def describe(Num(n)) -> "number"
+describe(Bool(true))
+-- Error: function 'describe' is not exhaustive
+--        (add a catch-all clause, or use the `partial` pragma)
+
+-- With {--! partial !--}: the definition is accepted as-is.</pre>
+                <p><strong>Use it when</strong> you are prototyping, or a function is intentionally defined only for some shapes and you accept the runtime risk.</p>
+
+                <div class="function-sig" id="no-curry">{--! no-curry !--}</div>
+                <p>Bern auto-curries: calling a function with fewer arguments than it expects returns a new function waiting for the rest. This pragma disables that, so every call must pass all the arguments.</p>
+                <pre class="simple-code">def add(x, y) -> x + y
+
+-- Without the pragma:
+add5 = add(5)       -- a function expecting one more argument
+add5(3)             -- 8
+
+-- With {--! no-curry !--}:
+add(5)              -- Error: 'add' expects 2 arguments</pre>
+                <p><strong>Use it when</strong> you'd rather a missing argument be reported as a mistake than silently produce a partially-applied function.</p>
+            </div>
+
+            <!-- OUTPUT & ENTRY POINT -->
+            <div class="doc-section" id="output">
+                <h2>Output &amp; entry point</h2>
+
+                <div class="function-sig" id="no-eval">{--! no-eval !--}</div>
+                <p>At the top level, a bare expression auto-prints its result. This pragma suppresses that, so only explicit <code>print(...)</code> calls produce output.</p>
+                <pre class="simple-code">-- Without the pragma:
+2 + 2               -- prints 4
+
+-- With {--! no-eval !--}:
+2 + 2               -- prints nothing
+print(2 + 2)        -- prints 4</pre>
+                <p><strong>Use it when</strong> a file is a module or script that shouldn't spray intermediate values to the console - you control output through <code>print</code>.</p>
+
+                <div class="function-sig" id="show-types">{--! show-types !--}</div>
+                <p>When an auto-printed value is shown, this pragma appends its type, in the form <code>value : Type</code>.</p>
+                <pre class="simple-code">-- Without the pragma:
+42                  -- 42
+
+-- With {--! show-types !--}:
+42                  -- 42 : Integer
+"hi"                -- hi : List</pre>
+                <p><strong>Use it when</strong> you are exploring in the REPL or debugging and want to see at a glance what type each result is.</p>
+
+                <div class="function-sig" id="main">{--! main !--}</div>
+                <p>By default a file runs top to bottom. This pragma additionally calls <code>main()</code> once the file has finished loading, giving the program a conventional entry point.</p>
+                <pre class="simple-code">{--! main !--}
+
+def greet(name) -> "Hello, " + name
+
+def main() do
+    print(greet("Bern"))
+end
+-- After loading, main() runs and prints: Hello, Bern</pre>
+                <p><strong>Use it when</strong> you want an explicit entry point - defining helpers and a <code>main</code> up front, and letting the pragma kick it off.</p>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        Copyright © 2026 • All rights reserved • Built with ❤️ by <a href="https://mirvox.xyz/">Miguel Aguiar</a>
+    </footer>
+</body>
+</html>

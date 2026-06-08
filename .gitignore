@@ -5,3 +5,6 @@ Bern.exe
 /lib/vendor/raylib
 /tests/ray.brn
 result
+.bern_history
+tests/tmp_csv_output.csv
+tests/tmp_csv_objects.csv

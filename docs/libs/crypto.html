@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>crypto - Bern Libraries</title>
+    <link rel="icon" type="image/png" href="../images/cat.png">
+    <link rel="stylesheet" href="../lib.css">
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <a href="../index.html" class="logo"><img src="../images/cat.png" alt="Bern Logo" width="20%" style="margin-top: 10px;"></a>
+            <nav>
+                <a href="../documentation.html">Language</a>
+                <a href="../libraries.html">Libraries</a>
+                <!-- <a href="../examples.html">Learn Bern</a> -->
+                <a href="../changelog.html">Changelog</a>
+                <a href="../pt-br/libs/crypto.html" style="font-weight: 600;">🌐 PT-BR</a>
+            </nav>
+        </div>
+    </header>
+
+    <div class="layout">
+        <aside class="sidebar">
+            <h3>crypto</h3>
+            <ul>
+                <li><a href="#random">Random utilities</a></li>
+                <li><a href="#hash">Hashing &amp; comparison</a></li>
+                <li><a href="#uuid">UUID-like IDs</a></li>
+                <li><a href="#together">Putting it together</a></li>
+            </ul>
+            <h3>More</h3>
+            <ul>
+                <li><a href="../libraries.html" class="back-link">← All libraries</a></li>
+            </ul>
+        </aside>
+
+        <div class="container">
+            <p class="breadcrumb"><a href="../documentation.html">Documentation</a> / <a href="../libraries.html">Libraries</a> / crypto</p>
+            <h1 class="page-title">crypto</h1>
+            <p class="page-subtitle">Token generation, checksums, and UUID-like identifiers in pure Bern.</p>
+
+            <pre class="simple-code">import crypto</pre>
+            <div class="note">
+                <strong>Note:</strong> These helpers are handy for IDs and checksums, but they are <strong>not</strong> a replacement for modern audited cryptography (AES, SHA-2, ed25519, …). Don't use them to protect secrets.
+            </div>
+
+            <div class="doc-section" id="random">
+                <h2>Random utilities</h2>
+
+                <div class="function-sig">crypto_random_token(length) → string</div>
+                <p>A random alphanumeric token of the given length.</p>
+                <pre class="simple-code">crypto_random_token(12)
+-- Output: "a8Kx2Mq0Zb1p"   (example)</pre>
+
+                <div class="function-sig">crypto_random_hex(byte_count) → string</div>
+                <p>Random hexadecimal text, two characters per requested byte.</p>
+                <pre class="simple-code">crypto_random_hex(8)
+-- Output: (16 hex chars, e.g. "3f0a9c12bb47de08")</pre>
+            </div>
+
+            <div class="doc-section" id="hash">
+                <h2>Hashing &amp; comparison</h2>
+
+                <div class="function-sig">crypto_checksum32(text) → int</div>
+                <p>A 32-bit Adler-style checksum of the text.</p>
+                <pre class="simple-code">crypto_checksum32("bern")
+-- Output: (a 32-bit integer)</pre>
+
+                <div class="function-sig">crypto_hash32_hex(text) → string</div>
+                <p>The checksum rendered as an 8-character hex string - useful as a short content fingerprint.</p>
+                <pre class="simple-code">crypto_hash32_hex("bern")
+-- Output: (8 hex chars)
+crypto_hash32_hex("bern") == crypto_hash32_hex("bern")
+-- Output: true   (same input → same hash)</pre>
+
+                <div class="function-sig">crypto_secure_compare(a, b) → boolean</div>
+                <p>Compare two strings with a fixed-length scan to reduce timing leakage.</p>
+                <pre class="simple-code">crypto_secure_compare("token123", "token123")
+-- Output: true
+crypto_secure_compare("token123", "token124")
+-- Output: false</pre>
+            </div>
+
+            <div class="doc-section" id="uuid">
+                <h2>UUID-like IDs</h2>
+
+                <div class="function-sig">crypto_uuid_v4_like() → string</div>
+                <p>A random identifier shaped like a UUID v4.</p>
+                <pre class="simple-code">crypto_uuid_v4_like()
+-- Output: "3f1a9c20-8b4e-4d77-9a2c-1e5f0b7c3d92"   (example)</pre>
+            </div>
+
+            <div class="doc-section" id="together">
+                <h2>Putting it together</h2>
+                <p>A common pattern is issuing an ID together with a fingerprint, then verifying it later with a constant-time compare:</p>
+                <div class="example-box">
+                    <h4>Issuing and verifying a signed token</h4>
+                    <pre class="simple-code">import crypto
+
+-- issue
+id    = crypto_uuid_v4_like()
+token = crypto_random_token(16)
+sig   = crypto_hash32_hex(id + token)
+
+-- ...later, verify a presented (id, token) pair
+def verify(id, token, sig) -> crypto_secure_compare(crypto_hash32_hex(id + token), sig)
+
+verify(id, token, sig)
+-- Output: true
+
+verify(id, "wrong-token", sig)
+-- Output: false</pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        Copyright © 2026 • All rights reserved • Built with ❤️ by <a href="https://mirvox.xyz/">Miguel Aguiar</a>
+    </footer>
+</body>
+</html>
