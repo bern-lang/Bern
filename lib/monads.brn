@@ -1,0 +1,178 @@
+-- This file contains basic monads and related functions for Bern.
+-- These are fundamental building blocks for more complex abstractions.
+-- And a more functional style of programming.
+
+adt Maybe = Just Any | Nothing
+adt Either = Left Any | Right Any
+adt List = Nil | Cons Any List
+
+-- ============================================================================
+-- Maybe
+--
+-- A computation that may or may not yield a value: `Just(x)` carries a value,
+-- `Nothing()` is the empty case. Use it instead of sentinel values (null, -1)
+-- so "no result" is explicit in the type.
+-- ============================================================================
+
+-- Predicates: which shape is it?
+def is_just(Just(_)) -> true
+def is_just(Nothing()) -> false
+
+def is_nothing(Just(_)) -> false
+def is_nothing(Nothing()) -> true
+
+-- Unwrap with a fallback when empty.
+def from_maybe(default, Just(x)) -> x
+def from_maybe(default, Nothing()) -> default
+
+-- Catamorphism: collapse a Maybe to a plain value. Apply `f` to the contents of
+-- a Just, otherwise return `default`.
+def maybe(default, f, Just(x)) -> f(x)
+def maybe(default, f, Nothing()) -> default
+
+-- Functor: transform the value inside a Just, leave Nothing untouched.
+def map_maybe(f, Just(x)) -> Just(f(x))
+def map_maybe(f, Nothing()) -> Nothing()
+
+-- Monadic bind: chain a Maybe-returning function. The chain short-circuits to
+-- Nothing as soon as any step produces Nothing.
+def bind_maybe(Just(x), f) -> f(x)
+def bind_maybe(Nothing(), f) -> Nothing()
+
+-- ============================================================================
+-- Either
+--
+-- A computation that yields one of two things, by convention `Left(e)` for a
+-- failure/error and `Right(x)` for a success. Unlike Maybe, the failure case
+-- carries information (a message, an error value), so it is the usual choice
+-- for "errors as values" where the why matters.
+-- ============================================================================
+
+def is_left(Left(_)) -> true
+def is_left(Right(_)) -> false
+
+def is_right(Left(_)) -> false
+def is_right(Right(_)) -> true
+
+-- Catamorphism: collapse an Either by handling both sides.
+def either(on_left, on_right, Left(e)) -> on_left(e)
+def either(on_left, on_right, Right(x)) -> on_right(x)
+
+-- Functor: map over the success (Right) side; a Left passes through unchanged.
+def map_either(f, Right(x)) -> Right(f(x))
+def map_either(f, Left(e)) -> Left(e)
+
+-- Map over the failure (Left) side; a Right passes through unchanged.
+def map_left(f, Right(x)) -> Right(x)
+def map_left(f, Left(e)) -> Left(f(e))
+
+-- Monadic bind: chain on the Right side; the first Left short-circuits.
+def bind_either(Right(x), f) -> f(x)
+def bind_either(Left(e), f) -> Left(e)
+
+-- Unwrap one side with a fallback for the other.
+def from_right(default, Right(x)) -> x
+def from_right(default, Left(_)) -> default
+
+def from_left(default, Right(_)) -> default
+def from_left(default, Left(e)) -> e
+
+-- Convert between the two: a Left becomes Nothing, a Right becomes Just.
+def either_to_maybe(Left(_)) -> Nothing()
+def either_to_maybe(Right(x)) -> Just(x)
+
+-- A Just becomes Right; a Nothing becomes Left carrying the supplied error.
+def maybe_to_either(err, Nothing()) -> Left(err)
+def maybe_to_either(err, Just(x)) -> Right(x)
+
+-- ============================================================================
+-- Generic monad operations
+--
+-- `bind` and `mmap` dispatch on the constructor, so they work uniformly over
+-- Maybe and Either. This is what lets the `>>=` and `<$>` operators below stay
+-- type-agnostic.
+-- ============================================================================
+
+def bind(Just(x), f)  -> f(x)
+def bind(Nothing(), f) -> Nothing()
+def bind(Right(x), f) -> f(x)
+def bind(Left(e), f)  -> Left(e)
+
+def mmap(f, Just(x))  -> Just(f(x))
+def mmap(f, Nothing()) -> Nothing()
+def mmap(f, Right(x)) -> Right(f(x))
+def mmap(f, Left(e))  -> Left(e)
+
+-- Operators -- the point of a monad library is readable chaining.
+--   f <$> m   maps a plain function over a monadic value     (map / functor)
+--   m >>= f   feeds a monadic value into a monadic function   (bind)
+infix <$> groups left, binds like *
+infix >>= groups left, binds like <>
+
+def (f <$> m) -> mmap(f, m)
+def (m >>= f) -> bind(m, f)
+
+-- ============================================================================
+-- List (the Cons/Nil cons-list ADT)
+--
+-- A classic linked list built from `Cons(head, tail)` and `Nil()`. Bern already
+-- has a fast built-in list (`[1, 2, 3]`); this ADT is here for teaching the
+-- shape and for code that wants to pattern-match the structure directly. The
+-- `list_from` / `list_to` pair bridges to and from built-in lists.
+-- ============================================================================
+
+-- Bridge to/from built-in lists.
+def list_from([]) -> Nil()
+def list_from([h|t]) -> Cons(h, list_from(t))
+
+def list_to(Nil()) -> []
+def list_to(Cons(h, t)) -> [h] <> list_to(t)
+
+def list_map(f, Nil()) -> Nil()
+def list_map(f, Cons(h, t)) -> Cons(f(h), list_map(f, t))
+
+def list_foldr(f, acc, Nil()) -> acc
+def list_foldr(f, acc, Cons(h, t)) -> f(h, list_foldr(f, acc, t))
+
+def list_length(Nil()) -> 0
+def list_length(Cons(_, t)) -> 1 + list_length(t)
+
+def list_append(Nil(), ys) -> ys
+def list_append(Cons(h, t), ys) -> Cons(h, list_append(t, ys))
+
+-- Reverse via a tail-recursive accumulator: O(n) with O(1) prepends.
+def list_reverse(xs) -> list_reverse_acc(xs, Nil())
+def list_reverse_acc(Nil(), acc) -> acc
+def list_reverse_acc(Cons(h, t), acc) -> list_reverse_acc(t, Cons(h, acc))
+
+-- ============================================================================
+-- Traversals over built-in lists
+--
+-- Walk a built-in list, run an effectful step on each element, and collect the
+-- results -- short-circuiting on the first failure.
+-- ============================================================================
+
+-- Turn a list of Maybes into a Maybe of a list: Just(all values) if every
+-- element is Just, otherwise Nothing.
+def sequence_maybe(xs) -> sequence_maybe_acc(xs, [])
+def sequence_maybe_acc([], acc) -> Just(acc)
+def sequence_maybe_acc([h|t], acc) -> sequence_maybe_step(h, t, acc)
+def sequence_maybe_step(Just(x), t, acc) -> sequence_maybe_acc(t, acc <> [x])
+def sequence_maybe_step(Nothing(), t, acc) -> Nothing()
+
+-- Map a Maybe-returning function across a list, failing fast on the first Nothing.
+def traverse_maybe(f, xs) -> sequence_maybe(map_each(f, xs))
+
+-- Like sequence_maybe but for Either: Right(all values), or the first Left seen.
+def sequence_either(xs) -> sequence_either_acc(xs, [])
+def sequence_either_acc([], acc) -> Right(acc)
+def sequence_either_acc([h|t], acc) -> sequence_either_step(h, t, acc)
+def sequence_either_step(Right(x), t, acc) -> sequence_either_acc(t, acc <> [x])
+def sequence_either_step(Left(e), t, acc) -> Left(e)
+
+-- Map an Either-returning function across a list, failing fast on the first Left.
+def traverse_either(f, xs) -> sequence_either(map_each(f, xs))
+
+-- Small local map over built-in lists, so this file stays independent of core.
+def map_each(f, []) -> []
+def map_each(f, [h|t]) -> [f(h)] <> map_each(f, t)

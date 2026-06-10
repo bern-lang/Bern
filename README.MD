@@ -14,7 +14,7 @@
 
 Bern **2.0** is a major release. It turns the interpreter into a configurable language and adds a lot of new capability. Highlights:
 
-* **New defaults:** errors-as-values (runtime errors become inspectable values instead of crashing), auto-currying, lazy ranges, exhaustive-match checking, short-circuit `&&`/`||`, and negative indexing.
+* **New defaults:** auto-currying, lazy ranges, exhaustive-match checking, short-circuit `&&`/`||`, and negative indexing. Opt into errors-as-values (language errors become inspectable values instead of crashing) with the `{--! errors-as-values !--}` pragma; `error()`/`is_error()` user errors are always values.
 * **Pragmas:** file-level directives like `{--! strict-types !--}` or `{--! immutable !--}` to opt into stricter or looser behaviour.
 * **Language:** written-word operators, the `)|` pipe, `when` guards, `returns`/`such-that`/`lambda` syntax, and `loop ... in`.
 * **Library & tooling:** JSON (`json_parse`/`json_stringify`), `keys()`, `error()`/`is_error()`, a much-improved REPL, and `bern build` for standalone executables.

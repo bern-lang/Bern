@@ -40,7 +40,7 @@ end
 
 def parse_csv_rows_raw(content, delimiter) do
     current_delimiter = delimiter
-    if (length(current_delimiter) == 0) then
+    if (len(current_delimiter) == 0) then
         current_delimiter = ","
     end
 
@@ -50,8 +50,8 @@ def parse_csv_rows_raw(content, delimiter) do
     row_idx = 0
     i = 0
     in_quotes = false
-    content_len = length(content)
-    delimiter_len = length(current_delimiter)
+    content_len = len(content)
+    delimiter_len = len(current_delimiter)
 
     for i < content_len do
         ch = content[i]
@@ -91,7 +91,7 @@ def parse_csv_rows_raw(content, delimiter) do
         i = i + 1
     end
 
-    if ((:> row) > 0 || length(field) > 0) then
+    if ((:> row) > 0 || len(field) > 0) then
         row = row <> [strip_trailing_carriage_return(field)]
         rows["" + row_idx] = row
     end
@@ -100,9 +100,9 @@ def parse_csv_rows_raw(content, delimiter) do
 end
 
 def strip_trailing_carriage_return(s) do
-    if (length(s) > 0) then
-        if (s[length(s) - 1] == '\r') then
-            return substring(s, 0, length(s) - 1)
+    if (len(s) > 0) then
+        if (s[len(s) - 1] == '\r') then
+            return substring(s, 0, len(s) - 1)
         end
     end
     return s
@@ -138,7 +138,7 @@ end
 
 def is_blank_field(text) do
     idx = 0
-    for idx < length(text) do
+    for idx < len(text) do
         ch = text[idx]
         if (ch != ' ' && ch != '\n' && ch != '\t' && ch != '\r') then
             return false

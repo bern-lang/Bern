@@ -134,7 +134,7 @@ printWelcome = do
   putStrLn (purple ++ "| |_/ / ___ _ __ _ __       " ++ reset)
   putStrLn (purple ++ "| ___ \\/ _ \\ '__| '_ \\     Type \":help\" for REPL commands." ++ reset)
   putStrLn (purple ++ "| |_/ /  __/ |  | | | |      Use \"bern <file>\" to run a program." ++ reset)
-  putStrLn (purple ++ "\\____/ \\___|_|  |_| |_|            [ v.2.1.0  08.06.2026 ]" ++ reset)
+  putStrLn (purple ++ "\\____/ \\___|_|  |_| |_|            [ v.2.2.0  10.06.2026 ]" ++ reset)
 
 {-
 English:

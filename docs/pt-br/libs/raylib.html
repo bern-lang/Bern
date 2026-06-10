@@ -41,7 +41,7 @@
         <div class="container">
             <p class="breadcrumb"><a href="../documentation.html">Documentação</a> / <a href="../libraries.html">Bibliotecas</a> / vendor/raylib</p>
             <h1 class="page-title">vendor/raylib <span class="vendor-badge">Vendor</span></h1>
-            <p class="page-subtitle">Bindings para a <a href="https://www.raylib.com">raylib 5.5</a> — janelas, desenho 2D/3D, entrada e áudio, direto sobre o FFI da Bern.</p>
+            <p class="page-subtitle">Bindings para a <a href="https://www.raylib.com">raylib 5.5</a> - janelas, desenho 2D/3D, entrada e áudio, direto sobre o FFI da Bern.</p>
 
             <pre class="simple-code">import vendor/raylib/raylib</pre>
             <p>O módulo carrega a biblioteca compartilhada da raylib empacotada para a sua plataforma (Windows <code>.dll</code>, Linux <code>.so</code>, macOS <code>.dylib</code>) e expõe as funções C da raylib com os nomes originais. Se você conhece o <a href="https://www.raylib.com/cheatsheet/cheatsheet.html">cheatsheet da raylib</a>, já conhece a API: <code>InitWindow</code>, <code>BeginDrawing</code>, <code>DrawText</code> e as demais são chamadas exatamente como você espera, com o handle da biblioteca já conectado para você.</p>
@@ -84,7 +84,7 @@ ConfigFlag.MSAA_4X_HINT  -- 32
                 <pre class="simple-code">InitWindow(800, 450, "Bern + raylib")</pre>
 
                 <div class="function-sig">WindowShouldClose() → bool</div>
-                <p>Verdadeiro quando o usuário fecha a janela ou pressiona a tecla de saída — a condição natural para o laço principal.</p>
+                <p>Verdadeiro quando o usuário fecha a janela ou pressiona a tecla de saída - a condição natural para o laço principal.</p>
 
                 <div class="function-sig">CloseWindow() → void</div>
                 <p>Encerra a janela e libera os recursos. Chame por último.</p>
@@ -151,7 +151,7 @@ DrawLine(0, 0, 800, 450, RL_GRAY)</pre>
                 <p>Desenha uma string com a fonte embutida. <code>MeasureText(text, fontSize)</code> retorna a largura em pixels, e <code>DrawFPS(x, y)</code> desenha um contador de quadros ao vivo.</p>
 
                 <div class="function-sig">colisão</div>
-                <p><code>CheckCollisionPointRec(point, rect)</code> e <code>CheckCollisionPointCircle(point, center, radius)</code> respondem testes simples de acerto — úteis para botões e estados de hover.</p>
+                <p><code>CheckCollisionPointRec(point, rect)</code> e <code>CheckCollisionPointCircle(point, center, radius)</code> respondem testes simples de acerto - úteis para botões e estados de hover.</p>
             </div>
 
             <div class="doc-section" id="audio">
@@ -175,7 +175,7 @@ CloseAudioDevice()</pre>
 
             <div class="doc-section" id="together">
                 <h2>Juntando tudo</h2>
-                <p>A clássica "primeira janela" da raylib — abrir uma janela, rodar o laço de quadros até o usuário fechá-la e desenhar uma linha de texto no meio.</p>
+                <p>A clássica "primeira janela" da raylib - abrir uma janela, rodar o laço de quadros até o usuário fechá-la e desenhar uma linha de texto no meio.</p>
                 <div class="example-box">
                     <h4>Sua primeira janela</h4>
                     <pre class="simple-code">import vendor/raylib/raylib

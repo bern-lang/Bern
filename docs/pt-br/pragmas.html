@@ -70,7 +70,7 @@
                     <tr><td><a href="#immutable"><code>immutable</code></a></td><td>reatribuir uma variável existente é erro</td></tr>
                     <tr><td><a href="#no-undefined"><code>no-undefined</code></a></td><td>ler uma variável não definida é erro</td></tr>
                     <tr><td><a href="#no-written-operators"><code>no-written-operators</code></a></td><td>libera os nomes de operadores em palavras para variáveis</td></tr>
-                    <tr><td><a href="#abort-on-error"><code>abort-on-error</code></a></td><td>falha em erros de execução em vez de valores de erro</td></tr>
+                    <tr><td><a href="#errors-as-values"><code>errors-as-values</code></a></td><td>transforma erros de execução da linguagem em valores inspecionáveis em vez de derrubar</td></tr>
                     <tr><td><a href="#partial"><code>partial</code></a></td><td>permite funções não exaustivas</td></tr>
                     <tr><td><a href="#no-curry"><code>no-curry</code></a></td><td>desativa o currying automático</td></tr>
                     <tr><td><a href="#no-eval"><code>no-eval</code></a></td><td>expressões soltas não imprimem automaticamente</td></tr>
@@ -150,7 +150,7 @@ bad :: Integer = 'a'
                 <div class="function-sig" id="safe-index">{--! safe-index !--}</div>
                 <p>Indexar além do fim de uma lista ou string normalmente é um erro. Com este pragma, um índice fora dos limites retorna <code>undefined</code>, então uma busca nunca falha.</p>
                 <pre class="simple-code">-- Sem o pragma:
-[1, 2, 3][99]     -- Error (um valor de erro)
+[1, 2, 3][99]     -- derruba (ou um valor de erro sob errors-as-values)
 
 -- Com {--! safe-index !--}:
 [1, 2, 3][99]     -- undefined</pre>
@@ -203,15 +203,18 @@ plus = 10           -- também ok</pre>
             <div class="doc-section" id="errors">
                 <h2>Erros &amp; funções</h2>
 
-                <div class="function-sig" id="abort-on-error">{--! abort-on-error !--}</div>
-                <p>Por padrão um erro de execução vira um <em>valor</em> que você pode inspecionar com <code>is_error</code>, e o programa continua rodando (erros como valores). Este pragma restaura o comportamento clássico: um erro derruba o programa na hora.</p>
-                <pre class="simple-code">-- Sem o pragma:
-result = head([])
-is_error(result)    -- true; o programa continua
+                <div class="function-sig" id="errors-as-values">{--! errors-as-values !--}</div>
+                <p>Por padrão um erro de execução <em>da linguagem</em> (chamar uma função indefinida, indexar fora dos limites, incompatibilidade de tipos, &hellip;) derruba o programa na hora. Este pragma transforma esses erros em <em>valores</em> que você pode inspecionar com <code>is_error</code>, então o programa continua rodando e o erro se propaga como veneno pela expressão ao redor.</p>
+                <p>Note que <strong>erros do usuário</strong> criados com <code>error("&hellip;")</code> são <em>sempre</em> valores, independentemente deste pragma -; é isso que torna <code>error()</code> / <code>is_error</code> úteis como um try/catch leve. O pragma só muda o que acontece com os erros da própria linguagem.</p>
+                <pre class="simple-code">-- Sem o pragma (padrão):
+[1, 2, 3][99]       -- derruba imediatamente com o erro
+error("boom")       -- ainda é um valor (erro do usuário)
+is_error(error("boom"))   -- true; o programa continua
 
--- Com {--! abort-on-error !--}:
-head([])            -- derruba imediatamente com o erro</pre>
-                <p><strong>Use quando</strong> preferir falhar rápido - um script onde um erro deve parar tudo, não fluir silenciosamente como valor.</p>
+-- Com {--! errors-as-values !--}:
+result = [1, 2, 3][99]
+is_error(result)    -- true; o programa continua</pre>
+                <p><strong>Use quando</strong> quiser se recuperar de erros da linguagem do mesmo jeito que você faz com valores <code>error("&hellip;")</code>, em vez de deixá-los parar o programa.</p>
 
                 <div class="function-sig" id="partial">{--! partial !--}</div>
                 <p>Uma função de um argumento cujas cláusulas não cobrem todos os casos é normalmente rejeitada como não exaustiva. Este pragma permite tais funções parciais; chamar um caso não coberto ainda é um erro em tempo de execução.</p>

@@ -62,7 +62,7 @@ def crypto_checksum32(text) do
     b = 0
     i = 0
 
-    for i < length(text) do
+    for i < len(text) do
         a = (a + crypto_char_value(text[i])) % mod
         b = (b + a) % mod
         i = i + 1
@@ -98,8 +98,8 @@ end
 def crypto_hash32_hex(text) -> crypto_u32_to_hex(crypto_checksum32(text))
 
 def crypto_secure_compare(a, b) do
-    la = length(a)
-    lb = length(b)
+    la = len(a)
+    lb = len(b)
     max_len = la
     if lb > max_len then
         max_len = lb

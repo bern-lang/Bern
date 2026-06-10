@@ -42,7 +42,7 @@
         <div class="container">
             <p class="breadcrumb"><a href="../documentation.html">Documentation</a> / <a href="../libraries.html">Libraries</a> / vendor/raylib</p>
             <h1 class="page-title">vendor/raylib <span class="vendor-badge">Vendor</span></h1>
-            <p class="page-subtitle">Bindings for <a href="https://www.raylib.com">raylib 5.5</a> — windowing, 2D/3D drawing, input and audio, straight over Bern's FFI.</p>
+            <p class="page-subtitle">Bindings for <a href="https://www.raylib.com">raylib 5.5</a> - windowing, 2D/3D drawing, input and audio, straight over Bern's FFI.</p>
 
             <pre class="simple-code">import vendor/raylib/raylib</pre>
             <p>The module loads the bundled raylib shared library for your platform (Windows <code>.dll</code>, Linux <code>.so</code>, macOS <code>.dylib</code>) and exposes the raylib C functions under their original names. If you know the <a href="https://www.raylib.com/cheatsheet/cheatsheet.html">raylib cheatsheet</a>, you already know the API: <code>InitWindow</code>, <code>BeginDrawing</code>, <code>DrawText</code>, and the rest are called exactly as you would expect, with the library handle wired up for you.</p>
@@ -85,7 +85,7 @@ ConfigFlag.MSAA_4X_HINT  -- 32
                 <pre class="simple-code">InitWindow(800, 450, "Bern + raylib")</pre>
 
                 <div class="function-sig">WindowShouldClose() → bool</div>
-                <p>True once the user closes the window or presses the exit key — the natural condition for the main loop.</p>
+                <p>True once the user closes the window or presses the exit key - the natural condition for the main loop.</p>
 
                 <div class="function-sig">CloseWindow() → void</div>
                 <p>Tear down the window and release resources. Call it last.</p>
@@ -152,7 +152,7 @@ DrawLine(0, 0, 800, 450, RL_GRAY)</pre>
                 <p>Draw a string with the built-in font. <code>MeasureText(text, fontSize)</code> returns its pixel width, and <code>DrawFPS(x, y)</code> draws a live frame-rate counter.</p>
 
                 <div class="function-sig">collision</div>
-                <p><code>CheckCollisionPointRec(point, rect)</code> and <code>CheckCollisionPointCircle(point, center, radius)</code> answer simple hit tests — handy for buttons and hover states.</p>
+                <p><code>CheckCollisionPointRec(point, rect)</code> and <code>CheckCollisionPointCircle(point, center, radius)</code> answer simple hit tests - handy for buttons and hover states.</p>
             </div>
 
             <div class="doc-section" id="audio">
@@ -176,7 +176,7 @@ CloseAudioDevice()</pre>
 
             <div class="doc-section" id="together">
                 <h2>Putting it together</h2>
-                <p>The classic raylib "first window" — open a window, run the frame loop until the user closes it, and draw a line of text in the middle.</p>
+                <p>The classic raylib "first window" - open a window, run the frame loop until the user closes it, and draw a line of text in the middle.</p>
                 <div class="example-box">
                     <h4>Your first window</h4>
                     <pre class="simple-code">import vendor/raylib/raylib

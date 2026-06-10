@@ -1,0 +1,34 @@
+import core
+import assert
+
+-- Infinite (open-ended) lazy ranges, in the style of Haskell's [1..].
+--
+-- A list keeps an unforced spine plus a cached length, so an open-ended range
+-- stores a genuinely infinite spine and an "infinite" length sentinel. Only the
+-- operations that touch elements lazily (head, take, drop, indexing, [h|t]
+-- pattern matching, prepend) may be used on one -- anything that walks the whole
+-- list (map/filter/len/reverse) would run forever, exactly as it would over a
+-- huge finite range. These tests stick to the lazy-safe operations.
+
+"Infinite lazy list tests"
+
+-- [start..] : open-ended, step +1
+assert_equals("take from [1..]", take(5, [1..]), [1, 2, 3, 4, 5])
+assert_equals("head of [10..]", head([10..]), 10)
+assert_equals("index into [1..]", [1..][4], 5)
+assert_equals("drop then take", take(3, drop(5, [1..])), [6, 7, 8])
+
+-- [start, next..] : open-ended with a custom step
+assert_equals("stepped [0,2..]", take(5, [0, 2..]), [0, 2, 4, 6, 8])
+assert_equals("descending [10,8..]", take(4, [10, 8..]), [10, 8, 6, 4])
+
+-- prepend onto an infinite list stays lazy
+assert_equals("prepend onto [1..]", take(4, [0 | [1..]]), [0, 1, 2, 3])
+
+-- [start, next .. end] : finite stepped range (length is arithmetic, not walked)
+assert_equals("finite stepped values", [1, 3..11], [1, 3, 5, 7, 9, 11])
+assert_equals("finite stepped size", :> [1, 3..11], 6)
+assert_equals("finite stepped descending", [10, 7..1], [10, 7, 4, 1])
+assert_equals("finite stepped empty", [1, 3..0], [])
+
+"All infinite list tests passed"

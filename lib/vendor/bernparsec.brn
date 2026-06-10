@@ -87,7 +87,7 @@ def mk_state(input, source_name) do
 end
 
 -- True when the cursor has reached the end of the input.
-def at_end(state) -> state["index"] >= length(state["input"])
+def at_end(state) -> state["index"] >= len(state["input"])
 
 -- The character under the cursor, or false at end of input.
 def current_char(state) do
@@ -176,7 +176,7 @@ def merge_failures(a, b) do
     else
         merged_expected = merge_expected(a["expected"], b["expected"])
         merged_message = a["message"]
-        if (length(merged_message) == 0) then
+        if (len(merged_message) == 0) then
             merged_message = b["message"]
         end
         return err_result(merged_expected, merged_message, a["state"])
@@ -763,7 +763,7 @@ def parse_state(parser, state) do
         idx = 0
         current = state
         token = parser["token"]
-        for idx < length(token) do
+        for idx < len(token) do
             if (at_end(current)) then
                 return err_result([token], "unexpected end of input", current)
             end
@@ -968,7 +968,7 @@ def errorBundlePretty(result) do
     end
 
     message = result["message"]
-    if (length(message) == 0) then
+    if (len(message) == 0) then
         message = "unexpected input"
     end
 

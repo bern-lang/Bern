@@ -29,7 +29,7 @@ assert_equals("left section (2 ^)",  map([1, 2, 3], (2 ^)), [2, 4, 8])
 -- Word operator, explicit fixity
 infix dot groups left, binds like *
 
-def (a dot b) -> sum(zipWith(a, b, \x, y -> x * y))
+def (a dot b) -> sum(zip_with(a, b, \x, y -> x * y))
 
 assert_equals("word op infix", [1, 2, 3] dot [4, 5, 6], 32)
 assert_equals("word op as function", dot([1, 2, 3], [4, 5, 6]), 32)

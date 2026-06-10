@@ -74,8 +74,8 @@ def tail([_|t]) -> t
 def tail([]) -> error("tail: empty list")
 
 -- Check if list is empty
-def isEmpty([]) -> true
-def isEmpty(_) -> false
+def is_empty([]) -> true
+def is_empty(_) -> false
 
 -- Any: Check if any element satisfies predicate
 def any([], f) -> false
@@ -114,10 +114,10 @@ def zip_acc(_, [], acc) -> reverse_list(acc)
 def zip_acc([h1|t1], [h2|t2], acc) -> zip_acc(t1, t2, [[h1, h2]] <> acc)
 
 -- ZipWith: Combine two lists with a function
-def zipWith(xs, ys, f) -> zipWith_acc(xs, ys, f, [])
-def zipWith_acc([], _, f, acc) -> reverse_list(acc)
-def zipWith_acc(_, [], f, acc) -> reverse_list(acc)
-def zipWith_acc([h1|t1], [h2|t2], f, acc) -> zipWith_acc(t1, t2, f, [f(h1, h2)] <> acc)
+def zip_with(xs, ys, f) -> zip_with_acc(xs, ys, f, [])
+def zip_with_acc([], _, f, acc) -> reverse_list(acc)
+def zip_with_acc(_, [], f, acc) -> reverse_list(acc)
+def zip_with_acc([h1|t1], [h2|t2], f, acc) -> zip_with_acc(t1, t2, f, [f(h1, h2)] <> acc)
 
 -- Range: Create a list from start to end (inclusive)
 -- Abstraction for [x..y]
@@ -161,11 +161,11 @@ def print(x) -> id(x)
 
 -- TypeOf function: returns the type of the argument as a string
 -- Abstraction for built in type retrieval
-def typeOf(x) -> ::x
+def type_of(x) -> ::x
 
 -- Length function for strings, lists, and sets
 -- Abstraction for built in length retrieval
-def length(x) -> :>x
+def len(x) -> :>x
 
 -- Constant function: always returns the first argument
 def const(x, _) -> x
@@ -199,6 +199,23 @@ def to_int(s) do
     return helper(s, 0)
 end
 
+def to_double(s) do
+    def helper([], acc, _) -> acc
+    def helper(['.'|tail], acc, _) -> helper(tail, acc, 1)
+    def helper([head|tail], acc, 0) do
+        digit = char_to_digit(head)
+        newAcc = acc * 10 + digit
+        return helper(tail, newAcc, 0)
+    end
+    def helper([head|tail], acc, divisor) do
+        digit = char_to_digit(head)
+        newAcc = acc + (digit * 1.0) / (divisor * 10)
+        return helper(tail, newAcc, divisor * 10)
+    end
+    return helper(s, 0.0, 0)
+end
+
+def double_to_int(d) -> d / 1.0
 def int_to_double(n) -> n * 1.0
 
 -- get the index of an element in a list or set.

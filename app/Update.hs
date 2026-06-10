@@ -67,7 +67,7 @@ import System.Process (readProcessWithExitCode)
 -- A versão que este interpretador reporta como a sua. Mantenha em sincronia com
 -- o campo `version` no Bern.cabal e com o banner do REPL.
 currentVersion :: String
-currentVersion = "2.1.0"
+currentVersion = "2.2.0"
 
 -- Where the published manifest lives (served by GitHub Pages).
 -- Onde o manifesto publicado vive (servido pelo GitHub Pages).

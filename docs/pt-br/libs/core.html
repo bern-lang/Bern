@@ -127,7 +127,7 @@ reverse({1, 2, 3})
 -- Saída: [30, 40]</pre>
 
                 <div class="function-sig">head(lista) → elemento</div>
-                <p>O primeiro elemento. Retorna um <a href="../documentation.html#errors-as-values">valor de erro</a> em lista vazia.</p>
+                <p>O primeiro elemento. Retorna um <a href="../documentation.html#errors">valor de erro</a> em lista vazia.</p>
                 <pre class="simple-code">head([10, 20, 30])
 -- Saída: 10</pre>
 
@@ -140,11 +140,11 @@ reverse({1, 2, 3})
             <div class="doc-section" id="predicates">
                 <h2>Predicados &amp; busca</h2>
 
-                <div class="function-sig">isEmpty(lista) → booleano</div>
+                <div class="function-sig">is_empty(lista) → booleano</div>
                 <p>Se a lista não tem elementos.</p>
-                <pre class="simple-code">isEmpty([])
+                <pre class="simple-code">is_empty([])
 -- Saída: true
-isEmpty([1])
+is_empty([1])
 -- Saída: false</pre>
 
                 <div class="function-sig">any(lista, predicado) → booleano</div>
@@ -180,9 +180,9 @@ index_of([1, 2, 3], 9)
                 <pre class="simple-code">zip([1, 2, 3], ['a', 'b', 'c'])
 -- Saída: [[1, 'a'], [2, 'b'], [3, 'c']]</pre>
 
-                <div class="function-sig">zipWith(lista1, lista2, função) → lista</div>
+                <div class="function-sig">zip_with(lista1, lista2, função) → lista</div>
                 <p>Combina elementos por posição usando uma função de dois argumentos.</p>
-                <pre class="simple-code">zipWith([1, 2, 3], [10, 20, 30], \a, b -> a + b)
+                <pre class="simple-code">zip_with([1, 2, 3], [10, 20, 30], \a, b -> a + b)
 -- Saída: [11, 22, 33]</pre>
             </div>
 
@@ -218,6 +218,13 @@ index_of([1, 2, 3], 9)
                 <pre class="simple-code">to_int("42")
 -- Saída: 42</pre>
 
+                <div class="function-sig">to_double(string) → double</div>
+                <p>Converte uma string decimal em um double. Uma string sem ponto decimal resulta em um double inteiro.</p>
+                <pre class="simple-code">to_double("3.14")
+-- Saída: 3.14
+to_double("12")
+-- Saída: 12.0</pre>
+
                 <div class="function-sig">int_to_double(int) → double</div>
                 <p>Amplia um inteiro para um double.</p>
                 <pre class="simple-code">int_to_double(5)
@@ -228,19 +235,19 @@ index_of([1, 2, 3], 9)
                 <pre class="simple-code">char_to_digit('7')
 -- Saída: 7</pre>
 
-                <div class="function-sig">typeOf(valor) → string</div>
+                <div class="function-sig">type_of(valor) → string</div>
                 <p>O tipo de um valor como string - a forma de função do operador <code>::</code>.</p>
-                <pre class="simple-code">typeOf([1, 2, 3])
+                <pre class="simple-code">type_of([1, 2, 3])
 -- Saída: "List"</pre>
 
-                <div class="function-sig">length(valor) → int</div>
+                <div class="function-sig">len(valor) → int</div>
                 <p>O comprimento de uma string, lista ou conjunto - a forma de função do operador <code>:&gt;</code>.</p>
-                <pre class="simple-code">length("hello")
+                <pre class="simple-code">len("hello")
 -- Saída: 5</pre>
 
                 <div class="function-sig">is_error(valor) → booleano</div>
-                <p>Se um valor é um <a href="../documentation.html#errors-as-values">valor de erro</a> recuperável.</p>
-                <pre class="simple-code">is_error([1, 2, 3][99])
+                <p>Se um valor é um <a href="../documentation.html#errors">valor de erro</a> recuperável. Erros do usuário vindos de <code>error("&hellip;")</code> são sempre valores; erros da linguagem só viram valores sob o pragma <code>errors-as-values</code>.</p>
+                <pre class="simple-code">is_error(error("boom"))
 -- Saída: true</pre>
 
                 <div class="function-sig">print(valor) → valor</div>

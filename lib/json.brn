@@ -48,7 +48,7 @@ def is_null(v) -> ::v == "Undefined"
 -- Safe character access: returns '\0' once past the end of the string so loop
 -- conditions never index out of bounds (Bern's && does not short-circuit).
 def char_at_safe(s, i) do
-    if (i < length(s)) then
+    if (i < len(s)) then
         return s[i]
     else
         return '\0'
@@ -69,7 +69,7 @@ end
 def jstring(s, i) do
     i = i + 1
     result = ""
-    for (char_at_safe(s, i) != '"' && i < length(s)) do
+    for (char_at_safe(s, i) != '"' && i < len(s)) do
         c = char_at_safe(s, i)
         if (c == '\\') then
             e = char_at_safe(s, i + 1)
@@ -268,7 +268,7 @@ def json_escape_char(c) -> "" + c
 def json_escape_string(s) do
     result = ""
     i = 0
-    n = length(s)
+    n = len(s)
     for i < n do
         result = result + json_escape_char(s[i])
         i = i + 1

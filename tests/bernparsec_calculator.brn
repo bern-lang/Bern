@@ -3,14 +3,14 @@ import vendor/bernparsec
 
 adt Expr = Lit Double | Add Expr Expr | Sub Expr Expr | Mul Expr Expr | Div Expr Expr | Neg Expr
 
-def to_double(n) do
+def num_to_double(n) do
     if (::n == "Double") then
         return n
     end
     return n * 1.0
 end
 
-def mk_lit(n) -> Lit(to_double(n))
+def mk_lit(n) -> Lit(num_to_double(n))
 def mk_neg(expr) -> Neg(expr)
 
 def combine_term(lhs, op, rhs) -> case op is "*" = Mul(lhs, rhs) | "/" = Div(lhs, rhs) end

@@ -2,8 +2,8 @@ import core
 import strings
 
 def url_find_substring(s, sub) do
-    sub_len = length(sub)
-    s_len = length(s)
+    sub_len = len(sub)
+    s_len = len(s)
 
     if sub_len == 0 then
         return 0
@@ -21,7 +21,7 @@ end
 
 def url_find_char(s, ch) do
     i = 0
-    for i < length(s) do
+    for i < len(s) do
         if s[i] == ch then
             return i
         end
@@ -40,7 +40,7 @@ def url_is_digits(text) do
     end
 
     i = 0
-    for i < length(text) do
+    for i < len(text) do
         if index_of("0123456789", text[i]) == -1 then
             return false
         end
@@ -122,7 +122,7 @@ end
 def url_encode_component(text) do
     result = ""
     i = 0
-    for i < length(text) do
+    for i < len(text) do
         c = text[i]
         if url_is_unreserved_char(c) then
             result = result + c
@@ -137,7 +137,7 @@ end
 def url_decode_component(text) do
     result = ""
     i = 0
-    n = length(text)
+    n = len(text)
 
     for i < n do
         c = text[i]
@@ -170,7 +170,7 @@ def parse_query(query) do
 
     pairs = split(query, "&")
     i = 0
-    for i < length(pairs) do
+    for i < len(pairs) do
         pair = pairs[i]
         eq_idx = url_find_substring(pair, "=")
 
@@ -179,7 +179,7 @@ def parse_query(query) do
             params[key] = ""
         else
             key = url_decode_component(substring(pair, 0, eq_idx))
-            value = url_decode_component(substring(pair, eq_idx + 1, length(pair)))
+            value = url_decode_component(substring(pair, eq_idx + 1, len(pair)))
             params[key] = value
         end
 
@@ -192,7 +192,7 @@ end
 def build_query(pairs) do
     q = ""
     i = 0
-    for i < length(pairs) do
+    for i < len(pairs) do
         pair = pairs[i]
         key = pair[0] + ""
         value = pair[1] + ""
@@ -218,13 +218,13 @@ def parse_url(url_text) do
 
     frag_idx = url_find_substring(working, "#")
     if frag_idx != -1 then
-        fragment = substring(working, frag_idx + 1, length(working))
+        fragment = substring(working, frag_idx + 1, len(working))
         working = substring(working, 0, frag_idx)
     end
 
     query_idx = url_find_substring(working, "?")
     if query_idx != -1 then
-        query = substring(working, query_idx + 1, length(working))
+        query = substring(working, query_idx + 1, len(working))
         working = substring(working, 0, query_idx)
     end
 
@@ -232,14 +232,14 @@ def parse_url(url_text) do
     authority_and_path = working
     if scheme_idx != -1 then
         scheme = to_lower(substring(working, 0, scheme_idx))
-        authority_and_path = substring(working, scheme_idx + 3, length(working))
+        authority_and_path = substring(working, scheme_idx + 3, len(working))
     end
 
     slash_idx = url_find_char(authority_and_path, '/')
     authority = authority_and_path
     if slash_idx != -1 then
         authority = substring(authority_and_path, 0, slash_idx)
-        path = substring(authority_and_path, slash_idx, length(authority_and_path))
+        path = substring(authority_and_path, slash_idx, len(authority_and_path))
     end
 
     if authority != "" then
@@ -249,7 +249,7 @@ def parse_url(url_text) do
             port = url_default_port(scheme)
         else
             host = substring(authority, 0, colon_idx)
-            port_text = substring(authority, colon_idx + 1, length(authority))
+            port_text = substring(authority, colon_idx + 1, len(authority))
             if url_is_digits(port_text) then
                 port = to_int(port_text)
             else

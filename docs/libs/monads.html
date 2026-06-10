@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>monads - Bern Libraries</title>
+    <link rel="icon" type="image/png" href="../images/cat.png">
+    <link rel="stylesheet" href="../lib.css">
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <a href="../index.html" class="logo"><img src="../images/cat.png" alt="Bern Logo" width="20%" style="margin-top: 10px;"></a>
+            <nav>
+                <a href="../documentation.html">Language</a>
+                <a href="../libraries.html">Libraries</a>
+                <!-- <a href="../examples.html">Learn Bern</a> -->
+                <a href="../changelog.html">Changelog</a>
+                <a href="../pt-br/libs/monads.html" style="font-weight: 600;">🌐 PT-BR</a>
+            </nav>
+        </div>
+    </header>
+
+    <div class="layout">
+        <aside class="sidebar">
+            <h3>monads</h3>
+            <ul>
+                <li><a href="#types">The types</a></li>
+                <li><a href="#maybe">Maybe</a></li>
+                <li><a href="#either">Either</a></li>
+                <li><a href="#generic">Generic bind &amp; operators</a></li>
+                <li><a href="#list">The List ADT</a></li>
+                <li><a href="#traverse">Traversals</a></li>
+                <li><a href="#together">Putting it together</a></li>
+            </ul>
+            <h3>More</h3>
+            <ul>
+                <li><a href="../libraries.html" class="back-link">← All libraries</a></li>
+            </ul>
+        </aside>
+
+        <div class="container">
+            <p class="breadcrumb"><a href="../documentation.html">Documentation</a> / <a href="../libraries.html">Libraries</a> / monads</p>
+            <h1 class="page-title">monads</h1>
+            <p class="page-subtitle">A small functional toolkit: Maybe, Either and a cons-list, with the maps, binds, operators and traversals to chain them.</p>
+
+            <pre class="simple-code">import monads</pre>
+            <p><code>monads</code> is written in Bern itself - every function below is an ordinary Bern function you could read in <code>lib/monads.brn</code>. It is built on three <a href="../documentation.html#adt">algebraic data types</a>, which (since Bern 2.2) compare with <code>==</code> and may be mixed inside a list.</p>
+
+            <div class="doc-section" id="types">
+                <h2>The types</h2>
+                <pre class="simple-code">adt Maybe  = Just Any | Nothing
+adt Either = Left Any | Right Any
+adt List   = Nil | Cons Any List</pre>
+                <p><strong>Maybe</strong> models a value that may be absent - <code>Just(x)</code> or <code>Nothing()</code> - so "no result" is explicit instead of a sentinel like <code>-1</code> or <code>null</code>. <strong>Either</strong> models one of two outcomes, by convention <code>Left(e)</code> for a failure that carries information and <code>Right(x)</code> for a success. <strong>List</strong> is a classic linked list for code that wants to pattern-match the structure directly; <code>list_from</code> / <code>list_to</code> bridge it to Bern's built-in lists.</p>
+                <p>Nullary constructors are written with empty parentheses, both to build and to match: <code>Nothing()</code>, <code>Nil()</code>.</p>
+            </div>
+
+            <div class="doc-section" id="maybe">
+                <h2>Maybe</h2>
+
+                <div class="function-sig">is_just(maybe) → boolean</div>
+                <div class="function-sig">is_nothing(maybe) → boolean</div>
+                <p>Test which shape a Maybe is.</p>
+                <pre class="simple-code">is_just(Just(5))
+-- Output: true
+is_nothing(Nothing())
+-- Output: true</pre>
+
+                <div class="function-sig">from_maybe(default, maybe) → value</div>
+                <p>Unwrap a <code>Just</code>, or fall back to <code>default</code> when it is <code>Nothing</code>.</p>
+                <pre class="simple-code">from_maybe(0, Just(42))
+-- Output: 42
+from_maybe(0, Nothing())
+-- Output: 0</pre>
+
+                <div class="function-sig">maybe(default, function, maybe) → value</div>
+                <p>Collapse a Maybe to a plain value: apply <code>function</code> to the contents of a <code>Just</code>, otherwise return <code>default</code>.</p>
+                <pre class="simple-code">maybe(-1, \x -> x * 2, Just(10))
+-- Output: 20
+maybe(-1, \x -> x * 2, Nothing())
+-- Output: -1</pre>
+
+                <div class="function-sig">map_maybe(function, maybe) → maybe</div>
+                <p>Transform the value inside a <code>Just</code>; a <code>Nothing</code> passes through untouched.</p>
+                <pre class="simple-code">map_maybe(\x -> x + 1, Just(7))
+-- Output: Just(8)
+map_maybe(\x -> x + 1, Nothing())
+-- Output: Nothing()</pre>
+
+                <div class="function-sig">bind_maybe(maybe, function) → maybe</div>
+                <p>Chain a Maybe-returning function. The chain short-circuits to <code>Nothing</code> as soon as any step produces one.</p>
+                <pre class="simple-code">bind_maybe(Just(4), \x -> Just(x * x))
+-- Output: Just(16)
+bind_maybe(Nothing(), \x -> Just(x))
+-- Output: Nothing()</pre>
+            </div>
+
+            <div class="doc-section" id="either">
+                <h2>Either</h2>
+
+                <div class="function-sig">is_left(either) → boolean</div>
+                <div class="function-sig">is_right(either) → boolean</div>
+                <p>Test which side an Either holds.</p>
+                <pre class="simple-code">is_right(Right(1))
+-- Output: true
+is_left(Left("bad"))
+-- Output: true</pre>
+
+                <div class="function-sig">either(on_left, on_right, either) → value</div>
+                <p>Collapse an Either by handling both sides with a function each.</p>
+                <pre class="simple-code">either(\e -> "error: " + e, \x -> "ok", Left("bad"))
+-- Output: "error: bad"
+either(\e -> 0, \x -> x, Right(9))
+-- Output: 9</pre>
+
+                <div class="function-sig">map_either(function, either) → either</div>
+                <p>Map over the success (<code>Right</code>) side; a <code>Left</code> passes through unchanged.</p>
+                <pre class="simple-code">map_either(\x -> x + 1, Right(9))
+-- Output: Right(10)
+map_either(\x -> x + 1, Left("e"))
+-- Output: Left(e)</pre>
+
+                <div class="function-sig">map_left(function, either) → either</div>
+                <p>Map over the failure (<code>Left</code>) side; a <code>Right</code> passes through unchanged.</p>
+                <pre class="simple-code">map_left(\e -> e + "!", Left("oops"))
+-- Output: Left(oops!)</pre>
+
+                <div class="function-sig">bind_either(either, function) → either</div>
+                <p>Chain on the <code>Right</code> side; the first <code>Left</code> short-circuits.</p>
+                <pre class="simple-code">bind_either(Right(2), \x -> Right(x * 10))
+-- Output: Right(20)
+bind_either(Left("stop"), \x -> Right(x))
+-- Output: Left(stop)</pre>
+
+                <div class="function-sig">from_right(default, either) → value</div>
+                <div class="function-sig">from_left(default, either) → value</div>
+                <p>Unwrap one side, falling back to <code>default</code> for the other.</p>
+                <pre class="simple-code">from_right(0, Right(5))
+-- Output: 5
+from_right(0, Left("x"))
+-- Output: 0</pre>
+
+                <div class="function-sig">either_to_maybe(either) → maybe</div>
+                <div class="function-sig">maybe_to_either(error, maybe) → either</div>
+                <p>Convert between the two. A <code>Left</code> becomes <code>Nothing</code> and a <code>Right</code> becomes <code>Just</code>; going the other way, a <code>Nothing</code> becomes <code>Left(error)</code>.</p>
+                <pre class="simple-code">either_to_maybe(Right(3))
+-- Output: Just(3)
+maybe_to_either("none", Nothing())
+-- Output: Left(none)</pre>
+            </div>
+
+            <div class="doc-section" id="generic">
+                <h2>Generic bind &amp; operators</h2>
+                <p><code>bind</code> and <code>mmap</code> dispatch on the constructor, so they work uniformly over both Maybe and Either - which is what lets the operators stay type-agnostic.</p>
+
+                <div class="function-sig">bind(monad, function) → monad</div>
+                <p>Generic monadic bind for a Maybe or an Either.</p>
+                <pre class="simple-code">bind(Just(5), \x -> Just(x + 1))
+-- Output: Just(6)
+bind(Right(5), \x -> Right(x + 1))
+-- Output: Right(6)</pre>
+
+                <div class="function-sig">mmap(function, monad) → monad</div>
+                <p>Generic functor map for a Maybe or an Either.</p>
+                <pre class="simple-code">mmap(\x -> x * 3, Just(4))
+-- Output: Just(12)</pre>
+
+                <div class="function-sig">function &lt;$&gt; monad → monad</div>
+                <p>Operator form of <code>mmap</code>: map a plain function over a monadic value.</p>
+                <pre class="simple-code">(\x -> x + 100) <$> Just(1)
+-- Output: Just(101)</pre>
+
+                <div class="function-sig">monad &gt;&gt;= function → monad</div>
+                <p>Operator form of <code>bind</code>: feed a monadic value into a monadic function. Left-associative, so chains read top to bottom.</p>
+                <pre class="simple-code">Just(5) >>= \x -> Just(x + 1) >>= \y -> Just(y * 2)
+-- Output: Just(12)
+
+Left("stop") >>= \x -> Right(x)
+-- Output: Left(stop)</pre>
+            </div>
+
+            <div class="doc-section" id="list">
+                <h2>The List ADT</h2>
+                <p>A linked list built from <code>Cons(head, tail)</code> and <code>Nil()</code>. Bern already has a fast built-in list (<code>[1, 2, 3]</code>); this ADT is for teaching the shape and for code that pattern-matches the structure. The bridges convert to and from built-in lists.</p>
+
+                <div class="function-sig">list_from(builtin_list) → List</div>
+                <div class="function-sig">list_to(List) → builtin_list</div>
+                <p>Convert between a built-in list and the <code>Cons</code>/<code>Nil</code> ADT.</p>
+                <pre class="simple-code">list_to(list_from([1, 2, 3]))
+-- Output: [1, 2, 3]</pre>
+
+                <div class="function-sig">list_map(function, List) → List</div>
+                <p>Apply a function to every element.</p>
+                <pre class="simple-code">list_to(list_map(\x -> x * x, list_from([1, 2, 3])))
+-- Output: [1, 4, 9]</pre>
+
+                <div class="function-sig">list_foldr(function, accumulator, List) → value</div>
+                <p>Reduce from the right; <code>function</code> receives <code>(element, accumulator)</code>.</p>
+                <pre class="simple-code">list_foldr(\a, b -> a + b, 0, list_from([1, 2, 3, 4]))
+-- Output: 10</pre>
+
+                <div class="function-sig">list_length(List) → int</div>
+                <pre class="simple-code">list_length(list_from([4, 5, 6, 7]))
+-- Output: 4</pre>
+
+                <div class="function-sig">list_append(List, List) → List</div>
+                <pre class="simple-code">list_to(list_append(list_from([1, 2]), list_from([3, 4])))
+-- Output: [1, 2, 3, 4]</pre>
+
+                <div class="function-sig">list_reverse(List) → List</div>
+                <p>Reverse via a tail-recursive accumulator - O(n) with O(1) prepends.</p>
+                <pre class="simple-code">list_to(list_reverse(list_from([1, 2, 3])))
+-- Output: [3, 2, 1]</pre>
+            </div>
+
+            <div class="doc-section" id="traverse">
+                <h2>Traversals</h2>
+                <p>Walk a built-in list, run an effectful step on each element, and collect the results - short-circuiting on the first failure. These rely on a list being able to hold both constructors of one ADT (e.g. <code>[Just(1), Nothing()]</code>), which Bern 2.2 allows.</p>
+
+                <div class="function-sig">sequence_maybe(list_of_maybes) → maybe</div>
+                <p>Turn a list of Maybes into a Maybe of a list: <code>Just</code> of all the values if every element is <code>Just</code>, otherwise <code>Nothing</code>.</p>
+                <pre class="simple-code">sequence_maybe([Just(1), Just(2), Just(3)])
+-- Output: Just([1, 2, 3])
+sequence_maybe([Just(1), Nothing(), Just(3)])
+-- Output: Nothing()</pre>
+
+                <div class="function-sig">traverse_maybe(function, list) → maybe</div>
+                <p>Map a Maybe-returning function across a list, failing fast on the first <code>Nothing</code>.</p>
+                <pre class="simple-code">traverse_maybe(\x -> Just(x + 1), [1, 2, 3])
+-- Output: Just([2, 3, 4])</pre>
+
+                <div class="function-sig">sequence_either(list_of_eithers) → either</div>
+                <div class="function-sig">traverse_either(function, list) → either</div>
+                <p>The <code>Either</code> versions: <code>Right</code> of all the values, or the first <code>Left</code> encountered.</p>
+                <pre class="simple-code">sequence_either([Right(1), Left("oops"), Right(3)])
+-- Output: Left(oops)</pre>
+            </div>
+
+            <div class="doc-section" id="together">
+                <h2>Putting it together</h2>
+                <p>The pieces compose into pipelines that never crash on a missing or invalid value. Here a couple of inputs are parsed, validated, and combined - any failure collapses the whole chain to <code>Nothing</code>:</p>
+                <div class="example-box">
+                    <h4>A computation that might fail</h4>
+                    <pre class="simple-code">import monads
+
+def safe_div(a, b) do
+    if (b == 0) then
+        return Nothing()
+    else
+        return Just(a / b)
+    end
+end
+
+result = Just(100)
+    >>= \x -> safe_div(x, 5)
+    >>= \y -> safe_div(y, 2)
+
+from_maybe(-1, result)
+-- Output: 10   (100 / 5 = 20, then 20 / 2 = 10)
+
+from_maybe(-1, Just(100) >>= \x -> safe_div(x, 0))
+-- Output: -1   (the division by zero short-circuits)</pre>
+                </div>
+                <p>And a traversal that validates a whole list at once, keeping the why on failure with <code>Either</code>:</p>
+                <div class="example-box">
+                    <h4>Validating every item</h4>
+                    <pre class="simple-code">import monads
+
+def check_positive(n) do
+    if (n > 0) then
+        return Right(n)
+    else
+        return Left("not positive: " + n)
+    end
+end
+
+from_right([], traverse_either(check_positive, [3, 8, 5]))
+-- Output: [3, 8, 5]
+
+from_left("?", traverse_either(check_positive, [3, 0, 5]))
+-- Output: "not positive: 0"</pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        Copyright © 2026 • All rights reserved • Built with ❤️ by <a href="https://mirvox.xyz/">Miguel Aguiar</a>
+    </footer>
+</body>
+</html>

@@ -71,7 +71,7 @@
                     <tr><td><a href="#immutable"><code>immutable</code></a></td><td>reassigning an existing variable is an error</td></tr>
                     <tr><td><a href="#no-undefined"><code>no-undefined</code></a></td><td>reading an unbound variable is an error</td></tr>
                     <tr><td><a href="#no-written-operators"><code>no-written-operators</code></a></td><td>free written-word operator names for variables</td></tr>
-                    <tr><td><a href="#abort-on-error"><code>abort-on-error</code></a></td><td>crash on runtime errors instead of error values</td></tr>
+                    <tr><td><a href="#errors-as-values"><code>errors-as-values</code></a></td><td>turn language runtime errors into inspectable values instead of crashing</td></tr>
                     <tr><td><a href="#partial"><code>partial</code></a></td><td>allow non-exhaustive functions</td></tr>
                     <tr><td><a href="#no-curry"><code>no-curry</code></a></td><td>disable auto-currying</td></tr>
                     <tr><td><a href="#no-eval"><code>no-eval</code></a></td><td>bare expressions don't auto-print</td></tr>
@@ -151,7 +151,7 @@ bad :: Integer = 'a'
                 <div class="function-sig" id="safe-index">{--! safe-index !--}</div>
                 <p>Indexing past the end of a list or string is normally an error. With this pragma an out-of-bounds index returns <code>undefined</code> instead, so a lookup never fails.</p>
                 <pre class="simple-code">-- Without the pragma:
-[1, 2, 3][99]     -- Error (an error value)
+[1, 2, 3][99]     -- crashes (or an error value under errors-as-values)
 
 -- With {--! safe-index !--}:
 [1, 2, 3][99]     -- undefined</pre>
@@ -204,15 +204,18 @@ plus = 10           -- also fine</pre>
             <div class="doc-section" id="errors">
                 <h2>Errors &amp; functions</h2>
 
-                <div class="function-sig" id="abort-on-error">{--! abort-on-error !--}</div>
-                <p>By default a runtime error becomes a <em>value</em> you can inspect with <code>is_error</code>, and the program keeps running (errors-as-values). This pragma restores the classic behaviour: an error crashes the program on the spot.</p>
-                <pre class="simple-code">-- Without the pragma:
-result = head([])
-is_error(result)    -- true; the program continues
+                <div class="function-sig" id="errors-as-values">{--! errors-as-values !--}</div>
+                <p>By default a <em>language</em> runtime error (calling an undefined function, indexing out of bounds, a type mismatch, &hellip;) crashes the program on the spot. This pragma turns those errors into <em>values</em> you can inspect with <code>is_error</code>, so the program keeps running and the error poison-propagates through the surrounding expression.</p>
+                <p>Note that <strong>user errors</strong> built with <code>error("&hellip;")</code> are <em>always</em> values regardless of this pragma -; that is what makes <code>error()</code> / <code>is_error</code> usable as a lightweight try/catch. The pragma only changes what happens to the language's own errors.</p>
+                <pre class="simple-code">-- Without the pragma (default):
+[1, 2, 3][99]       -- crashes immediately with the error
+error("boom")       -- still a value (user error)
+is_error(error("boom"))   -- true; the program continues
 
--- With {--! abort-on-error !--}:
-head([])            -- crashes immediately with the error</pre>
-                <p><strong>Use it when</strong> you would rather fail fast - a script where an error should stop everything, not quietly flow on as a value.</p>
+-- With {--! errors-as-values !--}:
+result = [1, 2, 3][99]
+is_error(result)    -- true; the program continues</pre>
+                <p><strong>Use it when</strong> you want to recover from language errors the same way you do from <code>error("&hellip;")</code> values, instead of letting them stop the program.</p>
 
                 <div class="function-sig" id="partial">{--! partial !--}</div>
                 <p>A single-argument function whose clauses don't cover every case is normally rejected as non-exhaustive. This pragma allows such partial functions; calling an uncovered case is still an error at runtime.</p>

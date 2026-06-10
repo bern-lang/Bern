@@ -105,7 +105,76 @@
         </div>
 
         <div class="release latest">
-            <h2>Bern 2.1 <span class="badge">latest</span> <span class="date">June 2026</span></h2>
+            <h2>Bern 2.2 <span class="badge">latest</span> <span class="date">June 2026</span></h2>
+            <p>Bern 2.2 sharpens the functional core: algebraic data types now compare with <code>==</code> and may mix constructors inside a list, <code>input()</code> became a real expression you can nest and pipe, and a new <code>monads</code> library ships Maybe, Either and a cons-list with the operators to chain them. Several <code>core</code> functions were also renamed to <code>snake_case</code> for consistency.</p>
+
+            <h3>Language</h3>
+
+            <p class="feat"><strong>Crash-on-error is the default again.</strong> In 2.0 every runtime error became a value (errors-as-values). That is now <em>opt-in</em>: by default a <em>language</em> error (undefined function, out-of-bounds index, type mismatch, &hellip;) crashes the program, which catches mistakes early. Add <code>{--! errors-as-values !--}</code> to recover the 2.0 behaviour for a file. Crucially, <strong>user errors</strong> built with <code>error("&hellip;")</code> are still always values you can test with <code>is_error</code> -; so <code>error()</code>/<code>is_error</code> keep working as a lightweight try/catch even by default. The old <code>abort-on-error</code> pragma is gone (it is now the default).</p>
+            <pre class="simple-code"><span class="function">is_error</span>(<span class="function">error</span>(<span class="string">"boom"</span>))   <span class="comment">-- true; a user error, no crash</span>
+[<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>][<span class="number">99</span>]            <span class="comment">-- language error: crashes (unless errors-as-values is on)</span></pre>
+
+            <p class="feat"><strong>Equality for ADT values.</strong> Algebraic data types can now be compared with <code>==</code> and <code>!=</code>. Equality is structural - same constructor and recursively-equal fields - and composes through lists and nesting, so two results built the same way are equal.</p>
+            <pre class="simple-code"><span class="keyword">import</span> monads
+
+<span class="function">Just</span>(<span class="number">8</span>) <span class="operator">==</span> <span class="function">Just</span>(<span class="number">8</span>)                       <span class="comment">-- true</span>
+<span class="function">Just</span>(<span class="number">1</span>) <span class="operator">==</span> <span class="function">Nothing</span>()                     <span class="comment">-- false</span>
+<span class="function">Just</span>([<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>]) <span class="operator">==</span> <span class="function">Just</span>([<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>])     <span class="comment">-- true  (nested list)</span>
+<span class="function">Just</span>(<span class="function">Just</span>(<span class="number">5</span>)) <span class="operator">==</span> <span class="function">Just</span>(<span class="function">Just</span>(<span class="number">5</span>))         <span class="comment">-- true  (nested ADT)</span></pre>
+
+            <p class="feat"><strong>ADT-aware lists.</strong> A list is still homogeneous, but an ADT value's type is now its declaring type (e.g. <code>Maybe</code>), not its constructor (<code>Just</code>/<code>Nothing</code>). So different constructors of the <em>same</em> ADT may share a list - <code>[Just(1), Nothing()]</code> or <code>[Circle(1.0), Square(2.0)]</code> - while lists that mix <em>different</em> ADTs are still rejected. The <code>impure-lists</code> pragma still turns the whole check off.</p>
+            <pre class="simple-code"><span class="keyword">adt</span> <span class="type">Shape</span> = <span class="type">Circle</span> <span class="type">Double</span> | <span class="type">Square</span> <span class="type">Double</span>
+
+shapes = [<span class="function">Circle</span>(<span class="number">1.0</span>), <span class="function">Square</span>(<span class="number">2.0</span>), <span class="function">Circle</span>(<span class="number">3.0</span>)]   <span class="comment">-- now allowed</span>
+<span class="operator">:&gt;</span> shapes                                          <span class="comment">-- 3</span></pre>
+
+            <p class="feat"><strong><code>input()</code> is an expression.</strong> Reading a line is no longer limited to the <code>x = input(...)</code> statement form. <code>input(...)</code> is now a full expression, so you can nest it inside a call or feed it straight into a pipe. A bare <code>x = input(...)</code> still reads strictly and in order, exactly as before.</p>
+            <pre class="simple-code"><span class="keyword">import</span> core
+
+x = <span class="function">to_double</span>(<span class="function">input</span>(<span class="string">"Type a number: "</span>))      <span class="comment">-- nested</span>
+y = <span class="function">input</span>(<span class="string">"Again: "</span>) )<span class="operator">|</span> <span class="function">to_double</span>()           <span class="comment">-- piped</span></pre>
+
+            <p class="feat"><strong>Infinite &amp; stepped ranges.</strong> Ranges now cover Haskell's full enumeration syntax. A second element sets the step, and dropping the upper bound makes the range <em>infinite and lazy</em>: only the prefix you ask for is ever computed. Use the operations that consume a finite head - <code>take</code>, <code>head</code>, <code>drop</code>, indexing, <code>[h|t]</code> matching, or prepending with <code>[x | xs]</code>. As in Haskell, anything that must walk the whole list (<code>map</code>, <code>filter</code>, <code>:&gt;</code>, printing) runs forever on an infinite one, so reach for <code>take</code> first; <code>:&gt; [1..]</code> reports an error instead of hanging.</p>
+            <pre class="simple-code"><span class="keyword">import</span> core
+
+[<span class="number">0</span>, <span class="number">2</span><span class="operator">..</span><span class="number">10</span>]                  <span class="comment">-- stepped:  [0, 2, 4, 6, 8, 10]</span>
+[<span class="number">10</span>, <span class="number">7</span><span class="operator">..</span><span class="number">1</span>]                  <span class="comment">-- negative step: [10, 7, 4, 1]</span>
+
+<span class="function">take</span>(<span class="number">5</span>, [<span class="number">1</span><span class="operator">..</span>])             <span class="comment">-- infinite, step +1:  [1, 2, 3, 4, 5]</span>
+<span class="function">take</span>(<span class="number">5</span>, [<span class="number">1</span>, <span class="number">3</span><span class="operator">..</span>])          <span class="comment">-- infinite, step +2:  [1, 3, 5, 7, 9]</span>
+<span class="function">take</span>(<span class="number">4</span>, [<span class="number">0</span> <span class="operator">|</span> [<span class="number">1</span><span class="operator">..</span>]])       <span class="comment">-- prepend onto infinite: [0, 1, 2, 3]</span>
+[<span class="number">1</span><span class="operator">..</span>][<span class="number">4</span>]                    <span class="comment">-- 5</span></pre>
+
+            <p class="feat"><strong>Portuguese operator names are reserved.</strong> The single-word Portuguese spellings of the written operators (<code>mais</code>, <code>menos</code>, <code>vezes</code>, <code>resto</code>, <code>nao</code>, <code>ou</code>, <code>igual</code>, <code>diferente</code>, <code>concatenar</code>, <code>uniao</code>, <code>intersecao</code>, <code>diferenca</code>, <code>recebe</code>, <code>tamanho</code>, <code>negativo</code>) are now protected just like their English counterparts, so assigning to one is a clear error instead of a silent shadow. The hyphenated forms (<code>maior-que</code>, <code>dividido-por</code>, &hellip;) never needed it - a hyphen can't appear in an identifier. <code>e</code> is deliberately left assignable, since the math library exports it as Euler's number. The <code>no-written-operators</code> pragma frees them all.</p>
+
+            <h3>Libraries</h3>
+
+            <p class="feat"><strong>New <code>monads</code> library.</strong> A small functional-programming toolkit built on three ADTs - <code>Maybe</code> (<code>Just</code>/<code>Nothing</code>), <code>Either</code> (<code>Left</code>/<code>Right</code>) and a cons-list (<code>Cons</code>/<code>Nil</code>). It ships predicates, catamorphisms (<code>maybe</code>, <code>either</code>), functor maps and binds for each, a type-agnostic <code>bind</code> / <code>mmap</code> with the <code>&lt;$&gt;</code> and <code>&gt;&gt;=</code> operators, list helpers with <code>list_from</code>/<code>list_to</code> bridges, and fail-fast traversals (<code>sequence_maybe</code>, <code>traverse_maybe</code>, and the <code>Either</code> equivalents). See the <a href="libs/monads.html">monads reference</a>.</p>
+            <pre class="simple-code"><span class="keyword">import</span> monads
+
+<span class="function">Just</span>(<span class="number">5</span>) <span class="operator">&gt;&gt;=</span> \x <span class="operator">-&gt;</span> <span class="function">Just</span>(x <span class="operator">+</span> <span class="number">1</span>) <span class="operator">&gt;&gt;=</span> \y <span class="operator">-&gt;</span> <span class="function">Just</span>(y <span class="operator">*</span> <span class="number">2</span>)   <span class="comment">-- Just(12)</span>
+<span class="function">sequence_maybe</span>([<span class="function">Just</span>(<span class="number">1</span>), <span class="function">Just</span>(<span class="number">2</span>), <span class="function">Just</span>(<span class="number">3</span>)])               <span class="comment">-- Just([1, 2, 3])</span>
+<span class="function">sequence_maybe</span>([<span class="function">Just</span>(<span class="number">1</span>), <span class="function">Nothing</span>(), <span class="function">Just</span>(<span class="number">3</span>)])             <span class="comment">-- Nothing()</span></pre>
+
+            <h3>core renames</h3>
+            <p class="feat"><strong>Consistent <code>snake_case</code> names.</strong> A few <code>core</code> functions were renamed so the whole library follows one convention. The bundled libraries were updated to match; if you used the old names, rename your call sites.</p>
+            <table class="pragma-table">
+                <tr><th>Old</th><th>New</th></tr>
+                <tr><td><code>isEmpty</code></td><td><code>is_empty</code></td></tr>
+                <tr><td><code>zipWith</code></td><td><code>zip_with</code></td></tr>
+                <tr><td><code>typeOf</code></td><td><code>type_of</code></td></tr>
+                <tr><td><code>length</code></td><td><code>len</code></td></tr>
+            </table>
+
+            <p class="feat"><strong>New conversion &amp; a fix.</strong> <code>core</code> gained <code>to_double</code>, which parses a decimal string into a double. An earlier integer-division bug that made it drop the fractional part was fixed, so <code>to_double("12.5")</code> is now <code>12.5</code>.</p>
+            <pre class="simple-code"><span class="keyword">import</span> core
+
+<span class="function">to_double</span>(<span class="string">"3.14"</span>)     <span class="comment">-- 3.14</span>
+<span class="function">to_double</span>(<span class="string">"12"</span>)       <span class="comment">-- 12.0</span></pre>
+        </div>
+
+        <div class="release">
+            <h2>Bern 2.1 <span class="date">June 2026</span></h2>
             <p>Bern 2.1 builds on the 2.0 foundation: user-defined operators, opt-in type annotations, friendlier multi-line declarations, a lexer fix for identifiers that start with a keyword, and a much larger parser-combinator toolkit. The website's library reference was also rebuilt around one page per library.</p>
 
             <h3>Language</h3>
@@ -169,7 +238,7 @@ truevar = true        <span class="comment">-- the literal still parses where a 
 
             <h3>New default behaviours</h3>
 
-            <p class="feat"><strong>Errors as values.</strong> A runtime error no longer aborts the whole program. Instead it becomes a first-class value that you can store, pass around, and inspect. Out-of-bounds indexing, failed lookups, and similar mistakes all produce an error value that quietly propagates through the rest of an expression, so the program keeps running. Test any value with <code>is_error</code>, and raise your own with <code>error</code>. If you prefer the old crash-on-failure behaviour, the <code>abort-on-error</code> pragma brings it back.</p>
+            <p class="feat"><strong>Errors as values.</strong> A runtime error no longer aborts the whole program. Instead it becomes a first-class value that you can store, pass around, and inspect. Out-of-bounds indexing, failed lookups, and similar mistakes all produce an error value that quietly propagates through the rest of an expression, so the program keeps running. Test any value with <code>is_error</code>, and raise your own with <code>error</code>. <em>(Changed in 2.1: this is now opt-in via the <code>errors-as-values</code> pragma; by default language errors crash, while <code>error()</code> user errors stay values.)</em></p>
             <pre class="simple-code"><span class="keyword">import</span> core
 
 bad = [<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>][<span class="number">99</span>]           <span class="comment">-- out of bounds, but no crash</span>
@@ -238,7 +307,7 @@ x = <span class="number">11</span>               <span class="comment">-- error:
                 <tr><td><code>start-on-one</code></td><td>indexing starts at 1</td></tr>
                 <tr><td><code>main</code></td><td>run <code>main()</code> after the file loads</td></tr>
                 <tr><td><code>no-curry</code></td><td>disable auto-currying</td></tr>
-                <tr><td><code>abort-on-error</code></td><td>crash on runtime errors instead of producing error values</td></tr>
+                <tr><td><code>errors-as-values</code></td><td>turn language runtime errors into inspectable values instead of crashing (opt-in since 2.1)</td></tr>
                 <tr><td><code>partial</code></td><td>allow non-exhaustive functions</td></tr>
                 <tr><td><code>no-written-operators</code></td><td>switch off the written-word operators, freeing names like <code>length</code> and <code>plus</code> for use as variables</td></tr>
             </table>

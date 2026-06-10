@@ -5,7 +5,7 @@ import core
 def substring(s, start, ends) do
     result = ""
     i = start
-    for (i < ends && i < length(s)) do
+    for (i < ends && i < len(s)) do
         result = result + s[i]
         i = i + 1
     end
@@ -17,9 +17,9 @@ def char_at(s, index) -> s[index]
 def split(s, delimiter) do
     result = []
     current = ""
-    delim_len = length(delimiter)
+    delim_len = len(delimiter)
     i = 0
-    for (i < length(s)) do
+    for (i < len(s)) do
         if (substring(s, i, i + delim_len) == delimiter) then
             result = result <> [current]
             current = ""
@@ -94,7 +94,7 @@ def to_lower(s) -> map(s, char_to_lower)
 
 def trim(s) do
     start = 0
-    final = length(s) - 1
+    final = len(s) - 1
 
     for (start <= final && (s[start] == ' ' || s[start] == '\n' || s[start] == '\t')) do
         start = start + 1
@@ -108,8 +108,8 @@ def trim(s) do
 end
 
 def contains(s, sub) do
-    s_len = length(s)
-    sub_len = length(sub)
+    s_len = len(s)
+    sub_len = len(sub)
 
     i = 0
     for (i <= s_len - sub_len) do
@@ -124,9 +124,9 @@ end
 def replace(s, old, new) do
     result = ""
     i = 0
-    old_len = length(old)
+    old_len = len(old)
 
-    for (i < length(s)) do
+    for (i < len(s)) do
         if (substring(s, i, i + old_len) == old) then
             result = result + new
             i = i + old_len
@@ -140,16 +140,16 @@ def replace(s, old, new) do
 end
 
 def starts_with(s, prefix) do
-    prefix_len = length(prefix)
-    if (length(s) < prefix_len) then
+    prefix_len = len(prefix)
+    if (len(s) < prefix_len) then
         return false
     end
     return substring(s, 0, prefix_len) == prefix
 end
 
 def ends_with(s, suffix) do
-    suffix_len = length(suffix)
-    s_len = length(s)
+    suffix_len = len(suffix)
+    s_len = len(s)
     if (s_len < suffix_len) then
         return false
     end

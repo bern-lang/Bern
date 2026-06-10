@@ -14,14 +14,16 @@ English:
       folded over the starting scope.
     * evaluate / evaluateRaw -- compute the VALUE of an Expression. evaluateRaw has
       one equation per Expression constructor; evaluate wraps it to implement the
-      "errors as values" model.
+      error model (crash by default, errors-as-values when opted in).
 
   Cross-cutting ideas implemented here, each with its own little section below:
     * Scope. A local Hashtable is the normal scope; a separate MVar (globalScopeMVar)
       holds the `:=` global scope that survives across function calls.
-    * Errors as values (default). A runtime failure does NOT crash; evaluate turns a
-      Left error into a first-class `ErrorVal` that propagates through expressions
-      and can be tested with is_error. The `abort-on-error` pragma restores crashing.
+    * Errors. By default a language runtime failure DOES crash (the Left propagates
+      to the statement layer and aborts). The opt-in `errors-as-values` pragma turns
+      that Left into a first-class `ErrorVal` that propagates through expressions and
+      can be tested with is_error. User errors built with error("...") are always
+      ErrorVal values, so they never crash -- this is the try/catch building block.
     * Pragmas are FILE-SCOPED. A function value is tagged with the pragma set of the
       file that defined it, and `withPragmas` installs that set for the duration of a
       call -- so a library behaves under its own pragmas, not the caller's.
@@ -50,16 +52,18 @@ Português:
       sobre o escopo inicial.
     * evaluate / evaluateRaw -- calculam o VALOR de uma Expression. evaluateRaw tem
       uma equação por construtor de Expression; evaluate o envolve para implementar o
-      modelo de "erros como valores".
+      modelo de erros (quebra por padrão, erros-como-valores quando ativado).
 
   Ideias transversais implementadas aqui, cada uma com sua pequena seção abaixo:
     * Escopo. Uma Hashtable local é o escopo normal; um MVar separado
       (globalScopeMVar) guarda o escopo global do `:=` que sobrevive entre chamadas de
       função.
-    * Erros como valores (padrão). Uma falha de execução NÃO quebra; evaluate
-      transforma um erro Left em um `ErrorVal` de primeira classe que se propaga pelas
-      expressões e pode ser testado com is_error. O pragma `abort-on-error` restaura o
-      comportamento de quebrar.
+    * Erros. Por padrão, uma falha de execução da linguagem QUEBRA o programa (o Left
+      se propaga até a camada de comandos e aborta). O pragma opcional
+      `errors-as-values` transforma esse Left em um `ErrorVal` de primeira classe que
+      se propaga pelas expressões e pode ser testado com is_error. Erros do usuário
+      criados com error("...") são sempre valores ErrorVal, então nunca quebram -- é a
+      peça que simula try/catch.
     * Pragmas têm ESCOPO DE ARQUIVO. Um valor de função é etiquetado com o conjunto de
       pragmas do arquivo que o definiu, e `withPragmas` instala esse conjunto pela
       duração de uma chamada -- então uma biblioteca se comporta sob os seus próprios
@@ -80,6 +84,7 @@ Português:
 module Language.Eval where
 import System.Exit (exitFailure)
 import System.IO.Unsafe (unsafePerformIO)
+import System.IO (hFlush, stdout)
 import System.Directory (doesFileExist, getCurrentDirectory)
 import Data.Maybe (isJust)
 import Debug.Trace (trace)
@@ -256,7 +261,7 @@ knownPragmas :: [String]
 knownPragmas =
     [ "impure-lists", "impure-sets", "strict-types", "strict-arithmetic"
     , "immutable", "no-eval", "show-types", "safe-index", "no-undefined"
-    , "start-on-one", "main", "strict-imports", "no-curry", "abort-on-error"
+    , "start-on-one", "main", "strict-imports", "no-curry", "errors-as-values"
     , "partial", "no-written-operators", "typed" ]
 
 -- Structural keywords: always part of Bern's syntax, so they can never be used
@@ -275,7 +280,17 @@ writtenOperatorNames :: [String]
 writtenOperatorNames =
     [ "plus", "minus", "times", "modulo", "negate", "not", "and", "or"
     , "concat", "union", "intersect", "difference", "equals", "typeof"
-    , "length", "be" ]
+    , "length", "be"
+    -- Brazilian Portuguese single-word forms. The hyphenated word operators
+    -- (`dividido-por`, `maior-que`, `e-faca`, `tal-que`, ...) are never reserved
+    -- because a hyphen cannot appear in an identifier anyway, so they could not
+    -- be used as a variable name in the first place -- exactly why the English
+    -- hyphenated forms are absent above too. `e` (the word for `and`) is
+    -- deliberately left out: it is also the natural name for Euler's number,
+    -- which the math library exports as `e`.
+    , "mais", "menos", "vezes", "resto", "negativo", "nao", "ou"
+    , "concatenar", "uniao", "intersecao", "diferenca", "igual", "diferente"
+    , "recebe", "tamanho" ]
 
 isReservedName :: String -> Bool
 isReservedName name =
@@ -342,6 +357,25 @@ adtValueMatchesType tbl ty (AlgebraicDataType ctorName _) =
         Just tv -> valueToString tv == Just ty
         Nothing -> False
 adtValueMatchesType _ _ _ = False
+
+-- The "type" of a value for list-homogeneity purposes. For an ADT value this is
+-- its declaring ADT (e.g. "Maybe"), NOT its constructor ("Just"/"Nothing"), so
+-- different constructors of one ADT may coexist in a list (e.g. [Just(1),
+-- Nothing()] or [Circle(..), Square(..)]). The constructor->type mapping is
+-- registered in the global scope when the ADT is defined; if it cannot be found
+-- we fall back to the constructor name. Non-ADT values use their getValueType.
+listElemTypeKey :: Value -> String
+listElemTypeKey (AlgebraicDataType ctorName _) =
+    let resolved = unsafePerformIO $ do
+            g <- readMVar globalScopeMVar
+            return (lookupHashtable g (adtCtorTypeKey ctorName) >>= valueToString)
+    in "adt:" ++ maybe ctorName id resolved
+listElemTypeKey v = getValueType v
+
+-- True when every value shares a list-element type per 'listElemTypeKey'.
+allSameElemType :: [Value] -> Bool
+allSameElemType []     = True
+allSameElemType (x:xs) = let k = listElemTypeKey x in all (\v -> listElemTypeKey v == k) xs
 
 -- | Scan a source string for `{--! name !--}` pragmas and apply each one.
 applyPragmas :: String -> IO ()
@@ -547,6 +581,61 @@ mkEvalErrorHint mpos msg hint = EvalError mpos msg (Just hint)
 
 stringToValue :: String -> Value
 stringToValue s = List (map Character s) (length s)
+
+-- ---------------------------------------------------------------------------
+-- Infinite (lazy) lists
+--
+-- A list whose length is unbounded -- an open-ended range like [1..] -- stores
+-- a negative sentinel in its `Length` field while its element spine is a
+-- genuine infinite Haskell list. Because a List already keeps its length as a
+-- cached number alongside an unforced spine (that is what makes [1..1000000000]
+-- cheap), the only thing an infinite list needs is a length value that survives
+-- the arithmetic the evaluator does on lengths. We use saturating arithmetic:
+-- decrementing an infinite length (as `[h|t]` matching does to the tail) leaves
+-- it infinite, and combining any length with an infinite one is infinite. Any
+-- negative length reads as infinite, so a decrement that ever drifts below zero
+-- still behaves correctly.
+--
+-- Only operations that actually touch elements (head, take, indexing, pattern
+-- matching) force the spine; whole-list operations (size with :>, equality,
+-- printing) either short-circuit on the sentinel or, like Haskell, run forever.
+-- ---------------------------------------------------------------------------
+infiniteLength :: Length
+infiniteLength = -1
+
+isInfiniteLength :: Length -> Bool
+isInfiniteLength = (< 0)
+
+-- Structural decrement (used when `[h|t]` peels one element off the tail):
+-- an infinite length stays infinite, a finite one drops by one.
+lenPred :: Length -> Length
+lenPred n
+    | isInfiniteLength n = n
+    | otherwise          = n - 1
+
+-- Combine two lengths (concatenation, prepend): infinite is absorbing.
+lenPlus :: Length -> Length -> Length
+lenPlus a b
+    | isInfiniteLength a || isInfiniteLength b = infiniteLength
+    | otherwise                                = a + b
+
+-- A numeric value as a Double (for the mixed Int/Double range forms); anything
+-- non-numeric yields Nothing so the range reports a clean type error.
+numAsDouble :: Value -> Maybe Double
+numAsDouble (Integer n) = Just (fromIntegral n)
+numAsDouble (Double d)  = Just d
+numAsDouble _           = Nothing
+
+-- Element count of the integer enumeration [a, b .. c] (Haskell's
+-- enumFromThenTo), computed arithmetically so a huge bounded stepped range stays
+-- as cheap as a plain range -- the spine is never walked just to learn its size.
+-- A zero step ascending toward the bound repeats forever, so it is infinite.
+intStepRangeLen :: Int -> Int -> Int -> Length
+intStepRangeLen a b c
+    | step == 0 = if a <= c then infiniteLength else 0
+    | step > 0  = if a > c then 0 else (c - a) `div` step + 1
+    | otherwise = if a < c then 0 else (a - c) `div` negate step + 1
+  where step = b - a
 
 importOwnerKey :: String -> String
 importOwnerKey name = "__bern_import_owner_" ++ name
@@ -959,6 +1048,17 @@ interpretCommand mpos (AlgebraicTypeDef (ADTDef isIterative typeName constructor
                                    tableWithIterableFlags
                                    constructors
 
+    -- Also publish the constructor->type mapping to the global scope so the
+    -- list-homogeneity check can resolve a constructor to its declaring ADT even
+    -- where no local scope is threaded in (e.g. during list concatenation). This
+    -- is what lets different constructors of one ADT share a list.
+    globalScope <- takeMVar globalScopeMVar
+    let globalWithCtorTypes = foldl (\tbl (ADTConstructor ctorName _) ->
+                                       insertHashtable tbl (adtCtorTypeKey ctorName) (stringToValue typeName))
+                                    globalScope
+                                    constructors
+    putMVar globalScopeMVar globalWithCtorTypes
+
     case constructors of
         [ADTConstructor _ fieldTypes] -> do
             let fieldTypeNames = map typeToString fieldTypes
@@ -1317,7 +1417,9 @@ matchOne (PList pats) (List vals len)
     | otherwise = Nothing
 matchOne (PCons headPat tailPat) (List (v:vs) len) = do
     headBindings <- matchOne headPat v
-    tailBindings <- matchOne tailPat (List vs (len - 1))
+    -- `lenPred` keeps an infinite tail infinite, so `[h|t]` peels the head off a
+    -- lazy range like [1..] without ever forcing or finitising the spine.
+    tailBindings <- matchOne tailPat (List vs (lenPred len))
     combineBindings (headBindings ++ tailBindings)
 matchOne (PCons _ _) (List [] _) = Nothing
 matchOne (PSet []) (Set [] _) = Just []
@@ -1338,15 +1440,16 @@ hasReturn tbl = isJust (lookupHashtable tbl "__return")
 die :: EvalError -> IO a
 die evalErr = putStrLn (formatError evalErr) >> exitFailure
 
--- errors-as-values (default): evaluate an expression, turning a runtime error
--- into a first-class ErrorVal instead of aborting. The abort-on-error pragma
--- restores the crash-on-error behaviour.
+-- Crash-on-error (default): a language runtime error propagates as a Left, which
+-- the statement layer turns into a fatal `die`. The opt-in errors-as-values
+-- pragma instead turns that Left into a first-class ErrorVal. User errors built
+-- with error("...") are always plain ErrorVal values, so they survive either way.
 evalValue :: Expression -> Hashtable String Value -> Either EvalError Value
 evalValue expr table = case evaluate expr table of
     Right v -> Right v
     Left err
-        | pragmaOn "abort-on-error" () -> Left err
-        | otherwise                    -> Right (ErrorVal (errorMsg err))
+        | pragmaOn "errors-as-values" () -> Right (ErrorVal (errorMsg err))
+        | otherwise                      -> Left err
 
 -- Poison propagation: the first ErrorVal among operands, if any.
 firstError :: [Value] -> Maybe Value
@@ -1405,14 +1508,25 @@ resolveIndex len i =
     in if i1 < 0 then len + i1 else i1
 
 indexLookup :: [Value] -> Int -> Int -> Either EvalError Value
-indexLookup vals len i =
-    let idx = resolveIndex len i
-    in if idx >= 0 && idx < len
-        then Right (vals !! idx)
-        else if pragmaOn "safe-index" ()
-            then Right Undefined
-            else Left $ mkEvalError Nothing
-                ("index " ++ show i ++ " out of bounds (length " ++ show len ++ ")")
+indexLookup vals len i
+    -- An infinite list has every non-negative index; indexing from the end (a
+    -- negative index) is undefined because there is no end to count back from.
+    | isInfiniteLength len =
+        let idx = if pragmaOn "start-on-one" () && i > 0 then i - 1 else i
+        in if idx >= 0
+            then Right (vals !! idx)
+            else if pragmaOn "safe-index" ()
+                then Right Undefined
+                else Left $ mkEvalError Nothing
+                    ("index " ++ show i ++ " out of bounds: cannot index an infinite list from the end")
+    | otherwise =
+        let idx = resolveIndex len i
+        in if idx >= 0 && idx < len
+            then Right (vals !! idx)
+            else if pragmaOn "safe-index" ()
+                then Right Undefined
+                else Left $ mkEvalError Nothing
+                    ("index " ++ show i ++ " out of bounds (length " ++ show len ++ ")")
 
 {-
 English:
@@ -1421,12 +1535,14 @@ English:
   computes its Value (a literal is itself; a BinaryOperator evaluates both sides and
   combines them; a FunctionCall looks the function up and applies it; and so on).
 
-  `evaluate` is the thin wrapper that implements ERRORS AS VALUES, the default model:
-  if evaluateRaw returns a `Left` error, evaluate converts it into a `Right ErrorVal`
-  -- a normal value carrying the message. Because an ErrorVal is just a value, it flows
-  through the rest of the expression (operators "poison-propagate" it, see firstError)
-  and can be tested with is_error, instead of aborting the program. The `abort-on-error`
-  pragma turns this off, letting the Left through so the failure crashes as usual.
+  `evaluate` is the thin wrapper that decides what a language failure MEANS. By
+  default it lets a `Left` error through, so the failure crashes the program as usual.
+  The opt-in `errors-as-values` pragma turns this on: a `Left` becomes a `Right
+  ErrorVal` -- a normal value carrying the message. Because an ErrorVal is just a value,
+  it flows through the rest of the expression (operators "poison-propagate" it, see
+  firstError) and can be tested with is_error, instead of aborting the program. Note
+  that user errors built with error("...") are ALWAYS ErrorVal values regardless of the
+  pragma, which is what makes error()/is_error usable as a try/catch building block.
 
   So the rule of thumb when reading below: evaluateRaw says HOW each expression is
   computed; evaluate decides what a failure MEANS.
@@ -1437,23 +1553,28 @@ Português:
   calcula seu Value (um literal é ele mesmo; um BinaryOperator avalia os dois lados e
   os combina; um FunctionCall busca a função e a aplica; e assim por diante).
 
-  `evaluate` é o invólucro fino que implementa os ERROS COMO VALORES, o modelo padrão:
-  se evaluateRaw retorna um erro `Left`, evaluate o converte em um `Right ErrorVal` --
-  um valor normal carregando a mensagem. Como um ErrorVal é só um valor, ele flui pelo
-  resto da expressão (operadores o "propagam como veneno", ver firstError) e pode ser
-  testado com is_error, em vez de abortar o programa. O pragma `abort-on-error`
-  desliga isto, deixando o Left passar para que a falha quebre como de costume.
+  `evaluate` é o invólucro fino que decide o que uma falha da linguagem SIGNIFICA. Por
+  padrão ele deixa o erro `Left` passar, então a falha quebra o programa como de
+  costume. O pragma opcional `errors-as-values` liga o outro modo: um `Left` vira um
+  `Right ErrorVal` -- um valor normal carregando a mensagem. Como um ErrorVal é só um
+  valor, ele flui pelo resto da expressão (operadores o "propagam como veneno", ver
+  firstError) e pode ser testado com is_error, em vez de abortar o programa. Note que
+  erros do usuário criados com error("...") são SEMPRE valores ErrorVal,
+  independentemente do pragma, e é isso que torna error()/is_error úteis como peça de
+  try/catch.
 
   Então a regra ao ler abaixo: evaluateRaw diz COMO cada expressão é computada;
   evaluate decide o que uma falha SIGNIFICA.
 -}
--- Public entry to expression evaluation. errors-as-values (default) turns any
--- runtime error into a first-class ErrorVal at every level, so an erroring
--- sub-expression poisons just its own value (and can be inspected with
--- is_error) rather than aborting. The abort-on-error pragma restores crashing.
+-- Public entry to expression evaluation. By default a language runtime error
+-- stays a Left and aborts the program. The opt-in errors-as-values pragma turns
+-- any such error into a first-class ErrorVal at every level, so an erroring
+-- sub-expression poisons just its own value (and can be inspected with is_error)
+-- rather than aborting. Either way, user errors built with error("...") are
+-- already ErrorVal values, so they poison-propagate without crashing.
 evaluate :: Expression -> Hashtable String Value -> Either EvalError Value
 evaluate expr table = case evaluateRaw expr table of
-    Left err | not (pragmaOn "abort-on-error" ()) -> Right (ErrorVal (errorMsg err))
+    Left err | pragmaOn "errors-as-values" () -> Right (ErrorVal (errorMsg err))
     other -> other
 
 evaluateRaw :: Expression -> Hashtable String Value -> Either EvalError Value
@@ -1490,7 +1611,7 @@ evaluateRaw (ListLiteral exprs) table = do
     vals <- mapM (`evaluate` table) exprs
     if null vals
         then Right (List [] 0)
-        else if pragmaOn "impure-lists" () || allSameType vals
+        else if pragmaOn "impure-lists" () || allSameElemType vals
             then Right (List vals (length vals))
             else Left $ mkEvalError Nothing "list elements must have the same type"
 
@@ -1526,6 +1647,46 @@ evaluateRaw (Range start end) table = do
             in Right (List vals (length vals))
         _ -> Left $ mkEvalError Nothing "range bounds must be numeric"
 
+-- Open-ended range [start..]: an infinite list stepping by +1. The spine is a
+-- genuine infinite Haskell list ([s'..]); the length is the infinite sentinel,
+-- so head/take/indexing realise only the elements they touch (see indexLookup,
+-- matchOne PCons) and never the whole spine.
+evaluateRaw (RangeFrom start) table = do
+    s <- evaluate start table
+    case s of
+        Integer s' -> Right (List [Integer i | i <- [s' ..]] infiniteLength)
+        Double s'  -> Right (List [Double i  | i <- [s' ..]] infiniteLength)
+        _ -> Left $ mkEvalError Nothing "range bounds must be numeric"
+
+-- Stepped open-ended range [start, next..]: infinite, stepping by (next-start),
+-- exactly like Haskell's enumFromThen. A descending step (e.g. [10, 8..]) counts
+-- down forever; a zero step repeats the start forever.
+evaluateRaw (RangeFromThen start next) table = do
+    s <- evaluate start table
+    n <- evaluate next table
+    case (s, n) of
+        (Integer a, Integer b) -> Right (List (map Integer [a, b ..]) infiniteLength)
+        _ -> case (numAsDouble s, numAsDouble n) of
+                (Just a, Just b) -> Right (List (map Double [a, b ..]) infiniteLength)
+                _ -> Left $ mkEvalError Nothing "range bounds must be numeric"
+
+-- Stepped bounded range [start, next .. end]: finite, custom step (Haskell's
+-- enumFromThenTo). For integers the length is computed arithmetically so a huge
+-- stepped range stays as cheap as a plain range; for doubles we follow the plain
+-- Range precedent and materialise the (bounded) spine to count it.
+evaluateRaw (RangeFromThenTo start next end) table = do
+    s <- evaluate start table
+    n <- evaluate next table
+    e <- evaluate end table
+    case (s, n, e) of
+        (Integer a, Integer b, Integer c) ->
+            Right (List (map Integer [a, b .. c]) (intStepRangeLen a b c))
+        _ -> case (numAsDouble s, numAsDouble n, numAsDouble e) of
+                (Just a, Just b, Just c) ->
+                    let vals = map Double [a, b .. c]
+                    in Right (List vals (length vals))
+                _ -> Left $ mkEvalError Nothing "range bounds must be numeric"
+
 evaluateRaw (ListCons headExprs tailExpr) table = do
     headVals <- mapM (`evaluate` table) headExprs
     tailVal  <- evaluate tailExpr table
@@ -1536,8 +1697,8 @@ evaluateRaw (ListCons headExprs tailExpr) table = do
                 -- Prepend without forcing the tail spine: only one tail element
                 -- is peeked for the homogeneity check, so [0 | [1..1000000000]]
                 -- stays lazy just like a range.
-                if pragmaOn "impure-lists" () || allSameType (headVals ++ take 1 tvals)
-                    then Right (List (headVals ++ tvals) (length headVals + tlen))
+                if pragmaOn "impure-lists" () || allSameElemType (headVals ++ take 1 tvals)
+                    then Right (List (headVals ++ tvals) (lenPlus (length headVals) tlen))
                     else Left $ mkEvalError Nothing "list elements must have the same type"
             _ -> Left $ mkEvalError Nothing
                     ("the tail of [.. | tail] must be a list, found " ++ getValueType tailVal)
@@ -1560,7 +1721,7 @@ evaluateRaw (ListComp headExpr quals) table = do
         Nothing ->
             if null vals
                 then Right (List [] 0)
-                else if pragmaOn "impure-lists" () || allSameType vals
+                else if pragmaOn "impure-lists" () || allSameElemType vals
                     then Right (List vals (length vals))
                     else Left $ mkEvalError Nothing "list elements must have the same type"
 
@@ -1640,7 +1801,25 @@ evaluateRaw (ReadFile filenameExpr) table = do
             return (List (map Character contents) (length contents))
         Nothing -> Left $ mkEvalError Nothing "file path must be String"
 
-evaluateRaw GetHostMachine _ = 
+-- `input(prompt)` as an expression: print the prompt, read a line, and return
+-- it as a string (list of characters). Like read_file / get_current_dir above,
+-- the IO is run through unsafePerformIO so it can sit inside a pure expression.
+evaluateRaw (InputExpr promptExpr) table = do
+    promptVal <- evaluate promptExpr table
+    case valueToString promptVal of
+        Nothing -> Left $ mkEvalErrorHint Nothing
+                       "expected String for prompt"
+                       "the prompt expression must evaluate to a string"
+        -- The whole value is built inside one IO action so getLine runs exactly
+        -- once. (Unlike read_file's idempotent readFile, reading a line twice
+        -- would consume two lines if the thunk were duplicated/forced twice.)
+        Just prompt -> Right $ unsafePerformIO $ do
+            putStr prompt
+            hFlush stdout
+            line <- getLine
+            return (List (map Character line) (length line))
+
+evaluateRaw GetHostMachine _ =
     let hostMachine = os
     in Right (List (map Character hostMachine) (length hostMachine))
 
@@ -2042,7 +2221,7 @@ data IndexKey = IdxInt Int | IdxKey String deriving (Eq, Show)
 setAt :: [IndexKey] -> Value -> Value -> Either EvalError Value
 setAt [] _ _ = Left $ mkEvalError Nothing "invalid assignment target"
 setAt (IdxInt i0:is) newVal (List vals len)
-    | idx < 0 || idx >= len = Left $ mkEvalError Nothing ("index " ++ show i0 ++ " out of bounds (length " ++ show len ++ ")")
+    | idx < 0 || (not (isInfiniteLength len) && idx >= len) = Left $ mkEvalError Nothing ("index " ++ show i0 ++ " out of bounds (length " ++ show len ++ ")")
     | null is =
         let old = vals !! idx
         in if pragmaOn "impure-lists" () || getValueType old == getValueType newVal
@@ -2093,6 +2272,9 @@ evalComparison Equal v1 v2
 evalComparison Equal (Character l) (Character r) = Right (Boolean (l == r))
 evalComparison Equal (List l _) (List r _) = Right (Boolean (l == r))
 evalComparison Equal (Set l _) (Set r _) = Right (Boolean (l == r))
+-- ADT values compare structurally: same constructor and recursively-equal
+-- fields (the Eq Value instance does the recursion).
+evalComparison Equal a@(AlgebraicDataType _ _) b@(AlgebraicDataType _ _) = Right (Boolean (a == b))
 
 evalComparison Different (Integer l) (Integer r) = Right (Boolean (l /= r))
 evalComparison Different (Double l) (Double r) = Right (Boolean (l /= r))
@@ -2103,6 +2285,7 @@ evalComparison Different v1 v2
 evalComparison Different (Character l) (Character r) = Right (Boolean (l /= r))
 evalComparison Different (List l _) (List r _) = Right (Boolean (l /= r))
 evalComparison Different (Set l _) (Set r _) = Right (Boolean (l /= r))
+evalComparison Different a@(AlgebraicDataType _ _) b@(AlgebraicDataType _ _) = Right (Boolean (a /= b))
 
 evalComparison And (Boolean l) (Boolean r) = Right (Boolean (l && r))
 evalComparison And l r = Left $ mkEvalError Nothing ("logical AND requires Bool, found " ++ getValueType l ++ " and " ++ getValueType r)
@@ -2155,7 +2338,9 @@ evalUnaryOp TypeOf v =
     in Right (List (map Character t) (length t))
 evalUnaryOp SizeOf v
     | Just s <- valueToString v = Right (Integer (length s))
-evalUnaryOp SizeOf (List _ len) = Right (Integer len)
+evalUnaryOp SizeOf (List _ len)
+    | isInfiniteLength len = Left $ mkEvalError Nothing "cannot take the size of an infinite list"
+    | otherwise            = Right (Integer len)
 evalUnaryOp SizeOf (Set _ len) = Right (Integer len)
 evalUnaryOp SizeOf (Object kvs) = Right (Integer (length kvs))
 evalUnaryOp SizeOf v = Left $ mkEvalError Nothing ("cannot get size of " ++ getValueType v)
@@ -2169,9 +2354,9 @@ evalUnion Concatenation (List l1 len1) (List l2 len2)
     -- step is what made the stdlib list functions O(n^2).
     | null l1 = Right (List l2 len2)
     | null l2 = Right (List l1 len1)
-    | pragmaOn "impure-lists" () = Right (List (l1 ++ l2) (len1 + len2))
-    | getValueType (head l1) == getValueType (head l2) =
-        Right (List (l1 ++ l2) (len1 + len2))
+    | pragmaOn "impure-lists" () = Right (List (l1 ++ l2) (lenPlus len1 len2))
+    | listElemTypeKey (head l1) == listElemTypeKey (head l2) =
+        Right (List (l1 ++ l2) (lenPlus len1 len2))
     | otherwise = Left $ mkEvalError Nothing "list concatenation requires same element types"
 evalUnion Concatenation (Set s1 _) (Set s2 _) =
     -- `impure` is forced into WHNF of the result so the pragma is read at the

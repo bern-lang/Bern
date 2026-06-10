@@ -1,0 +1,867 @@
+import strings
+
+/*
+Bindings for [[ raylib v5.5 ; https://www.raylib.com ]].
+
+	*********************************************************************************************
+	*
+	*   raylib v5.5 - A simple and easy-to-use library to enjoy videogames programming (www.raylib.com)
+	*
+	*   FEATURES:
+	*       - NO external dependencies, all required libraries included with raylib
+	*       - Multiplatform: Windows, Linux, FreeBSD, OpenBSD, NetBSD, DragonFly,
+	*                        MacOS, Haiku, Android, Raspberry Pi, DRM native, HTML5.
+	*       - Written in plain C code (C99) in PascalCase/camelCase notation
+	*       - Hardware accelerated with OpenGL (1.1, 2.1, 3.3, 4.3, ES2, ES3 - choose at compile)
+	*       - Unique OpenGL abstraction layer (usable as standalone module): [rlgl]
+	*       - Multiple Fonts formats supported (TTF, OTF, FNT, BDF, Sprite fonts)
+	*       - Outstanding texture formats support, including compressed formats (DXT, ETC, adtC)
+	*       - Full 3d support for 3d Shapes, Models, Billboards, Heightmaps and more!
+	*       - Flexible Materials system, supporting classic maps and PBR maps
+	*       - Animated 3D models supported (skeletal bones animation) (IQM, M3D, GLTF)
+	*       - Shaders support, including Model shaders and Postprocessing shaders
+	*       - Powerful math module for Vector, Matrix and Quaternion operations: [raymath]
+	*       - Audio loading and playing with streaming support (WAV, OGG, MP3, FLAC, QOA, XM, MOD)
+	*       - VR stereo rendering with configurable HMD device parameters
+	*       - Bindings to multiple programming languages available!
+	*
+	*   NOTES:
+	*       - One default Font is loaded on InitWindow()->LoadFontDefault() [core, text]
+	*       - One default Texture2D is loaded on rlglInit(), 1x1 white pixel R8G8B8A8 [rlgl] (OpenGL 3.3 or ES2)
+	*       - One default Shader is loaded on rlglInit()->rlLoadShaderDefault() [rlgl] (OpenGL 3.3 or ES2)
+	*       - One default RenderBatch is loaded on rlglInit()->rlLoadRenderBatch() [rlgl] (OpenGL 3.3 or ES2)
+	*
+	*   DEPENDENCIES (included):
+	*       [rcore][GLFW] rglfw (Camilla Löwy - github.com/glfw/glfw) for window/context management and input
+	*       [rcore][RGFW] rgfw (ColleagueRiley - github.com/ColleagueRiley/RGFW) for window/context management and input
+	*       [rlgl] glad/glad_gles2 (David Herberth - github.com/Dav1dde/glad) for OpenGL 3.3 extensions loading
+	*       [raudio] miniaudio (David Reid - github.com/mackron/miniaudio) for audio device/context management
+	*
+	*   OPTIONAL DEPENDENCIES (included):
+	*       [rcore] msf_gif (Miles Fogle) for GIF recording
+	*       [rcore] sinfl (Micha Mettke) for DEFLATE decompression algorithm
+	*       [rcore] sdefl (Micha Mettke) for DEFLATE compression algorithm
+	*       [rcore] rprand (Ramon Snatamaria) for pseudo-random numbers generation
+	*       [rtextures] qoi (Dominic Szablewski - https://phoboslab.org) for QOI image manage
+	*       [rtextures] stb_image (Sean Barret) for images loading (BMP, TGA, PNG, JPEG, HDR...)
+	*       [rtextures] stb_image_write (Sean Barret) for image writing (BMP, TGA, PNG, JPG)
+	*       [rtextures] stb_image_resize2 (Sean Barret) for image resizing algorithms
+	*       [rtextures] stb_perlin (Sean Barret) for Perlin Noise image generation
+	*       [rtext] stb_truetype (Sean Barret) for ttf fonts loading
+	*       [rtext] stb_rect_pack (Sean Barret) for rectangles packing
+	*       [rmodels] par_shapes (Philip Rideout) for parametric 3d shapes generation
+	*       [rmodels] tinyobj_loader_c (Syoyo Fujita) for models loading (OBJ, MTL)
+	*       [rmodels] cgltf (Johannes Kuhlmann) for models loading (glTF)
+	*       [rmodels] m3d (bzt) for models loading (M3D, https://bztsrc.gitlab.io/model3d)
+	*       [rmodels] vox_loader (Johann Nadalutti) for models loading (VOX)
+	*       [raudio] dr_wav (David Reid) for WAV audio file loading
+	*       [raudio] dr_flac (David Reid) for FLAC audio file loading
+	*       [raudio] dr_mp3 (David Reid) for MP3 audio file loading
+	*       [raudio] stb_vorbis (Sean Barret) for OGG audio loading
+	*       [raudio] jar_xm (Joshua Reisenauer) for XM audio module loading
+	*       [raudio] jar_mod (Joshua Reisenauer) for MOD audio module loading
+	*       [raudio] qoa (Dominic Szablewski - https://phoboslab.org) for QOA audio manage
+	*
+	*
+	*   LICENSE: zlib/libpng
+	*
+	*   raylib is licensed under an unmodified zlib/libpng license, which is an OSI-certified,
+	*   BSD-like license that allows static linking with closed source software:
+	*
+	*   Copyright (c) 2013-2024 Ramon Santamaria (@raysan5)
+	*
+	*   This software is provided "as-is", without any express or implied warranty. In no event
+	*   will the authors be held liable for any damages arising from the use of this software.
+	*
+	*   Permission is granted to anyone to use this software for any purpose, including commercial
+	*   applications, and to alter it and redistribute it freely, subject to the following restrictions:
+	*
+	*     1. The origin of this software must not be misrepresented; you must not claim that you
+	*     wrote the original software. If you use this software in a product, an acknowledgment
+	*     in the product documentation would be appreciated but is not required.
+	*
+	*     2. Altered source versions must be plainly marked as such, and must not be misrepresented
+	*     as being the original software.
+	*
+	*     3. This notice may not be removed or altered from any source distribution.
+	*
+	*********************************************************************************************
+*/
+
+import core
+import math
+
+RL_VERSION_MAJOR = 5
+RL_VERSION_MINOR = 5
+RL_VERSION_PATCH = 0
+RL_VERSION = "5.5"
+
+RL_PI = 3.14159265358979323846
+RL_DEG2RAD = (RL_PI / 180.0)
+RL_RAD2DEG = (180.0 / RL_PI)
+
+
+-- Vector Type (adt) - using Float for C compatibility (32-bit)
+adt Vector = Vector2 Float Float | Vector3 Float Float Float | Vector4 Float Float Float Float
+
+-- Quaternion Type (adt) - using Float for C compatibility
+adt Quaternion = Quaternion Float Float Float Float
+
+-- Matrix Type (adt)
+adt Matrix = Matrix [Double]  -- 4x4 matrix represented as a flat list
+
+-- Color Type (adt)
+adt Color = Color Byte Byte Byte Byte
+
+-- Rectangle Type (adt) - using Float for C compatibility
+adt Rectangle = Rectangle Float Float Float Float
+
+-- Image Type (adt) - using proper C integer types
+adt Image = Image Int Int Int Int  
+-- void *data, int width, int height, int mipmaps, int format
+
+-- Texture Type (adt) - unsigned int id, int width, height, mipmaps, format
+adt Texture = Texture Int Int Int Int Int  
+-- id (unsigned int), width, height, mipmaps, format
+
+-- Texture2D and TextureCubemap (aliases to Texture)
+Texture2D = Texture
+TextureCubemap = Texture
+
+-- RenderTexture Type (adt) - unsigned int id, Texture texture, Texture depth
+adt RenderTexture = RenderTexture Int Texture Texture  
+-- id (unsigned int), texture, depth
+
+RenderTexture2D = RenderTexture
+
+-- NPatchInfo Type (adt)
+adt NPatchInfo = NPatchInfo Rectangle Int Int Int Int Int  
+-- source, left, top, right, bottom, layout
+
+-- GlyphInfo Type (adt)
+adt GlyphInfo = GlyphInfo Int Int Int Int Image  
+-- value (codepoint), offsetX, offsetY, advanceX, image
+
+-- Font Type (adt)
+adt Font = Font Int Int Int Texture2D List List 
+-- baseSize, glyphCount, glyphPadding, texture, recs, glyphs
+
+-- Camera3D Type (adt) - Vector3 position, Vector3 target, Vector3 up, float fovy, int projection
+adt Camera3D = Camera3D Vector Vector Vector Float Int  
+-- position, target, up, fovy, projection
+
+-- Camera type fallback
+Camera = Camera3D
+
+-- Camera2D Type (adt) - Vector2 offset, Vector2 target, float rotation, float zoom
+adt Camera2D = Camera2D Vector Vector Float Float  
+-- offset, target, rotation, zoom
+
+-- Mesh Type (adt)
+-- vertexCount, triangleCount (simplified - full implementation would need pointers)
+adt Mesh = Mesh Int Int
+
+-- Shader Type (adt)
+-- id, locs array
+adt Shader = Shader Int List
+
+-- MaterialMap Type (adt) - Texture2D texture, Color color, float value
+adt MaterialMap = MaterialMap Texture2D Color Float
+
+-- Material Type (adt)
+-- shader, maps, params (4 floats)
+adt Material = Material Shader List List
+
+-- Transform Type (adt)
+-- translation, rotation, scale
+adt Transform = Transform Vector Quaternion Vector
+
+-- BoneInfo Type (adt)
+-- name, parent
+adt BoneInfo = BoneInfo String Int
+
+-- Model Type (adt)
+-- transform, meshCount, materialCount (simplified)
+adt Model = Model Matrix Int Int
+
+-- ModelAnimation Type (adt)
+-- boneCount, frameCount, bones, name
+adt ModelAnimation = ModelAnimation Int Int [BoneInfo] String
+
+-- Ray Type (adt)
+-- position, direction
+adt Ray = Ray Vector Vector
+
+-- RayCollision Type (adt) - bool hit, float distance, Vector3 point, Vector3 normal
+adt RayCollision = RayCollision Bool Float Vector Vector
+
+-- BoundingBox Type (adt)
+-- min, max
+adt BoundingBox = BoundingBox Vector Vector
+
+-- Wave Type (adt)
+-- frameCount, sampleRate, sampleSize, channels
+adt Wave = Wave Int Int Int Int
+
+-- AudioStream Type (adt)
+-- sampleRate, sampleSize, channels
+adt AudioStream = AudioStream Int Int Int
+
+-- Sound Type (adt)
+-- stream, frameCount
+adt Sound = Sound AudioStream Int
+
+-- Music Type (adt)
+-- stream, frameCount, looping, ctxType
+adt Music = Music AudioStream Int Bool Int
+
+-- VrDeviceInfo Type (adt) - int hRes, int vRes, float hScreenSize, float vScreenSize, 
+-- float eyeToScreenDistance, float lensSeparationDistance, float interpupillaryDistance, 
+-- float lensDistortionValues[4], float chromaAbCorrection[4]
+adt VrDeviceInfo = VrDeviceInfo Int Int Float Float Float Float Float List List
+
+-- VrStereoConfig Type (adt)
+-- projection, viewOffset, leftLensCenter, rightLensCenter, 
+-- leftScreenCenter, rightScreenCenter, scale, scaleIn
+adt VrStereoConfig = VrStereoConfig List List List List List List List List
+
+-- FilePathList Type (adt)
+-- capacity, count, paths
+adt FilePathList = FilePathList Int Int [String]
+
+-- AutomationEvent Type (adt)
+-- frame, type, params
+adt AutomationEvent = AutomationEvent Int Int [Int]
+
+-- AutomationEventList Type (adt)
+-- capacity, count, events
+adt AutomationEventList = AutomationEventList Int Int [AutomationEvent]
+
+
+-- Some Basic Colors
+RL_LIGHTGRAY = Color(200, 200, 200, 255)
+RL_GRAY      = Color(130, 130, 130, 255)
+RL_DARKGRAY  = Color(80, 80, 80, 255)
+RL_YELLOW    = Color(253, 249, 0, 255)
+RL_GOLD      = Color(255, 203, 0, 255)
+RL_ORANGE    = Color(255, 161, 0, 255)
+RL_PINK      = Color(255, 109, 194, 255)
+RL_RED       = Color(230, 41, 55, 255)
+RL_MAROON    = Color(190, 33, 55, 255)
+RL_GREEN     = Color(0, 228, 48, 255)
+RL_LIME      = Color(0, 158, 47, 255)
+RL_DARKGREEN = Color(0, 117, 44, 255)
+RL_SKYBLUE   = Color(102, 191, 255, 255)
+RL_BLUE      = Color(0, 121, 241, 255)
+RL_DARKBLUE  = Color(0, 82, 172, 255)
+RL_PURPLE    = Color(200, 122, 255, 255)
+RL_VIOLET    = Color(135, 60, 190, 255)
+RL_DARKPURPLE= Color(112, 31, 126, 255)
+RL_BEIGE     = Color(211, 176, 131, 255)
+RL_BROWN     = Color(127, 106, 79, 255)
+RL_DARKBROWN = Color(76, 63, 47, 255)
+RL_WHITE     = Color(255, 255, 255, 255)
+RL_BLACK     = Color(0, 0, 0, 255)
+RL_MAGENTA   = Color(255, 0, 255, 255)
+RL_RAYWHITE  = Color(245, 245, 245, 255)
+
+-- Keyboard Keys
+KeyboardKey = #{
+    NULL: 0,
+    APOSTROPHE: 39,
+    COMMA: 44,
+    MINUS: 45,
+    PERIOD: 46,
+    SLASH: 47,
+    _0: 48,
+    _1: 49,
+    _2: 50,
+    _3: 51,
+    _4: 52,
+    _5: 53,
+    _6: 54,
+    _7: 55,
+    _8: 56,
+    _9: 57,
+    SEMICOLON: 59,
+    EQUAL: 61,
+    A: 65,
+    B: 66,
+    C: 67,
+    D: 68,
+    E: 69,
+    F: 70,
+    G: 71,
+    H: 72,
+    I: 73,
+    J: 74,
+    K: 75,
+    L: 76,
+    M: 77,
+    N: 78,
+    O: 79,
+    P: 80,
+    Q: 81,
+    R: 82,
+    S: 83,
+    T: 84,
+    U: 85,
+    V: 86,
+    W: 87,
+    X: 88,
+    Y: 89,
+    Z: 90,
+    LEFT_BRACKET: 91,
+    BACKSLASH: 92,
+    RIGHT_BRACKET: 93,
+    GRAVE: 96,
+    SPACE: 32,
+    ESCAPE: 256,
+    ENTER: 257,
+    TAB: 258,
+    BACKSPACE: 259,
+    INSERT: 260,
+    DELETE: 261,
+    RIGHT: 262,
+    LEFT: 263,
+    DOWN: 264,
+    UP: 265,
+    PAGE_UP: 266,
+    PAGE_DOWN: 267,
+    HOME: 268,
+    END: 269,
+    CAPS_LOCK: 280,
+    SCROLL_LOCK: 281,
+    NUM_LOCK: 282,
+    PRINT_SCREEN: 283,
+    PAUSE: 284,
+    F1: 290,
+    F2: 291,
+    F3: 292,
+    F4: 293,
+    F5: 294,
+    F6: 295,
+    F7: 296,
+    F8: 297,
+    F9: 298,
+    F10: 299,
+    F11: 300,
+    F12: 301,
+    LEFT_SHIFT: 340,
+    LEFT_CONTROL: 341,
+    LEFT_ALT: 342,
+    LEFT_SUPER: 343,
+    RIGHT_SHIFT: 344,
+    RIGHT_CONTROL: 345,
+    RIGHT_ALT: 346,
+    RIGHT_SUPER: 347,
+    KB_MENU: 348,
+    LEFT_BRACE: 91,
+    RIGHT_BRACE: 93
+}#
+
+MouseButton = #{
+    LEFT: 0,
+    RIGHT: 1,
+    MIDDLE: 2,
+    SIDE: 3,
+    EXTRA: 4,
+    FORWARD: 5,
+    BACK: 6
+}#
+
+MouseCursor = #{
+    DEFAULT: 0,
+    ARROW: 1,
+    IBEAM: 2,
+    CROSSHAIR: 3,
+    POINTING_HAND: 4,
+    RESIZE_EW: 5,
+    RESIZE_NS: 6,
+    RESIZE_NWSE: 7,
+    RESIZE_NESW: 8,
+    RESIZE_ALL: 9,
+    NOT_ALLOWED: 10
+}#
+
+GamepadButton = #{
+    UNKNOWN: 0,
+    LEFT_FACE_UP: 1,
+    LEFT_FACE_RIGHT: 2,
+    LEFT_FACE_DOWN: 3,
+    LEFT_FACE_LEFT: 4,
+    RIGHT_FACE_UP: 5,
+    RIGHT_FACE_RIGHT: 6,
+    RIGHT_FACE_DOWN: 7,
+    RIGHT_FACE_LEFT: 8,
+    MIDDLE_LEFT: 9,
+    MIDDLE_RIGHT: 10,
+    LEFT_TRIGGER_1: 11,
+    LEFT_TRIGGER_2: 12,
+    RIGHT_TRIGGER_1: 13,
+    RIGHT_TRIGGER_2: 14,
+    LEFT_THUMB: 15,
+    RIGHT_THUMB: 16
+}#
+
+GamepadAxis = #{
+    LEFT_X: 0,
+    LEFT_Y: 1,
+    RIGHT_X: 2,
+    RIGHT_Y: 3,
+    LEFT_TRIGGER: 4,
+    RIGHT_TRIGGER: 5
+}#
+
+MaterialMapIndex = #{
+    ALBEDO: 0,
+    METALNESS: 1,
+    NORMAL: 2,
+    ROUGHNESS: 3,
+    OCCLUSION: 4,
+    EMISSION: 5,
+    HEIGHT: 6,
+    CUBEMAP: 7,
+    IRRADIANCE: 8,
+    PREFILTER: 9,
+    BRDF: 10
+}#
+
+ShaderLocationIndex = #{
+    VERTEX_POSITION: 0,              // Shader location: vertex attribute: position
+    VERTEX_TEXCOORD01: 1,            // Shader location: vertex attribute: texcoord01
+    VERTEX_TEXCOORD02: 2,            // Shader location: vertex attribute: texcoord02
+    VERTEX_NORMAL: 3,                // Shader location: vertex attribute: normal
+    VERTEX_TANGENT: 4,               // Shader location: vertex attribute: tangent
+    VERTEX_COLOR: 5,                 // Shader location: vertex attribute: color
+    MATRIX_MVP: 6,                   // Shader location: matrix uniform: model-view-projection
+    MATRIX_VIEW: 7,                  // Shader location: matrix uniform: view (camera transform)
+    MATRIX_PROJECTION: 8,            // Shader location: matrix uniform: projection
+    MATRIX_MODEL: 9,                 // Shader location: matrix uniform: model (transform)
+    MATRIX_NORMAL: 10,               // Shader location: matrix uniform: normal
+    VECTOR_VIEW: 11,                 // Shader location: vector uniform: view
+    COLOR_DIFFUSE: 12,               // Shader location: vector uniform: diffuse color
+    COLOR_SPECULAR: 13,              // Shader location: vector uniform: specular color
+    COLOR_AMBIENT: 14,               // Shader location: vector uniform: ambient color
+    MAP_ALBEDO: 15,                  // Shader location: sampler2d texture: albedo (same as: SHADER_LOC_MAP_DIFFUSE)
+    MAP_METALNESS: 16,               // Shader location: sampler2d texture: metalness (same as: SHADER_LOC_MAP_SPECULAR)
+    MAP_NORMAL: 17,                  // Shader location: sampler2d texture: normal
+    MAP_ROUGHNESS: 18,               // Shader location: sampler2d texture: roughness
+    MAP_OCCLUSION: 19,               // Shader location: sampler2d texture: occlusion
+    MAP_EMISSION: 20,                // Shader location: sampler2d texture: emission
+    MAP_HEIGHT: 21,                  // Shader location: sampler2d texture: height
+    MAP_CUBEMAP: 22,                 // Shader location: samplerCube texture: cubemap
+    MAP_IRRADIANCE: 23,              // Shader location: samplerCube texture: irradiance
+    MAP_PREFILTER: 24,               // Shader location: samplerCube texture: prefilter
+    MAP_BRDF: 25,                    // Shader location: sampler2d texture: brdf
+    VERTEX_BONEIDS: 26,              // Shader location: vertex attribute: boneIds
+    VERTEX_BONEWEIGHTS: 27,          // Shader location: vertex attribute: boneWeights
+    BONE_MATRICES: 28                // Shader location: array of matrices uniform: boneMatrices
+}#
+
+CAMERA_MOVE_SPEED = 5.4
+CAMERA_ROTATION_SPEED = 0.03
+CAMERA_PAN_SPEED = 0.2
+
+CAMERA_MOUSE_MOVE_SENSITIVITY = 0.003
+
+CAMERA_ORBITAL_SPEED = 0.05
+
+CameraMode = #{
+    CUSTOM: 0,
+    FREE: 1,
+    ORBITAL: 2,
+    FIRST_PERSON: 3,
+    THIRD_PERSON: 4
+}#
+
+CameraProjection = #{
+    PERSPECTIVE: 0,
+    ORTHOGRAPHIC: 1
+}#
+
+NPatchLayout = #{
+    NINE_PATCH: 0,
+    THREE_PATCH_VERTICAL: 1,
+    THREE_PATCH_HORIZONTAL: 2
+}#
+
+-- Additional Enums/Constants as Hashmaps
+
+ConfigFlag = #{
+    VSYNC_HINT: 64,
+    FULLSCREEN_MODE: 2,
+    WINDOW_RESIZABLE: 4,
+    WINDOW_UNDECORATED: 8,
+    WINDOW_HIDDEN: 128,
+    WINDOW_MINIMIZED: 512,
+    WINDOW_MAXIMIZED: 1024,
+    WINDOW_UNFOCUSED: 2048,
+    WINDOW_TOPMOST: 4096,
+    WINDOW_ALWAYS_RUN: 256,
+    WINDOW_TRANSPARENT: 16,
+    WINDOW_HIGHDPI: 8192,
+    WINDOW_MOUSE_PASSTHROUGH: 16384,
+    BORDERLESS_WINDOWED_MODE: 32768,
+    MSAA_4X_HINT: 32,
+    INTERLACED_HINT: 65536
+}#
+
+TraceLogLevel = #{
+    ALL: 0,
+    TRACE: 1,
+    DEBUG: 2,
+    INFO: 3,
+    WARNING: 4,
+    ERROR: 5,
+    FATAL: 6,
+    NONE: 7
+}#
+
+PixelFormat = #{
+    UNKNOWN: 0,
+    UNCOMPRESSED_GRAYSCALE: 1,
+    UNCOMPRESSED_GRAY_ALPHA: 2,
+    UNCOMPRESSED_R5G6B5: 3,
+    UNCOMPRESSED_R8G8B8: 4,
+    UNCOMPRESSED_R5G5B5A1: 5,
+    UNCOMPRESSED_R4G4B4A4: 6,
+    UNCOMPRESSED_R8G8B8A8: 7,
+    UNCOMPRESSED_R32: 8,
+    UNCOMPRESSED_R32G32B32: 9,
+    UNCOMPRESSED_R32G32B32A32: 10,
+    UNCOMPRESSED_R16: 11,
+    UNCOMPRESSED_R16G16B16: 12,
+    UNCOMPRESSED_R16G16B16A16: 13,
+    COMPRESSED_DXT1_RGB: 14,
+    COMPRESSED_DXT1_RGBA: 15,
+    COMPRESSED_DXT3_RGBA: 16,
+    COMPRESSED_DXT5_RGBA: 17,
+    COMPRESSED_ETC1_RGB: 18,
+    COMPRESSED_ETC2_RGB: 19,
+    COMPRESSED_ETC2_EAC_RGBA: 20,
+    COMPRESSED_PVRT_RGB: 21,
+    COMPRESSED_PVRT_RGBA: 22,
+    COMPRESSED_adtC_4x4_RGBA: 23,
+    COMPRESSED_adtC_8x8_RGBA: 24
+}#
+
+TextureFilter = #{
+    POINT: 0,
+    BILINEAR: 1,
+    TRILINEAR: 2,
+    ANISOTROPIC_4X: 3,
+    ANISOTROPIC_8X: 4,
+    ANISOTROPIC_16X: 5
+}#
+
+TextureWrap = #{
+    REPEAT: 0,
+    CLAMP: 1,
+    MIRROR_REPEAT: 2,
+    MIRROR_CLAMP: 3
+}#
+
+CubemapLayout = #{
+    AUTO_DETECT: 0,
+    LINE_VERTICAL: 1,
+    LINE_HORIZONTAL: 2,
+    CROSS_THREE_BY_FOUR: 3,
+    CROSS_FOUR_BY_THREE: 4
+}#
+
+FontType = #{
+    DEFAULT: 0,
+    BITMAP: 1,
+    SDF: 2
+}#
+
+BlendMode = #{
+    ALPHA: 0,
+    ADDITIVE: 1,
+    MULTIPLIED: 2,
+    ADD_COLORS: 3,
+    SUBTRACT_COLORS: 4,
+    ALPHA_PREMULTIPLY: 5,
+    CUSTOM: 6,
+    CUSTOM_SEPARATE: 7
+}#
+
+Gesture = #{
+    TAP: 1,
+    DOUBLETAP: 2,
+    HOLD: 4,
+    DRAG: 8,
+    SWIPE_RIGHT: 16,
+    SWIPE_LEFT: 32,
+    SWIPE_UP: 64,
+    SWIPE_DOWN: 128,
+    PINCH_IN: 256,
+    PINCH_OUT: 512
+}#
+
+ShaderUniformDataType = #{
+    FLOAT: 0,
+    VEC2: 1,
+    VEC3: 2,
+    VEC4: 3,
+    INT: 4,
+    IVEC2: 5,
+    IVEC3: 6,
+    IVEC4: 7,
+    SAMPLER2D: 8
+}#
+
+-- Bindings Definitions
+
+def get_raylib_path() do
+    os = get_host_machine()
+    cwd = get_current_dir()
+    if os == "mingw64" || os == "mingw32" then
+        path = cwd <> "/lib/vendor/raylib/windows/raylib.dll"
+        return replace(path, "/", "\\")
+    else if os == "darwin" then
+        return cwd <> "/lib/vendor/raylib/macos/libraylib.550.dylib"
+    else
+        return cwd <> "/lib/vendor/raylib/linux/libraylib.so.550"
+    end
+end
+
+RAYLIB_PATH = get_raylib_path()
+"RAYLIB_PATH: " <> RAYLIB_PATH
+
+-- Wrapper functions
+foreign ClearBackground(RAYLIB_PATH, "Color") -> "void"
+foreign DrawText(RAYLIB_PATH, "string", "int", "int", "int", "Color") -> "void"
+
+foreign InitWindow(RAYLIB_PATH, "int", "int", "string") -> "void"
+foreign WindowShouldClose(RAYLIB_PATH) -> "bool"
+foreign CloseWindow(RAYLIB_PATH) -> "void"
+foreign IsWindowReady(RAYLIB_PATH) -> "bool"
+foreign IsWindowFullscreen(RAYLIB_PATH) -> "bool"
+foreign IsWindowHidden(RAYLIB_PATH) -> "bool"
+foreign IsWindowMinimized(RAYLIB_PATH) -> "bool"
+foreign IsWindowMaximized(RAYLIB_PATH) -> "bool"
+foreign IsWindowFocused(RAYLIB_PATH) -> "bool"
+foreign IsWindowResized(RAYLIB_PATH) -> "bool"
+foreign IsWindowState(RAYLIB_PATH, "int") -> "bool"
+foreign SetWindowState(RAYLIB_PATH, "int") -> "void"
+foreign ClearBackground(RAYLIB_PATH, "Color") -> "void"
+foreign ClearWindowState(RAYLIB_PATH, "int") -> "void"
+foreign ToggleFullscreen(RAYLIB_PATH) -> "void"
+foreign ToggleBorderlessWindowed(RAYLIB_PATH) -> "void"
+foreign MaximizeWindow(RAYLIB_PATH) -> "void"
+foreign MinimizeWindow(RAYLIB_PATH) -> "void"
+foreign RestoreWindow(RAYLIB_PATH) -> "void"
+foreign SetWindowTitle(RAYLIB_PATH, "string") -> "void"
+foreign SetWindowPosition(RAYLIB_PATH, "int", "int") -> "void"
+foreign SetWindowMonitor(RAYLIB_PATH, "int") -> "void"
+foreign SetWindowMinSize(RAYLIB_PATH, "int", "int") -> "void"
+foreign SetWindowMaxSize(RAYLIB_PATH, "int", "int") -> "void"
+foreign SetWindowSize(RAYLIB_PATH, "int", "int") -> "void"
+foreign SetWindowOpacity(RAYLIB_PATH, "double") -> "void"
+foreign SetWindowFocused(RAYLIB_PATH) -> "void"
+foreign GetScreenWidth(RAYLIB_PATH) -> "int"
+foreign GetScreenHeight(RAYLIB_PATH) -> "int"
+foreign GetRenderWidth(RAYLIB_PATH) -> "int"
+foreign GetRenderHeight(RAYLIB_PATH) -> "int"
+foreign GetMonitorCount(RAYLIB_PATH) -> "int"
+foreign GetCurrentMonitor(RAYLIB_PATH) -> "int"
+foreign GetMonitorWidth(RAYLIB_PATH, "int") -> "int"
+foreign GetMonitorHeight(RAYLIB_PATH, "int") -> "int"
+foreign GetMonitorPhysicalWidth(RAYLIB_PATH, "int") -> "int"
+foreign GetMonitorPhysicalHeight(RAYLIB_PATH, "int") -> "int"
+foreign GetMonitorRefreshRate(RAYLIB_PATH, "int") -> "int"
+foreign GetMonitorName(RAYLIB_PATH, "int") -> "string"
+foreign SetClipboardText(RAYLIB_PATH, "string") -> "void"
+foreign GetClipboardText(RAYLIB_PATH) -> "string"
+foreign EnableEventWaiting(RAYLIB_PATH) -> "void"
+foreign DisableEventWaiting(RAYLIB_PATH) -> "void"
+
+-- Custom frame control functions
+foreign SwapScreenBuffer(RAYLIB_PATH) -> "void"
+foreign PollInputEvents(RAYLIB_PATH) -> "void"
+foreign WaitTime(RAYLIB_PATH, "double") -> "void"
+
+-- Cursor-related functions
+foreign ShowCursor(RAYLIB_PATH) -> "void"
+foreign HideCursor(RAYLIB_PATH) -> "void"
+foreign IsCursorHidden(RAYLIB_PATH) -> "bool"
+foreign EnableCursor(RAYLIB_PATH) -> "void"
+foreign DisableCursor(RAYLIB_PATH) -> "void"
+foreign IsCursorOnScreen(RAYLIB_PATH) -> "bool"
+
+-- Drawing-related functions
+foreign BeginDrawing(RAYLIB_PATH) -> "void"
+foreign EndDrawing(RAYLIB_PATH) -> "void"
+foreign EndMode2D(RAYLIB_PATH) -> "void"
+foreign EndMode3D(RAYLIB_PATH) -> "void"
+foreign EndTextureMode(RAYLIB_PATH) -> "void"
+foreign EndShaderMode(RAYLIB_PATH) -> "void"
+foreign EndBlendMode(RAYLIB_PATH) -> "void"
+foreign BeginScissorMode(RAYLIB_PATH, "int", "int", "int", "int") -> "void"
+foreign EndScissorMode(RAYLIB_PATH) -> "void"
+foreign EndVrStereoMode(RAYLIB_PATH) -> "void"
+
+-- Timing-related functions
+foreign SetTargetFPS(RAYLIB_PATH, "int") -> "void"
+foreign GetFPS(RAYLIB_PATH) -> "int"
+foreign GetFrameTime(RAYLIB_PATH) -> "double"
+foreign GetTime(RAYLIB_PATH) -> "double"
+
+-- Random value generation functions
+foreign SetRandomSeed(RAYLIB_PATH, "int") -> "void"
+foreign GetRandomValue(RAYLIB_PATH, "int", "int") -> "int"
+
+-- Misc. functions
+foreign TakeScreenshot(RAYLIB_PATH, "string") -> "void"
+foreign SetConfigFlags(RAYLIB_PATH, "int") -> "void"
+foreign OpenURL(RAYLIB_PATH, "string") -> "void"
+
+-- Trace log functions
+foreign SetTraceLogLevel(RAYLIB_PATH, "int") -> "void"
+
+-- Files management functions
+foreign FileExists(RAYLIB_PATH, "string") -> "bool"
+foreign DirectoryExists(RAYLIB_PATH, "string") -> "bool"
+foreign IsFileExtension(RAYLIB_PATH, "string", "string") -> "bool"
+foreign GetFileLength(RAYLIB_PATH, "string") -> "int"
+foreign GetFileExtension(RAYLIB_PATH, "string") -> "string"
+foreign GetFileName(RAYLIB_PATH, "string") -> "string"
+foreign GetFileNameWithoutExt(RAYLIB_PATH, "string") -> "string"
+foreign GetDirectoryPath(RAYLIB_PATH, "string") -> "string"
+foreign GetPrevDirectoryPath(RAYLIB_PATH, "string") -> "string"
+foreign GetWorkingDirectory(RAYLIB_PATH) -> "string"
+foreign GetApplicationDirectory(RAYLIB_PATH) -> "string"
+foreign MakeDirectory(RAYLIB_PATH, "string") -> "int"
+foreign ChangeDirectory(RAYLIB_PATH, "string") -> "bool"
+foreign IsPathFile(RAYLIB_PATH, "string") -> "bool"
+foreign IsFileNameValid(RAYLIB_PATH, "string") -> "bool"
+foreign IsFileDropped(RAYLIB_PATH) -> "bool"
+
+-- Input-related functions: keyboard
+foreign IsKeyPressed(RAYLIB_PATH, "int") -> "bool"
+foreign IsKeyPressedRepeat(RAYLIB_PATH, "int") -> "bool"
+foreign IsKeyDown(RAYLIB_PATH, "int") -> "bool"
+foreign IsKeyReleased(RAYLIB_PATH, "int") -> "bool"
+foreign IsKeyUp(RAYLIB_PATH, "int") -> "bool"
+foreign GetKeyPressed(RAYLIB_PATH) -> "int"
+foreign GetCharPressed(RAYLIB_PATH) -> "int"
+foreign SetExitKey(RAYLIB_PATH, "int") -> "void"
+
+-- Input-related functions: gamepads
+foreign IsGamepadAvailable(RAYLIB_PATH, "int") -> "bool"
+foreign GetGamepadName(RAYLIB_PATH, "int") -> "string"
+foreign IsGamepadButtonPressed(RAYLIB_PATH, "int", "int") -> "bool"
+foreign IsGamepadButtonDown(RAYLIB_PATH, "int", "int") -> "bool"
+foreign IsGamepadButtonReleased(RAYLIB_PATH, "int", "int") -> "bool"
+foreign IsGamepadButtonUp(RAYLIB_PATH, "int", "int") -> "bool"
+foreign GetGamepadButtonPressed(RAYLIB_PATH) -> "int"
+foreign GetGamepadAxisCount(RAYLIB_PATH, "int") -> "int"
+foreign GetGamepadAxisMovement(RAYLIB_PATH, "int", "int") -> "double"
+foreign SetGamepadMappings(RAYLIB_PATH, "string") -> "int"
+foreign SetGamepadVibration(RAYLIB_PATH, "int", "double", "double", "double") -> "void"
+
+-- Input-related functions: mouse
+foreign IsMouseButtonPressed(RAYLIB_PATH, "int") -> "bool"
+foreign IsMouseButtonDown(RAYLIB_PATH, "int") -> "bool"
+foreign IsMouseButtonReleased(RAYLIB_PATH, "int") -> "bool"
+foreign IsMouseButtonUp(RAYLIB_PATH, "int") -> "bool"
+foreign GetMouseX(RAYLIB_PATH) -> "int"
+foreign GetMouseY(RAYLIB_PATH) -> "int"
+foreign SetMousePosition(RAYLIB_PATH, "int", "int") -> "void"
+foreign SetMouseOffset(RAYLIB_PATH, "int", "int") -> "void"
+foreign SetMouseScale(RAYLIB_PATH, "double", "double") -> "void"
+foreign GetMouseWheelMove(RAYLIB_PATH) -> "double"
+foreign SetMouseCursor(RAYLIB_PATH, "int") -> "void"
+
+-- Input-related functions: touch
+foreign GetTouchX(RAYLIB_PATH) -> "int"
+foreign GetTouchY(RAYLIB_PATH) -> "int"
+foreign GetTouchPointId(RAYLIB_PATH, "int") -> "int"
+foreign GetTouchPointCount(RAYLIB_PATH) -> "int"
+
+-- Gestures and Touch Handling Functions
+foreign SetGesturesEnabled(RAYLIB_PATH, "int") -> "void"
+foreign GetGestureDetected(RAYLIB_PATH) -> "int"
+foreign GetGestureHoldDuration(RAYLIB_PATH) -> "double"
+foreign GetGestureDragAngle(RAYLIB_PATH) -> "double"
+foreign GetGesturePinchAngle(RAYLIB_PATH) -> "double"
+
+-- Basic Shapes Drawing Functions
+foreign DrawPixel(RAYLIB_PATH, "int", "int", "Color") -> "void"
+foreign DrawLine(RAYLIB_PATH, "int", "int", "int", "int", "Color") -> "void"
+foreign DrawCircle(RAYLIB_PATH, "int", "int", "double", "Color") -> "void"
+foreign DrawCircleLines(RAYLIB_PATH, "int", "int", "double", "Color") -> "void"
+foreign DrawEllipse(RAYLIB_PATH, "int", "int", "double", "double", "Color") -> "void"
+foreign DrawEllipseLines(RAYLIB_PATH, "int", "int", "double", "double", "Color") -> "void"
+foreign DrawRectangle(RAYLIB_PATH, "int", "int", "int", "int", "Color") -> "void"
+foreign DrawRectangleLines(RAYLIB_PATH, "int", "int", "int", "int", "Color") -> "void"
+foreign DrawRectangleGradientV(RAYLIB_PATH, "int", "int", "int", "int", "Color", "Color") -> "void"
+foreign DrawRectangleGradientH(RAYLIB_PATH, "int", "int", "int", "int", "Color", "Color") -> "void"
+
+-- Basic shapes collision detection functions
+foreign CheckCollisionPointRec(RAYLIB_PATH, "Vector", "Rectangle") -> "bool"
+foreign CheckCollisionPointCircle(RAYLIB_PATH, "Vector", "Vector", "double") -> "bool"
+
+-- Text drawing functions
+foreign DrawFPS(RAYLIB_PATH, "int", "int") -> "void"
+foreign DrawText(RAYLIB_PATH, "string", "int", "int", "int", "Color") -> "void"
+
+-- Text font info functions
+foreign SetTextLineSpacing(RAYLIB_PATH, "int") -> "void"
+foreign MeasureText(RAYLIB_PATH, "string", "int") -> "int"
+
+-- Text strings management functions
+foreign TextLength(RAYLIB_PATH, "string") -> "int"
+foreign TextSubtext(RAYLIB_PATH, "string", "int", "int") -> "string"
+foreign TextFindIndex(RAYLIB_PATH, "string", "string") -> "int"
+foreign TextToUpper(RAYLIB_PATH, "string") -> "string"
+foreign TextToLower(RAYLIB_PATH, "string") -> "string"
+foreign TextToPascal(RAYLIB_PATH, "string") -> "string"
+foreign TextToSnake(RAYLIB_PATH, "string") -> "string"
+foreign TextToCamel(RAYLIB_PATH, "string") -> "string"
+foreign TextToInteger(RAYLIB_PATH, "string") -> "int"
+foreign TextToFloat(RAYLIB_PATH, "string") -> "double"
+
+-- Basic geometric 3D shapes drawing functions
+foreign DrawLine3D(RAYLIB_PATH, "Vector", "Vector", "Color") -> "void"
+foreign DrawPoint3D(RAYLIB_PATH, "Vector", "Color") -> "void"
+foreign DrawGrid(RAYLIB_PATH, "int", "double") -> "void"
+
+-- Audio device management functions
+foreign InitAudioDevice(RAYLIB_PATH) -> "void"
+foreign CloseAudioDevice(RAYLIB_PATH) -> "void"
+foreign IsAudioDeviceReady(RAYLIB_PATH) -> "bool"
+
+-- Wave/Sound loading/unloading functions
+foreign LoadSound(RAYLIB_PATH, "string") -> "Sound"
+foreign IsSoundValid(RAYLIB_PATH, "Sound") -> "bool"
+foreign UnloadSound(RAYLIB_PATH, "Sound") -> "void"
+
+-- Wave/Sound management functions
+foreign PlaySound(RAYLIB_PATH, "Sound") -> "void"
+foreign StopSound(RAYLIB_PATH, "Sound") -> "void"
+foreign PauseSound(RAYLIB_PATH, "Sound") -> "void"
+foreign ResumeSound(RAYLIB_PATH, "Sound") -> "void"
+foreign IsSoundPlaying(RAYLIB_PATH, "Sound") -> "bool"
+foreign SetSoundVolume(RAYLIB_PATH, "Sound", "double") -> "void"
+foreign SetSoundPitch(RAYLIB_PATH, "Sound", "double") -> "void"
+foreign SetSoundPan(RAYLIB_PATH, "Sound", "double") -> "void"
+
+-- Music management functions
+foreign LoadMusicStream(RAYLIB_PATH, "string") -> "Music"
+foreign IsMusicValid(RAYLIB_PATH, "Music") -> "bool"
+foreign UnloadMusicStream(RAYLIB_PATH, "Music") -> "void"
+foreign PlayMusicStream(RAYLIB_PATH, "Music") -> "void"
+foreign IsMusicStreamPlaying(RAYLIB_PATH, "Music") -> "bool"
+foreign UpdateMusicStream(RAYLIB_PATH, "Music") -> "void"
+foreign StopMusicStream(RAYLIB_PATH, "Music") -> "void"
+foreign PauseMusicStream(RAYLIB_PATH, "PauseMusicStream", "Music") -> "void"
+foreign ResumeMusicStream(RAYLIB_PATH, "Music") -> "void"
+foreign SeekMusicStream(RAYLIB_PATH, "Music", "double") -> "void"
+foreign SetMusicVolume(RAYLIB_PATH, "Music", "double") -> "void"
+foreign SetMusicPitch(RAYLIB_PATH, "Music", "double") -> "void"
+foreign SetMusicPan(RAYLIB_PATH, "Music", "double") -> "void"
+foreign GetMusicTimeLength(RAYLIB_PATH, "Music") -> "double"
+foreign GetMusicTimePlayed(RAYLIB_PATH, "Music") -> "double"

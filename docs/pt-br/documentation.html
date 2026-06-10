@@ -472,7 +472,7 @@
             <h3>Um Pouco Avançado</h3>
             <ul>
                 <li><a href="#adt">ADTs</a></li>
-                <li><a href="#errors-as-values">Erros como Valores</a></li>
+                <li><a href="#errors">Erros</a></li>
                 <li><a href="#globals">Funções Globais</a></li>
             </ul>
 
@@ -575,7 +575,7 @@ isActive = true</pre>
             <p><code>*</code> e <code>/</code> prendem mais forte que <code>+</code> e <code>-</code>, como na matemática, e os parênteses sobrepõem isso:</p>
             <pre class="simple-code">2 + 3 * 4    -- 14   (o 3 * 4 acontece primeiro)
 (2 + 3) * 4  -- 20</pre>
-            <p>Todo operador também tem um nome em palavras (<code>7 plus 2</code>, <code>7 times 2</code>) - veja <a href="#operators">Operadores</a> para o conjunto completo, incluindo o pipe.</p>
+            <p>Todo operador também tem um nome em palavras (<code>7 mais 2</code>, <code>7 vezes 2</code>) - veja <a href="#operators">Operadores</a> para o conjunto completo, incluindo o pipe.</p>
 
             <h3>Avaliação</h3>
             <p>Assim como literais, variáveis podem ser chamadas diretamente e serão devidamente avaliadas. Basta escrever o nome da variável para ver o seu valor:</p>
@@ -590,8 +590,8 @@ integer
             <p>Bern oferece dois operadores especiais para introspecção:</p>
             
             <ul>
-                <li><code>::</code> (typeof) - Retorna o tipo de um valor como uma string</li>
-                <li><code>:></code> (length) - Retorna o comprimento de uma lista, conjunto ou string</li>
+                <li><code>::</code> (<code>tipo-de</code>) - Retorna o tipo de um valor como uma string</li>
+                <li><code>:></code> (<code>tamanho</code>) - Retorna o comprimento de uma lista, conjunto ou string</li>
             </ul>
 
             <pre class="simple-code">typeof_integer = :: 2
@@ -630,12 +630,12 @@ length_string = :> "hello"
                 <tr><td>Lambda</td><td><code>"Lambda"</code></td><td><code>\x -> x + 1</code></td><td>Uma função anônima. Veja <a href="#functions">Funções</a>.</td></tr>
                 <tr><td>NaN</td><td><code>"NaN"</code></td><td><code>0.0 / 0.0</code></td><td>"Not a Number" - um resultado numérico indefinido.</td></tr>
                 <tr><td>Undefined</td><td><code>"Undefined"</code></td><td>variável não definida</td><td>A ausência de um valor (ex.: um nome não vinculado, ou <code>null</code> de JSON).</td></tr>
-                <tr><td>Error</td><td><code>"Error"</code></td><td><code>error("boom")</code></td><td>Um erro de execução carregado como valor. Veja <a href="#errors-as-values">Erros como Valores</a>.</td></tr>
+                <tr><td>Error</td><td><code>"Error"</code></td><td><code>error("boom")</code></td><td>Um erro de execução carregado como valor. Veja <a href="#errors">Erros</a>.</td></tr>
                 <tr><td>ADT</td><td>o próprio nome</td><td><code>Circle(5.0)</code></td><td>Um valor definido pelo usuário. Reporta o próprio nome do tipo, ex.: <code>"Shape"</code>. Veja <a href="#adt">ADTs</a>.</td></tr>
             </table>
 
             <h3>Inspecionando o Tipo de um Valor</h3>
-            <p>Use <code>::</code> (ou sua forma em palavra <code>typeof</code>) para perguntar a qualquer valor seu tipo em tempo de execução. O resultado é uma string, então você pode compará-lo ou ramificar sobre ele:</p>
+            <p>Use <code>::</code> (ou sua forma em palavra <code>tipo-de</code>) para perguntar a qualquer valor seu tipo em tempo de execução. O resultado é uma string, então você pode compará-lo ou ramificar sobre ele:</p>
 
             <pre class="simple-code">:: 42
 -- Output: "Integer"
@@ -688,7 +688,7 @@ adt Box   = Box Auto                     -- o campo guarda o tipo que for passad
 
             <details class="adv">
             <summary>Quer variáveis com tipo verificado pelo pragma <code>typed</code>? Clique aqui! <span class="v2badge">Bern 2.1</span></summary>
-            <p>Com o pragma <a href="#pragmas"><code>typed</code></a> ativado, você pode anotar uma variável com um tipo usando <code>nome :: Tipo = valor</code>. O valor é verificado contra o tipo declarado quando a atribuição executa; uma incompatibilidade é um erro fatal. É opcional - sem o pragma, a sintaxe fica inativa e <code>::</code> mantém seu significado usual de operador typeof.</p>
+            <p>Com o pragma <a href="#pragmas"><code>typed</code></a> ativado, você pode anotar uma variável com um tipo usando <code>nome :: Tipo = valor</code>. O valor é verificado contra o tipo declarado quando a atribuição executa; uma incompatibilidade é um erro fatal. É opcional - sem o pragma, a sintaxe fica inativa e <code>::</code> mantém seu significado usual de operador <code>tipo-de</code>.</p>
 
             <pre class="simple-code">{--! typed !--}
 
@@ -723,33 +723,33 @@ sh :: Shape = Circle(1.0)               -- um valor Shape é aceito</pre>
 
             <table class="lib-table">
                 <tr><th>Símbolo</th><th>Palavra</th><th>Símbolo</th><th>Palavra</th></tr>
-                <tr><td><code>+</code></td><td><code>plus</code></td><td><code>==</code></td><td><code>equals</code> (ou <code>is</code>)</td></tr>
-                <tr><td><code>-</code></td><td><code>minus</code></td><td><code>!=</code></td><td><code>not-equals</code></td></tr>
-                <tr><td><code>*</code></td><td><code>times</code></td><td><code>&amp;&amp;</code></td><td><code>and</code></td></tr>
-                <tr><td><code>/</code></td><td><code>divided-by</code></td><td><code>||</code></td><td><code>or</code></td></tr>
-                <tr><td><code>%</code></td><td><code>modulo</code></td><td><code>!</code></td><td><code>not</code></td></tr>
-                <tr><td><code>&gt;</code></td><td><code>is-greater</code></td><td><code>&lt;&gt;</code></td><td><code>concat</code></td></tr>
-                <tr><td><code>&lt;</code></td><td><code>is-less</code></td><td><code>&lt;|</code></td><td><code>union</code></td></tr>
-                <tr><td><code>&gt;=</code></td><td><code>is-greater-or-equal</code></td><td><code>|&gt;</code></td><td><code>intersect</code></td></tr>
-                <tr><td><code>&lt;=</code></td><td><code>is-less-or-equal</code></td><td><code>&lt;/&gt;</code></td><td><code>difference</code></td></tr>
-                <tr><td><code>::</code></td><td><code>typeof</code></td><td><code>)|</code></td><td><code>and-do</code></td></tr>
-                <tr><td><code>:&gt;</code></td><td><code>length</code></td><td><code>=</code></td><td><code>be</code> (atribuição)</td></tr>
+                <tr><td><code>+</code></td><td><code>mais</code></td><td><code>==</code></td><td><code>igual</code></td></tr>
+                <tr><td><code>-</code></td><td><code>menos</code></td><td><code>!=</code></td><td><code>diferente</code></td></tr>
+                <tr><td><code>*</code></td><td><code>vezes</code></td><td><code>&amp;&amp;</code></td><td><code>e</code></td></tr>
+                <tr><td><code>/</code></td><td><code>dividido-por</code></td><td><code>||</code></td><td><code>ou</code></td></tr>
+                <tr><td><code>%</code></td><td><code>resto</code></td><td><code>!</code></td><td><code>nao</code></td></tr>
+                <tr><td><code>&gt;</code></td><td><code>maior-que</code></td><td><code>&lt;&gt;</code></td><td><code>concatenar</code></td></tr>
+                <tr><td><code>&lt;</code></td><td><code>menor-que</code></td><td><code>&lt;|</code></td><td><code>uniao</code></td></tr>
+                <tr><td><code>&gt;=</code></td><td><code>maior-ou-igual</code></td><td><code>|&gt;</code></td><td><code>intersecao</code></td></tr>
+                <tr><td><code>&lt;=</code></td><td><code>menor-ou-igual</code></td><td><code>&lt;/&gt;</code></td><td><code>diferenca</code></td></tr>
+                <tr><td><code>::</code></td><td><code>tipo-de</code></td><td><code>)|</code></td><td><code>e-faca</code></td></tr>
+                <tr><td><code>:&gt;</code></td><td><code>tamanho</code></td><td><code>=</code></td><td><code>recebe</code> (atribuição)</td></tr>
             </table>
 
-            <p>Laços também aceitam <code>in</code> como sinônimo de <code>:</code> (e <code>for</code> como sinônimo de <code>loop</code>), e corpos de função e de case aceitam <code>returns</code> como sinônimo de <code>-&gt;</code> / <code>=</code>.</p>
+            <p>Corpos de função e de case também aceitam <code>retorna</code> (ou <code>tal-que</code>) como sinônimo de <code>-&gt;</code> / <code>=</code>.</p>
 
-            <pre class="simple-code">nums be [<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span>]
+            <pre class="simple-code">nums recebe [<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span>]
 
-<span class="number">3</span> is-greater <span class="number">2</span> and <span class="number">5</span> is-less-or-equal <span class="number">5</span>
--- Output: true
+<span class="number">3</span> maior-que <span class="number">2</span> e <span class="number">5</span> menor-ou-igual <span class="number">5</span>
+-- Saída: true
 
-[<span class="number">1</span>, <span class="number">2</span>] concat [<span class="number">3</span>, <span class="number">4</span>]
--- Output: [1, 2, 3, 4]
+[<span class="number">1</span>, <span class="number">2</span>] concatenar [<span class="number">3</span>, <span class="number">4</span>]
+-- Saída: [1, 2, 3, 4]
 
-<span class="keyword">def</span> <span class="function">classify</span>(n) <span class="keyword">when</span> n is-greater <span class="number">0</span> returns <span class="string">"positive"</span></pre>
+<span class="keyword">def</span> <span class="function">classifica</span>(n) <span class="keyword">when</span> n maior-que <span class="number">0</span> retorna <span class="string">"positivo"</span></pre>
 
             <div class="note">
-                <strong>Nota:</strong> as palavras usam hifens (<code>is-greater-or-equal</code>) e se resolvem da mesma forma que seus símbolos, com a mesma precedência.
+                <strong>Nota:</strong> as palavras usam hifens (<code>maior-ou-igual</code>) e se resolvem da mesma forma que seus símbolos, com a mesma precedência. As formas em inglês (<code>plus</code>, <code>is-greater</code>, &hellip;) também continuam válidas.
             </div>
         </div>
 
@@ -759,7 +759,7 @@ sh :: Shape = Circle(1.0)               -- um valor Shape é aceito</pre>
             <p>Todo nome em Bern vive em um <strong>escopo</strong> - a região do programa onde aquele vínculo pode ser visto. Bern mantém dois tipos de escopo, e o operador que você usa para atribuir uma variável decide em qual deles ela entra:</p>
 
             <ul>
-                <li><code>=</code> (ou a palavra <code>be</code>) - um vínculo <strong>local</strong>, visível apenas no escopo atual.</li>
+                <li><code>=</code> (ou a palavra <code>recebe</code>) - um vínculo <strong>local</strong>, visível apenas no escopo atual.</li>
                 <li><code>:=</code> - um vínculo <strong>global</strong>, visível em todo o programa.</li>
             </ul>
 
@@ -947,6 +947,27 @@ numbers_list
 
 small_range = [1..5]
 -- Output: [1,2,3,4,5]</pre>
+
+            <h3>Intervalos com Passo &amp; Infinitos</h3>
+            <p>Os intervalos seguem a sintaxe de enumeração completa do Haskell. Adicione um segundo elemento para definir o passo, e omita o limite superior para tornar o intervalo <strong>infinito e preguiçoso</strong>:</p>
+
+            <pre class="simple-code">pares   = [0, 2..10]   -- passo de 2:        [0,2,4,6,8,10]
+regressiva = [10, 7..1] -- passo negativo:   [10,7,4,1]
+
+naturais = [1..]       -- infinito, passo +1
+impares  = [1, 3..]    -- infinito, passo +2
+descida  = [10, 8..]   -- infinito, contando para baixo</pre>
+
+            <p>Uma lista infinita guarda uma espinha de elementos não forçada, então é barata de criar e você consome apenas o que pedir. Use as operações que pegam um prefixo finito -; <code>take</code>, <code>head</code>, <code>drop</code>, indexação, casamento de padrão <code>[h|t]</code>, ou prepend com <code>[x | xs]</code>:</p>
+
+            <pre class="simple-code">take(5, [1..])         -- [1,2,3,4,5]
+head([100..])          -- 100
+[1..][4]               -- 5
+take(4, [0 | [1..]])   -- [0,1,2,3]</pre>
+
+            <div class="note">
+                <strong>Atenção:</strong> como em Haskell, uma operação que precisa percorrer a lista <em>inteira</em> nunca termina numa lista infinita. <code>map</code>, <code>filter</code>, <code>len</code>/<code>:&gt;</code> e imprimir uma lista infinita rodam para sempre -; use <code>take</code> primeiro. Pedir o tamanho de uma lista infinita (<code>:&gt; [1..]</code>) é reportado como um erro em vez de travar.
+            </div>
 
             <h3>Indexação</h3>
             <p>Acesse elementos específicos usando indexação baseada em zero:</p>
@@ -1199,7 +1220,7 @@ person["address"]["city"]
         <div class="doc-section" id="functions">
             <h2>Funções</h2>
             
-            <p>As funções de Bern são poderosas e flexíveis, suportando casamento de padrões, sintaxe de seta em linha e corpos em bloco com returns explícitos.</p>
+            <p>As funções de Bern são poderosas e flexíveis, suportando casamento de padrões, sintaxe de seta em linha e corpos em bloco com retornos explícitos.</p>
 
             <h3>Definição Simples de Função</h3>
             <p>Para funções de uma linha, use a sintaxe de seta <code>def name(params) -> expr</code>:</p>
@@ -1553,25 +1574,20 @@ safeDivide(5, 0)
             </div>
         </div>
 
-        <div class="doc-section" id="errors-as-values">
-            <h2>Erros como Valores <span class="v2badge">Bern 2.0</span></h2>
-            <p>Por padrão, um erro em tempo de execução não derruba mais o programa. Em vez disso, ele vira um <strong>valor de erro</strong> de primeira classe que se propaga pelas expressões e pode ser inspecionado. O programa continua rodando.</p>
+        <div class="doc-section" id="errors">
+            <h2>Erros</h2>
+            <p>Bern tem dois tipos de erro, e eles se comportam de formas diferentes:</p>
+            <ul>
+                <li><strong>Erros da linguagem</strong> -; lançados pelo interpretador quando algo dá errado durante a execução (chamar uma função indefinida, indexar além do fim de uma lista, somar um número com um booleano, &hellip;). <strong>Por padrão eles derrubam o programa</strong> com uma mensagem apontando a linha, então os descuidos aparecem na hora.</li>
+                <li><strong>Erros do usuário</strong> -; valores que você mesmo cria com <code>error("&hellip;")</code>. Eles são <em>sempre</em> valores comuns: nunca derrubam o programa sozinhos, fluem pelas expressões, e você os testa com <code>is_error</code>. São o try/catch leve de Bern.</li>
+            </ul>
 
-            <pre class="simple-code">import core
-
-bad = [1, 2, 3][99]      -- out of bounds
-is_error(bad)
--- Output: true
-
-"the program keeps running"
--- Output: "the program keeps running"</pre>
-
-            <p>Isso foi implementado para deixar Bern mais parecido com outras linguagens, como Go ou Odin. Dito isso, eu realmente acredito que você deveria usar Mônadas e ADTs para tratamento de erros!</p>
-            <h3>Lançando e testando erros</h3>
-            <div class="function-sig">error(message) → error value</div>
-            <p>Cria um valor de erro recuperável.</p>
-            <div class="function-sig">is_error(value) → boolean</div>
-            <p>Verifica se um valor é um erro.</p>
+            <h3>Erros do usuário: error() e is_error()</h3>
+            <p>Estas duas funções estão definidas no <code>core</code>:</p>
+            <div class="function-sig">error(mensagem) → valor de erro</div>
+            <p>Cria um valor de erro recuperável carregando uma mensagem.</p>
+            <div class="function-sig">is_error(valor) → boolean</div>
+            <p>Verifica se um valor é um valor de erro (seu <code>typeof</code> é <code>"Error"</code>).</p>
             <pre class="simple-code">def safe_head([]) -> error("empty list")
 def safe_head([h|_]) -> h
 
@@ -1580,10 +1596,81 @@ if is_error(result) then
     "no head"
 else
     result
-end</pre>
+end
+-- Saída: "no head"</pre>
+            <p>Um valor de erro se <em>propaga como veneno</em>: passe-o para um operador e o resultado é o mesmo erro, então uma única checagem no fim pega uma falha em qualquer ponto da cadeia.</p>
+            <pre class="simple-code">is_error(error("boom") + 100)
+-- Saída: true   (o erro "boom" flui através do +)</pre>
+
+            <h3>Erros como valores (opcional) <span class="v2badge">Bern 2.0</span></h3>
+            <p>O pragma <code>errors-as-values</code> faz os erros <em>da linguagem</em> se comportarem como erros do usuário: em vez de derrubar, uma operação que falha vira um valor de erro que você pode inspecionar. Isso torna os erros da linguagem recuperáveis, parecido com Go ou Odin.</p>
+            <pre class="simple-code">{--! errors-as-values !--}
+import core
+
+bad = [1, 2, 3][99]      -- out of bounds: um valor de erro, não um crash
+is_error(bad)
+-- Saída: true
+
+"the program keeps running"
+-- Saída: "the program keeps running"</pre>
+            <div class="note">
+                <strong>Nota:</strong> o pragma só afeta os erros <em>da linguagem</em>. Erros do usuário vindos de <code>error("&hellip;")</code> são valores de qualquer jeito, e algumas checagens estruturais (veja <em>Sempre fatais</em> abaixo) derrubam mesmo com o pragma ligado.
+            </div>
+
+            <h3>Os erros da linguagem por completo</h3>
+            <p>Estes são os erros que o próprio interpretador lança. No padrão eles derrubam; sob <code>errors-as-values</code> os erros <em>de expressão</em> (os três primeiros grupos) viram valores de erro. As mensagens abaixo são representativas -; a maioria inclui os tipos ou nomes concretos envolvidos.</p>
+
+            <h4>Tipos &amp; operadores</h4>
+            <table class="lib-table">
+                <tr><th>Erro</th><th>Quando acontece</th></tr>
+                <tr><td><code>numeric operation requires Int or Double</code></td><td>aritmética com um não-número, ex. <code>true + 1</code></td></tr>
+                <tr><td><code>cannot apply &lt;op&gt; to &lt;T&gt; and &lt;T&gt;</code></td><td>um operador em tipos incompatíveis, ex. <code>"a" * true</code> ou <code>[1,2] &gt; "x"</code></td></tr>
+                <tr><td><code>division by zero</code></td><td><code>x / 0</code> sob o pragma <code>strict-arithmetic</code> (caso contrário o resultado é <code>NaN</code>)</td></tr>
+                <tr><td><code>logical AND / OR / NOT requires Bool</code></td><td><code>&amp;&amp;</code>, <code>||</code> ou <code>!</code> em não-booleanos, ex. <code>5 &amp;&amp; 10</code></td></tr>
+                <tr><td><code>cannot negate &lt;T&gt;</code></td><td>menos unário em um não-número, ex. <code>-"x"</code></td></tr>
+                <tr><td><code>the strict-types pragma forbids implicit coercion</code></td><td>misturar string e número sob <code>strict-types</code>, ex. <code>"n: " + 42</code></td></tr>
+            </table>
+
+            <h4>Nomes &amp; funções</h4>
+            <table class="lib-table">
+                <tr><th>Erro</th><th>Quando acontece</th></tr>
+                <tr><td><code>undefined function with name 'x'</code></td><td>chamar (ou referenciar) um nome que nunca foi definido</td></tr>
+                <tr><td><code>reading an unbound variable</code></td><td>usar um nome sem valor, sob o pragma <code>no-undefined</code></td></tr>
+                <tr><td><code>no matching pattern for N argument(s)</code></td><td>nenhuma cláusula da função casa com os argumentos, ex. <code>factorial("hi")</code></td></tr>
+                <tr><td><code>guard must evaluate to a boolean</code></td><td>uma guarda <code>when</code> que retorna um não-Bool</td></tr>
+                <tr><td><code>ambiguous imported symbol 'x'</code></td><td>dois módulos importados exportam o mesmo nome; qualifique como <code>modulo:x</code></td></tr>
+            </table>
+
+            <h4>Coleções &amp; indexação</h4>
+            <table class="lib-table">
+                <tr><th>Erro</th><th>Quando acontece</th></tr>
+                <tr><td><code>index N out of bounds (length L)</code></td><td>indexar além do fim de uma lista ou string (a menos que <code>safe-index</code> esteja ligado, que retorna <code>undefined</code>)</td></tr>
+                <tr><td><code>key 'k' not found</code></td><td>ler uma chave de objeto que não existe</td></tr>
+                <tr><td><code>cannot index &lt;T&gt; with &lt;T&gt;</code></td><td>um tipo de índice errado, ex. uma chave string numa lista</td></tr>
+                <tr><td><code>cannot index into &lt;T&gt;</code></td><td>indexar um valor que não é coleção, ex. <code>42[0]</code></td></tr>
+                <tr><td><code>list elements must have the same type</code></td><td>uma lista heterogênea sem o pragma <code>impure-lists</code></td></tr>
+                <tr><td><code>cannot add lists of different lengths</code></td><td>aritmética elemento-a-elemento de listas com tamanhos diferentes</td></tr>
+                <tr><td><code>range bounds must be numeric</code></td><td>um intervalo cujos extremos não são números, ex. <code>"a".."z"</code></td></tr>
+                <tr><td><code>cannot iterate over &lt;T&gt;</code></td><td><code>for x in 42</code>, ou iterar um ADT não declarado <code>iterative</code></td></tr>
+                <tr><td><code>cannot get size of &lt;T&gt;</code> / <code>of an infinite list</code></td><td><code>:&gt;</code> num valor que não tem tamanho</td></tr>
+            </table>
+
+            <h4>Sempre fatais (em comandos &amp; no carregamento)</h4>
+            <p>Estes são checados fora da avaliação de expressões, então derrubam <em>mesmo com</em> <code>errors-as-values</code> ligado:</p>
+            <table class="lib-table">
+                <tr><th>Erro</th><th>Quando acontece</th></tr>
+                <tr><td><code>condition must be Bool</code></td><td>uma condição de <code>if</code> ou <code>while</code> que não é booleana</td></tr>
+                <tr><td><code>repeat count must be Int</code></td><td>uma contagem de <code>repeat &hellip; times</code> que não é inteira</td></tr>
+                <tr><td><code>type mismatch: cannot assign &lt;T&gt; to &lt;T&gt;</code></td><td>atribuição indexada com o tipo de elemento errado, ex. <code>nums[0] = "x"</code></td></tr>
+                <tr><td><code>cannot reassign 'x'</code></td><td>reatribuir uma variável existente sob o pragma <code>immutable</code></td></tr>
+                <tr><td><code>type mismatch for 'x': declared T but value is T</code></td><td>uma ligação <code>typed</code> cujo valor não casa com o tipo declarado</td></tr>
+                <tr><td><code>module 'x' not found</code> / <code>failed to parse module</code></td><td>um <code>import</code> inválido</td></tr>
+                <tr><td><code>module 'x' has non-exhaustive functions</code></td><td>uma função importada cujas cláusulas não cobrem todos os casos (a menos de <code>partial</code>)</td></tr>
+                <tr><td><code>failed to bind C function 'x'</code></td><td>uma declaração FFI <code>foreign</code> que não pôde ser carregada</td></tr>
+            </table>
 
             <div class="note">
-                <strong>Nota:</strong> use o pragma <code>abort-on-error</code> para restaurar o comportamento clássico de falhar em erros.
+                <strong>Dica:</strong> valores de erro são úteis para recuperação rápida, mas para programas de verdade prefira <a href="libs/monads.html">Maybe e Either</a> (a biblioteca <code>monads</code>), para que "isso pode falhar" fique explícito nos seus dados em vez de um valor que você pode esquecer de checar.
             </div>
         </div>
 
@@ -1718,9 +1805,9 @@ bern build app.brn -o myprogram.exe
                 <tr><td><code>start-on-one</code></td><td>a indexação começa em 1</td></tr>
                 <tr><td><code>main</code></td><td>executa <code>main()</code> após o carregamento do arquivo</td></tr>
                 <tr><td><code>no-curry</code></td><td>desativa o currying automático</td></tr>
-                <tr><td><code>abort-on-error</code></td><td>falha em erros de execução em vez de produzir valores de erro</td></tr>
+                <tr><td><code>errors-as-values</code></td><td>transforma erros de execução da linguagem em valores inspecionáveis em vez de derrubar</td></tr>
                 <tr><td><code>partial</code></td><td>permite funções não exaustivas</td></tr>
-                <tr><td><code>no-written-operators</code></td><td>desliga os operadores em palavras, liberando nomes como <code>length</code> e <code>plus</code> para uso como variáveis</td></tr>
+                <tr><td><code>no-written-operators</code></td><td>desliga os operadores em palavras, liberando os nomes reservados (<code>tamanho</code>, <code>mais</code>, <code>recebe</code>, &hellip; e suas formas em inglês) para uso como variáveis</td></tr>
                 <tr><td><code>typed</code></td><td><span class="v2badge">Bern 2.1</span> ativa declarações de variável com tipo, <code>nome :: Tipo = valor</code>, verificadas em tempo de execução (veja <a href="#types">Declarações de Variável Tipadas</a>)</td></tr>
             </table>
         </div>

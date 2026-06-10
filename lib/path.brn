@@ -9,7 +9,7 @@ def path_normalize_separators(path) -> path
 
 def path_drive_prefix(path) do
     p = path_normalize_separators(path)
-    if length(p) >= 2 then
+    if len(p) >= 2 then
         if p[1] == ':' then
             return substring(p, 0, 2)
         else
@@ -25,7 +25,7 @@ def path_is_absolute(path) do
     if starts_with(p, "/") then
         return true
     else
-        if length(p) >= 2 then
+        if len(p) >= 2 then
             return p[1] == ':'
         else
             return false
@@ -35,11 +35,11 @@ end
 
 def path_trim_trailing_separator(path) do
     p = path_normalize_separators(path)
-    if length(p) <= 1 then
+    if len(p) <= 1 then
         return p
     else
         if ends_with(p, "/") then
-            return path_trim_trailing_separator(substring(p, 0, length(p) - 1))
+            return path_trim_trailing_separator(substring(p, 0, len(p) - 1))
         else
             return p
         end
@@ -60,7 +60,7 @@ def path_join(left, right) do
 
     l = path_trim_trailing_separator(l)
     if starts_with(r, "/") then
-        r = substring(r, 1, length(r))
+        r = substring(r, 1, len(r))
     end
 
     return l + "/" + r
@@ -70,7 +70,7 @@ def path_join_many([]) -> ""
 def path_join_many([head|tail]) do
     result = head
     i = 0
-    for i < length(tail) do
+    for i < len(tail) do
         result = path_join(result, tail[i])
         i = i + 1
     end
@@ -81,7 +81,7 @@ def path_split(path) do
     raw = split(path_normalize_separators(path), "/")
     parts = []
     i = 0
-    for i < length(raw) do
+    for i < len(raw) do
         part = raw[i]
         if part != "" then
             parts = parts <> [part]
@@ -94,14 +94,14 @@ end
 def path_basename(path) do
     p = path_trim_trailing_separator(path)
     parts = path_split(p)
-    if length(parts) == 0 then
+    if len(parts) == 0 then
         if path_is_absolute(p) then
             return "/"
         else
             return ""
         end
     else
-        return parts[length(parts) - 1]
+        return parts[len(parts) - 1]
     end
 end
 
@@ -112,7 +112,7 @@ def path_dirname(path) do
     abs = path_is_absolute(norm)
     drive = path_drive_prefix(norm)
 
-    if length(parts) <= 1 then
+    if len(parts) <= 1 then
         if drive != "" then
             return drive + "/"
         else
@@ -124,15 +124,15 @@ def path_dirname(path) do
         end
     end
 
-    parent_parts = take(length(parts) - 1, parts)
+    parent_parts = take(len(parts) - 1, parts)
 
     if drive != "" then
-        if length(parent_parts) == 0 then
+        if len(parent_parts) == 0 then
             return drive + "/"
         end
 
         if parent_parts[0] == drive then
-            if length(parent_parts) == 1 then
+            if len(parent_parts) == 1 then
                 return drive + "/"
             else
                 rest = drop(1, parent_parts)
@@ -152,7 +152,7 @@ def path_dirname(path) do
 end
 
 def path_find_last_char(s, ch) do
-    i = length(s) - 1
+    i = len(s) - 1
     for i >= 0 do
         if s[i] == ch then
             return i
@@ -168,7 +168,7 @@ def path_extname(path) do
     if dot <= 0 then
         return ""
     else
-        return substring(base, dot, length(base))
+        return substring(base, dot, len(base))
     end
 end
 
@@ -178,7 +178,7 @@ def path_stem(path) do
     if ext == "" then
         return base
     else
-        return substring(base, 0, length(base) - length(ext))
+        return substring(base, 0, len(base) - len(ext))
     end
 end
 
@@ -194,16 +194,16 @@ def path_normalize(path) do
     stack = []
     i = 0
 
-    for i < length(raw_parts) do
+    for i < len(raw_parts) do
         part = raw_parts[i]
 
         if part == "" || part == "." then
             skip = 0
         else if part == ".." then
-            if length(stack) > 0 then
-                last = stack[length(stack) - 1]
+            if len(stack) > 0 then
+                last = stack[len(stack) - 1]
                 if last != ".." then
-                    stack = take(length(stack) - 1, stack)
+                    stack = take(len(stack) - 1, stack)
                 else
                     if !abs then
                         stack = stack <> [".."]
@@ -222,7 +222,7 @@ def path_normalize(path) do
     end
 
     if drive != "" then
-        if length(stack) > 0 then
+        if len(stack) > 0 then
             if stack[0] == drive then
                 stack = drop(1, stack)
             end

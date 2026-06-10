@@ -103,7 +103,7 @@ const PRAGMAS = [
   "main",
   "strict-imports",
   "no-curry",
-  "abort-on-error",
+  "errors-as-values",
   "partial",
   "no-written-operators",
 ];
@@ -197,7 +197,7 @@ const PRAGMA_DOCS = {
   main: "After the file loads, automatically call and print `main()`.",
   "strict-imports": "Reserved: intended to require qualifying imported names with their module namespace.",
   "no-curry": "Disable automatic currying of partially-applied functions.",
-  "abort-on-error": "Runtime errors crash execution instead of producing inspectable error values.",
+  "errors-as-values": "Turn language runtime errors into inspectable error values (testable with is_error) instead of crashing. Off by default: language errors crash, while user errors built with error(\"...\") are always values.",
   partial: "Allow non-exhaustive functions (skip the exhaustiveness check).",
   "no-written-operators": "Switch off the written-word operators, freeing names like `length`, `plus`, or `mais` for use as variables.",
 };
@@ -333,7 +333,7 @@ const SNIPPETS = [
   {
     label: "pragma {--! ... !--}",
     insertText:
-      "{--! ${1|impure-lists,impure-sets,strict-types,strict-arithmetic,immutable,no-eval,show-types,safe-index,no-undefined,start-on-one,main,strict-imports,no-curry,abort-on-error,partial,no-written-operators|} !--}",
+      "{--! ${1|impure-lists,impure-sets,strict-types,strict-arithmetic,immutable,no-eval,show-types,safe-index,no-undefined,start-on-one,main,strict-imports,no-curry,errors-as-values,partial,no-written-operators|} !--}",
     detail: "File-level pragma directive",
   },
   {

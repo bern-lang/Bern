@@ -2,9 +2,9 @@
 /dist-newstyle
 extension/CHANGELOG.md
 Bern.exe
-/lib/vendor/raylib
 /tests/ray.brn
 result
 .bern_history
 tests/tmp_csv_output.csv
 tests/tmp_csv_objects.csv
+Bern-2.2.0-win.zip

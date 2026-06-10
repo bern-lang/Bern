@@ -359,11 +359,22 @@ parseList = do
     nonEmpty = do
         first <- parseExpression
         choice
-            [ try $ do  -- range
+            [ try $ do  -- range: [first..end] or open-ended [first..]
                 _ <- symbolNoNl ".."
-                end <- parseExpression
+                mEnd <- optional (try parseExpression)   -- absent => infinite
                 _ <- symbolNoNl "]"
-                return (Range first end)
+                return $ case mEnd of
+                    Just end -> Range first end
+                    Nothing  -> RangeFrom first
+            , try $ do  -- stepped range: [first, next .. end] or open-ended [first, next ..]
+                _ <- symbolNoNl ","
+                next <- parseExpression
+                _ <- symbolNoNl ".."
+                mEnd <- optional (try parseExpression)
+                _ <- symbolNoNl "]"
+                return $ case mEnd of
+                    Just end -> RangeFromThenTo first next end
+                    Nothing  -> RangeFromThen first next
             , do        -- single head followed by '|': comprehension or cons
                 _ <- symbolNoNl "|"
                 parseComprehensionTail first <|> parseConsTail [first]
@@ -917,6 +928,7 @@ parseBaseTerm = try parseObject
     <|> try parseBoolean
     <|> try parseList
     <|> try parseSet
+    <|> try parseInputExpr
     <|> try parseGetHostMachine
     <|> try parseGetCurrentDir
     <|> try parseReadFile
@@ -1239,21 +1251,14 @@ parseAssignment = try parseTypedAssign <|> try parseIndexedAssign <|> try parseG
         _ <- optional scn
         _ <- void (symbol "=") <|> wordOp "be" <|> wordOp "recebe"
         _ <- optional sc
-        inputCall <- optional $ try $ do
-            _ <- keyword "input"
-            _ <- symbolNoNl "("
-            promptExpr <- optional parseExpression
-            _ <- symbolNoNl ")"
-            return promptExpr
-        case inputCall of
-            Just promptExpr -> 
-                let prompt = case promptExpr of
-                               Just p  -> p
-                               Nothing -> StringLiteral ""
-                in return $ Input varName prompt
-            Nothing -> do
-                expr <- parseExpression
-                return $ Assign varName expr
+        expr <- parseExpression
+        -- `input(...)` is a full expression (InputExpr), so it can be nested in
+        -- a call or piped (e.g. `to_double(input(...))`, `input(...) )| f`). But a
+        -- bare `x = input(...)` keeps the dedicated Input command so the read runs
+        -- strictly and in order rather than lazily through the assigned thunk.
+        return $ case stripPos expr of
+            InputExpr prompt -> Input varName prompt
+            _                -> Assign varName expr
 
 parsePrint :: Parser Command
 parsePrint = do
@@ -1370,6 +1375,17 @@ parseReadFile = do
     filenameExpr <- parseExpression
     _ <- symbolNoNl ")"
     return $ ReadFile filenameExpr
+
+-- `input(prompt)` used as an expression (e.g. nested inside another call or as
+-- the left side of a `)|` pipe). The prompt is optional, mirroring the
+-- statement form `x = input(...)`. An empty prompt defaults to "".
+parseInputExpr :: Parser Expression
+parseInputExpr = do
+    _ <- try (keyword "input")
+    _ <- symbolNoNl "("
+    promptExpr <- optional parseExpression
+    _ <- symbolNoNl ")"
+    return $ InputExpr (maybe (StringLiteral "") id promptExpr)
 
 parseKeys :: Parser Expression
 parseKeys = do

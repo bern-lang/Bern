@@ -107,7 +107,76 @@
         </div>
 
         <div class="release latest">
-            <h2>Bern 2.1 <span class="badge">mais recente</span> <span class="date">Junho de 2026</span></h2>
+            <h2>Bern 2.2 <span class="badge">mais recente</span> <span class="date">Junho de 2026</span></h2>
+            <p>Bern 2.2 afia o núcleo funcional: tipos algébricos agora comparam com <code>==</code> e podem misturar construtores dentro de uma lista, <code>input()</code> virou uma expressão de verdade que dá para aninhar e encadear, e uma nova biblioteca <code>monads</code> traz Maybe, Either e uma lista encadeada com os operadores para combiná-los. Algumas funções do <code>core</code> também foram renomeadas para <code>snake_case</code> por consistência.</p>
+
+            <h3>Linguagem</h3>
+
+            <p class="feat"><strong>Falhar em erros volta a ser o padrão.</strong> No 2.0 todo erro de execução virava um valor (erros como valores). Agora isso é <em>opcional</em>: por padrão um erro <em>da linguagem</em> (função indefinida, índice fora dos limites, incompatibilidade de tipos, &hellip;) derruba o programa, o que pega descuidos cedo. Adicione <code>{--! errors-as-values !--}</code> para recuperar o comportamento do 2.0 em um arquivo. O importante: <strong>erros do usuário</strong> criados com <code>error("&hellip;")</code> continuam sendo sempre valores que você testa com <code>is_error</code> -; então <code>error()</code>/<code>is_error</code> seguem funcionando como um try/catch leve mesmo por padrão. O antigo pragma <code>abort-on-error</code> foi removido (agora é o padrão).</p>
+            <pre class="simple-code"><span class="function">is_error</span>(<span class="function">error</span>(<span class="string">"boom"</span>))   <span class="comment">-- true; erro do usuário, sem crash</span>
+[<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>][<span class="number">99</span>]            <span class="comment">-- erro da linguagem: derruba (a menos que errors-as-values esteja ligado)</span></pre>
+
+            <p class="feat"><strong>Igualdade para valores de ADT.</strong> Tipos algébricos agora podem ser comparados com <code>==</code> e <code>!=</code>. A igualdade é estrutural - mesmo construtor e campos recursivamente iguais - e compõe por listas e aninhamento, então dois resultados construídos da mesma forma são iguais.</p>
+            <pre class="simple-code"><span class="keyword">import</span> monads
+
+<span class="function">Just</span>(<span class="number">8</span>) <span class="operator">==</span> <span class="function">Just</span>(<span class="number">8</span>)                       <span class="comment">-- true</span>
+<span class="function">Just</span>(<span class="number">1</span>) <span class="operator">==</span> <span class="function">Nothing</span>()                     <span class="comment">-- false</span>
+<span class="function">Just</span>([<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>]) <span class="operator">==</span> <span class="function">Just</span>([<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>])     <span class="comment">-- true  (lista aninhada)</span>
+<span class="function">Just</span>(<span class="function">Just</span>(<span class="number">5</span>)) <span class="operator">==</span> <span class="function">Just</span>(<span class="function">Just</span>(<span class="number">5</span>))         <span class="comment">-- true  (ADT aninhado)</span></pre>
+
+            <p class="feat"><strong>Listas cientes de ADT.</strong> Uma lista continua homogênea, mas o tipo de um valor de ADT agora é o seu tipo declarado (ex.: <code>Maybe</code>), não o construtor (<code>Just</code>/<code>Nothing</code>). Então construtores diferentes do <em>mesmo</em> ADT podem dividir uma lista - <code>[Just(1), Nothing()]</code> ou <code>[Circle(1.0), Square(2.0)]</code> - enquanto listas que misturam ADTs <em>diferentes</em> continuam rejeitadas. O pragma <code>impure-lists</code> ainda desliga a verificação inteira.</p>
+            <pre class="simple-code"><span class="keyword">adt</span> <span class="type">Shape</span> = <span class="type">Circle</span> <span class="type">Double</span> | <span class="type">Square</span> <span class="type">Double</span>
+
+shapes = [<span class="function">Circle</span>(<span class="number">1.0</span>), <span class="function">Square</span>(<span class="number">2.0</span>), <span class="function">Circle</span>(<span class="number">3.0</span>)]   <span class="comment">-- agora permitido</span>
+<span class="operator">:&gt;</span> shapes                                          <span class="comment">-- 3</span></pre>
+
+            <p class="feat"><strong><code>input()</code> é uma expressão.</strong> Ler uma linha não está mais limitado à forma de comando <code>x = input(...)</code>. <code>input(...)</code> agora é uma expressão completa, então dá para aninhá-la dentro de uma chamada ou jogá-la direto num pipe. Um <code>x = input(...)</code> simples ainda lê de forma estrita e em ordem, exatamente como antes.</p>
+            <pre class="simple-code"><span class="keyword">import</span> core
+
+x = <span class="function">to_double</span>(<span class="function">input</span>(<span class="string">"Digite um número: "</span>))     <span class="comment">-- aninhado</span>
+y = <span class="function">input</span>(<span class="string">"De novo: "</span>) )<span class="operator">|</span> <span class="function">to_double</span>()         <span class="comment">-- encadeado</span></pre>
+
+            <p class="feat"><strong>Intervalos infinitos &amp; com passo.</strong> Os intervalos agora cobrem toda a sintaxe de enumeração do Haskell. Um segundo elemento define o passo, e omitir o limite superior torna o intervalo <em>infinito e preguiçoso</em>: só o prefixo que você pedir é calculado. Use as operações que consomem um início finito - <code>take</code>, <code>head</code>, <code>drop</code>, indexação, casamento <code>[h|t]</code>, ou prepend com <code>[x | xs]</code>. Como em Haskell, qualquer coisa que precise percorrer a lista inteira (<code>map</code>, <code>filter</code>, <code>:&gt;</code>, imprimir) roda para sempre numa lista infinita, então use <code>take</code> primeiro; <code>:&gt; [1..]</code> reporta um erro em vez de travar.</p>
+            <pre class="simple-code"><span class="keyword">import</span> core
+
+[<span class="number">0</span>, <span class="number">2</span><span class="operator">..</span><span class="number">10</span>]                  <span class="comment">-- com passo:  [0, 2, 4, 6, 8, 10]</span>
+[<span class="number">10</span>, <span class="number">7</span><span class="operator">..</span><span class="number">1</span>]                  <span class="comment">-- passo negativo: [10, 7, 4, 1]</span>
+
+<span class="function">take</span>(<span class="number">5</span>, [<span class="number">1</span><span class="operator">..</span>])             <span class="comment">-- infinito, passo +1:  [1, 2, 3, 4, 5]</span>
+<span class="function">take</span>(<span class="number">5</span>, [<span class="number">1</span>, <span class="number">3</span><span class="operator">..</span>])          <span class="comment">-- infinito, passo +2:  [1, 3, 5, 7, 9]</span>
+<span class="function">take</span>(<span class="number">4</span>, [<span class="number">0</span> <span class="operator">|</span> [<span class="number">1</span><span class="operator">..</span>]])       <span class="comment">-- prepend em infinito: [0, 1, 2, 3]</span>
+[<span class="number">1</span><span class="operator">..</span>][<span class="number">4</span>]                    <span class="comment">-- 5</span></pre>
+
+            <p class="feat"><strong>Nomes de operador em português são reservados.</strong> As grafias em português de uma palavra dos operadores escritos (<code>mais</code>, <code>menos</code>, <code>vezes</code>, <code>resto</code>, <code>nao</code>, <code>ou</code>, <code>igual</code>, <code>diferente</code>, <code>concatenar</code>, <code>uniao</code>, <code>intersecao</code>, <code>diferenca</code>, <code>recebe</code>, <code>tamanho</code>, <code>negativo</code>) agora são protegidas como as suas equivalentes em inglês, então atribuir a uma delas é um erro claro em vez de uma sombra silenciosa. As formas com hífen (<code>maior-que</code>, <code>dividido-por</code>, &hellip;) nunca precisaram disso - um hífen não pode aparecer num identificador. <code>e</code> foi deliberadamente deixado atribuível, já que a biblioteca math o exporta como o número de Euler. O pragma <code>no-written-operators</code> libera todas.</p>
+
+            <h3>Bibliotecas</h3>
+
+            <p class="feat"><strong>Nova biblioteca <code>monads</code>.</strong> Um pequeno kit de programação funcional construído sobre três ADTs - <code>Maybe</code> (<code>Just</code>/<code>Nothing</code>), <code>Either</code> (<code>Left</code>/<code>Right</code>) e uma lista encadeada (<code>Cons</code>/<code>Nil</code>). Traz predicados, catamorfismos (<code>maybe</code>, <code>either</code>), maps de functor e binds para cada um, um <code>bind</code> / <code>mmap</code> agnóstico de tipo com os operadores <code>&lt;$&gt;</code> e <code>&gt;&gt;=</code>, helpers de lista com pontes <code>list_from</code>/<code>list_to</code>, e travessias que param no primeiro erro (<code>sequence_maybe</code>, <code>traverse_maybe</code>, e os equivalentes de <code>Either</code>). Veja a <a href="libs/monads.html">referência de monads</a>.</p>
+            <pre class="simple-code"><span class="keyword">import</span> monads
+
+<span class="function">Just</span>(<span class="number">5</span>) <span class="operator">&gt;&gt;=</span> \x <span class="operator">-&gt;</span> <span class="function">Just</span>(x <span class="operator">+</span> <span class="number">1</span>) <span class="operator">&gt;&gt;=</span> \y <span class="operator">-&gt;</span> <span class="function">Just</span>(y <span class="operator">*</span> <span class="number">2</span>)   <span class="comment">-- Just(12)</span>
+<span class="function">sequence_maybe</span>([<span class="function">Just</span>(<span class="number">1</span>), <span class="function">Just</span>(<span class="number">2</span>), <span class="function">Just</span>(<span class="number">3</span>)])               <span class="comment">-- Just([1, 2, 3])</span>
+<span class="function">sequence_maybe</span>([<span class="function">Just</span>(<span class="number">1</span>), <span class="function">Nothing</span>(), <span class="function">Just</span>(<span class="number">3</span>)])             <span class="comment">-- Nothing()</span></pre>
+
+            <h3>Renomeações no core</h3>
+            <p class="feat"><strong>Nomes <code>snake_case</code> consistentes.</strong> Algumas funções do <code>core</code> foram renomeadas para que a biblioteca inteira siga uma única convenção. As bibliotecas embutidas foram atualizadas para acompanhar; se você usava os nomes antigos, renomeie suas chamadas.</p>
+            <table class="pragma-table">
+                <tr><th>Antigo</th><th>Novo</th></tr>
+                <tr><td><code>isEmpty</code></td><td><code>is_empty</code></td></tr>
+                <tr><td><code>zipWith</code></td><td><code>zip_with</code></td></tr>
+                <tr><td><code>typeOf</code></td><td><code>type_of</code></td></tr>
+                <tr><td><code>length</code></td><td><code>len</code></td></tr>
+            </table>
+
+            <p class="feat"><strong>Nova conversão &amp; uma correção.</strong> O <code>core</code> ganhou <code>to_double</code>, que lê uma string decimal para um double. Um bug antigo de divisão inteira que fazia a função descartar a parte fracionária foi corrigido, então <code>to_double("12.5")</code> agora é <code>12.5</code>.</p>
+            <pre class="simple-code"><span class="keyword">import</span> core
+
+<span class="function">to_double</span>(<span class="string">"3.14"</span>)     <span class="comment">-- 3.14</span>
+<span class="function">to_double</span>(<span class="string">"12"</span>)       <span class="comment">-- 12.0</span></pre>
+        </div>
+
+        <div class="release">
+            <h2>Bern 2.1 <span class="date">Junho de 2026</span></h2>
             <p>Bern 2.1 constrói sobre a base do 2.0: operadores definidos pelo usuário, anotações de tipo opcionais, declarações multi-linha mais amigáveis, uma correção no lexer para identificadores que começam com uma palavra-chave, e um conjunto de combinadores de parser bem maior. A referência de bibliotecas do site também foi reconstruída em torno de uma página por biblioteca.</p>
 
             <h3>Linguagem</h3>
@@ -171,7 +240,7 @@ truevar = true        <span class="comment">-- o literal ainda parseia onde um v
 
             <h3>Novos comportamentos padrão</h3>
 
-            <p class="feat"><strong>Erros como valores.</strong> Um erro em tempo de execução não derruba mais o programa inteiro. Em vez disso, ele vira um valor de primeira classe que você pode guardar, repassar e inspecionar. Indexação fora dos limites, buscas que falham e descuidos parecidos produzem um valor de erro que se propaga silenciosamente pelo resto da expressão, então o programa continua rodando. Teste qualquer valor com <code>is_error</code> e lance o seu próprio com <code>error</code>. Se preferir o antigo comportamento de falhar, o pragma <code>abort-on-error</code> o traz de volta.</p>
+            <p class="feat"><strong>Erros como valores.</strong> Um erro em tempo de execução não derruba mais o programa inteiro. Em vez disso, ele vira um valor de primeira classe que você pode guardar, repassar e inspecionar. Indexação fora dos limites, buscas que falham e descuidos parecidos produzem um valor de erro que se propaga silenciosamente pelo resto da expressão, então o programa continua rodando. Teste qualquer valor com <code>is_error</code> e lance o seu próprio com <code>error</code>. <em>(Mudou no 2.1: agora isso é opcional via o pragma <code>errors-as-values</code>; por padrão erros da linguagem derrubam o programa, enquanto erros do usuário com <code>error()</code> continuam valores.)</em></p>
             <pre class="simple-code"><span class="keyword">import</span> core
 
 bad = [<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>][<span class="number">99</span>]           <span class="comment">-- fora dos limites, mas sem falha</span>
@@ -240,29 +309,29 @@ x = <span class="number">11</span>               <span class="comment">-- erro: 
                 <tr><td><code>start-on-one</code></td><td>a indexação começa em 1</td></tr>
                 <tr><td><code>main</code></td><td>executa <code>main()</code> após o carregamento do arquivo</td></tr>
                 <tr><td><code>no-curry</code></td><td>desativa o currying automático</td></tr>
-                <tr><td><code>abort-on-error</code></td><td>falha em erros de execução em vez de produzir valores de erro</td></tr>
+                <tr><td><code>errors-as-values</code></td><td>transforma erros de execução da linguagem em valores inspecionáveis em vez de derrubar (opcional desde o 2.1)</td></tr>
                 <tr><td><code>partial</code></td><td>permite funções não exaustivas</td></tr>
                 <tr><td><code>no-written-operators</code></td><td>desliga os operadores em palavras, liberando nomes como <code>length</code> e <code>plus</code> para uso como variáveis</td></tr>
             </table>
 
             <h3>Adições à linguagem</h3>
 
-            <p class="feat"><strong>Operadores em palavras.</strong> Todo operador simbólico agora tem uma grafia em português corrente, então você pode escrever código que se lê em voz alta como uma frase: <code>plus</code>, <code>minus</code>, <code>times</code>, <code>divided-by</code>, <code>is-greater-or-equal</code>, <code>and</code>, <code>or</code>, <code>not</code>, <code>concat</code>, <code>and-do</code> (pipe), <code>be</code> (atribuição) e muito mais. Símbolos e palavras são intercambiáveis e podem ser misturados livremente.</p>
-            <pre class="simple-code"><span class="number">3</span> is-greater <span class="number">2</span> and <span class="number">5</span> is-less-or-equal <span class="number">5</span>    <span class="comment">-- true</span>
-[<span class="number">1</span>, <span class="number">2</span>] concat [<span class="number">3</span>, <span class="number">4</span>]                       <span class="comment">-- [1, 2, 3, 4]</span>
-total be <span class="number">10</span> plus <span class="number">5</span>                         <span class="comment">-- atribuição: total agora é 15</span></pre>
+            <p class="feat"><strong>Operadores em palavras.</strong> Todo operador simbólico também tem uma grafia em palavras, então você pode escrever código que se lê em voz alta como uma frase. Em português: <code>mais</code>, <code>menos</code>, <code>vezes</code>, <code>dividido-por</code>, <code>maior-ou-igual</code>, <code>e</code>, <code>ou</code>, <code>nao</code>, <code>concatenar</code>, <code>e-faca</code> (pipe), <code>recebe</code> (atribuição) e muito mais (as formas em inglês também valem). Símbolos e palavras são intercambiáveis e podem ser misturados livremente.</p>
+            <pre class="simple-code"><span class="number">3</span> maior-que <span class="number">2</span> e <span class="number">5</span> menor-ou-igual <span class="number">5</span>    <span class="comment">-- true</span>
+[<span class="number">1</span>, <span class="number">2</span>] concatenar [<span class="number">3</span>, <span class="number">4</span>]                  <span class="comment">-- [1, 2, 3, 4]</span>
+total recebe <span class="number">10</span> mais <span class="number">5</span>                     <span class="comment">-- atribuição: total agora é 15</span></pre>
 
             <p class="feat"><strong>O operador pipe <code>)|</code>.</strong> O pipe encaminha um valor para uma função como seu primeiro argumento, então uma sequência de transformações se lê da esquerda para a direita, na ordem em que acontece, em vez de aninhada de dentro para fora.</p>
             <pre class="simple-code">[<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>] <span class="operator">)|</span> <span class="function">filter</span>(<span class="operator">\</span>x <span class="operator">-&gt;</span> x <span class="operator">%</span> <span class="number">2</span> <span class="operator">==</span> <span class="number">0</span>)   <span class="comment">-- [2, 4]</span></pre>
 
-            <p class="feat"><strong>Sintaxe de função legível.</strong> Corpos de função e lambda podem ser introduzidos com as palavras <code>returns</code> e <code>such-that</code> no lugar da seta <code>-&gt;</code>, e uma lambda pode ser escrita com a palavra-chave <code>lambda</code>. As formas simbólicas continuam funcionando em todo lugar.</p>
-            <pre class="simple-code"><span class="keyword">def</span> <span class="function">double</span>(n) returns n <span class="operator">*</span> <span class="number">2</span>                <span class="comment">-- 'returns' se lê melhor que -&gt;</span>
+            <p class="feat"><strong>Sintaxe de função legível.</strong> Corpos de função e lambda podem ser introduzidos com as palavras <code>retorna</code> e <code>tal-que</code> no lugar da seta <code>-&gt;</code>, e uma lambda pode ser escrita com a palavra-chave <code>lambda</code>. As formas simbólicas continuam funcionando em todo lugar.</p>
+            <pre class="simple-code"><span class="keyword">def</span> <span class="function">double</span>(n) retorna n <span class="operator">*</span> <span class="number">2</span>                <span class="comment">-- 'retorna' se lê melhor que -&gt;</span>
 <span class="function">double</span>(<span class="number">21</span>)                                 <span class="comment">-- 42</span>
-<span class="function">map</span>([<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>], lambda x such-that x <span class="operator">*</span> <span class="number">10</span>)  <span class="comment">-- [10, 20, 30]</span></pre>
+<span class="function">map</span>([<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>], lambda x tal-que x <span class="operator">*</span> <span class="number">10</span>)  <span class="comment">-- [10, 20, 30]</span></pre>
 
             <p class="feat"><strong>Guardas de casamento de padrões.</strong> Uma cláusula de função pode carregar uma guarda <code>when</code>. A cláusula só casa quando seus padrões batem e sua expressão de guarda é verdadeira, deixando você ramificar por valor, não apenas pela forma.</p>
-            <pre class="simple-code"><span class="keyword">def</span> <span class="function">grade</span>(n) when n is-greater <span class="number">90</span> <span class="operator">-&gt;</span> <span class="string">"A"</span>
-<span class="keyword">def</span> <span class="function">grade</span>(n) when n is-greater <span class="number">70</span> <span class="operator">-&gt;</span> <span class="string">"B"</span>
+            <pre class="simple-code"><span class="keyword">def</span> <span class="function">grade</span>(n) when n maior-que <span class="number">90</span> <span class="operator">-&gt;</span> <span class="string">"A"</span>
+<span class="keyword">def</span> <span class="function">grade</span>(n) when n maior-que <span class="number">70</span> <span class="operator">-&gt;</span> <span class="string">"B"</span>
 <span class="keyword">def</span> <span class="function">grade</span>(n) <span class="operator">-&gt;</span> <span class="string">"C"</span>
 <span class="function">grade</span>(<span class="number">95</span>)                                  <span class="comment">-- "A"</span></pre>
 

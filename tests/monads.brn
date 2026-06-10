@@ -1,0 +1,69 @@
+import monads
+import assert
+
+-- Maybe ----------------------------------------------------------------------
+assert_equals("is_just true", is_just(Just(5)), true)
+assert_equals("is_just false", is_just(Nothing()), false)
+assert_equals("is_nothing true", is_nothing(Nothing()), true)
+assert_equals("from_maybe just", from_maybe(0, Just(42)), 42)
+assert_equals("from_maybe nothing", from_maybe(0, Nothing()), 0)
+assert_equals("maybe just", maybe(-1, \x -> x * 2, Just(10)), 20)
+assert_equals("maybe nothing", maybe(-1, \x -> x * 2, Nothing()), -1)
+assert_equals("map_maybe just", from_maybe(0, map_maybe(\x -> x + 1, Just(7))), 8)
+assert_equals("map_maybe nothing", is_nothing(map_maybe(\x -> x + 1, Nothing())), true)
+assert_equals("bind_maybe just", from_maybe(0, bind_maybe(Just(4), \x -> Just(x * x))), 16)
+assert_equals("bind_maybe nothing", is_nothing(bind_maybe(Nothing(), \x -> Just(x))), true)
+
+-- Either ---------------------------------------------------------------------
+assert_equals("is_right true", is_right(Right(1)), true)
+assert_equals("is_left true", is_left(Left(1)), true)
+assert_equals("either left", either(\e -> "L:" + e, \x -> "R", Left("bad")), "L:bad")
+assert_equals("either right", either(\e -> 0, \x -> x, Right(9)), 9)
+assert_equals("map_either right", from_right(0, map_either(\x -> x + 1, Right(9))), 10)
+assert_equals("map_either left", is_left(map_either(\x -> x + 1, Left("e"))), true)
+assert_equals("map_left left", from_left("?", map_left(\e -> e + "!", Left("oops"))), "oops!")
+assert_equals("bind_either right", from_right(0, bind_either(Right(2), \x -> Right(x * 10))), 20)
+assert_equals("bind_either left", is_left(bind_either(Left("stop"), \x -> Right(x))), true)
+assert_equals("from_right left", from_right(-1, Left("x")), -1)
+assert_equals("from_left right", from_left(-1, Right(5)), -1)
+assert_equals("either_to_maybe right", from_maybe(0, either_to_maybe(Right(3))), 3)
+assert_equals("either_to_maybe left", is_nothing(either_to_maybe(Left("e"))), true)
+assert_equals("maybe_to_either nothing", is_left(maybe_to_either("none", Nothing())), true)
+assert_equals("maybe_to_either just", from_right(0, maybe_to_either("none", Just(7))), 7)
+
+-- Generic bind / mmap + operators -------------------------------------------
+assert_equals("bind maybe", from_maybe(0, bind(Just(5), \x -> Just(x + 1))), 6)
+assert_equals("bind either", from_right(0, bind(Right(5), \x -> Right(x + 1))), 6)
+assert_equals("mmap maybe", from_maybe(0, mmap(\x -> x * 3, Just(4))), 12)
+assert_equals("<$> operator", from_maybe(0, (\x -> x + 100) <$> Just(1)), 101)
+assert_equals(">>= chain maybe", from_maybe(0, Just(5) >>= \x -> Just(x + 1) >>= \y -> Just(y * 2)), 12)
+assert_equals(">>= either", from_right(0, Right(2) >>= \x -> Right(x * 10)), 20)
+assert_equals(">>= left short-circuit", is_left(Left("stop") >>= \x -> Right(x)), true)
+
+-- List ADT (Cons / Nil) ------------------------------------------------------
+assert_equals("list roundtrip", list_to(list_from([1, 2, 3])), [1, 2, 3])
+assert_equals("list_map", list_to(list_map(\x -> x * x, list_from([1, 2, 3]))), [1, 4, 9])
+assert_equals("list_length", list_length(list_from([4, 5, 6, 7])), 4)
+assert_equals("list_foldr sum", list_foldr(\a, b -> a + b, 0, list_from([1, 2, 3, 4])), 10)
+assert_equals("list_reverse", list_to(list_reverse(list_from([1, 2, 3]))), [3, 2, 1])
+assert_equals("list_append", list_to(list_append(list_from([1, 2]), list_from([3, 4]))), [1, 2, 3, 4])
+
+-- Traversals (rely on same-ADT lists like [Just(1), Nothing()]) --------------
+assert_equals("sequence_maybe all just", from_maybe([], sequence_maybe([Just(1), Just(2), Just(3)])), [1, 2, 3])
+assert_equals("sequence_maybe with nothing", is_nothing(sequence_maybe([Just(1), Nothing(), Just(3)])), true)
+assert_equals("traverse_maybe ok", from_maybe([], traverse_maybe(\x -> Just(x + 1), [1, 2, 3])), [2, 3, 4])
+assert_equals("sequence_either all right", from_right([], sequence_either([Right(1), Right(2)])), [1, 2])
+assert_equals("sequence_either with left", from_left("?", sequence_either([Right(1), Left("oops"), Right(3)])), "oops")
+
+-- Structural equality of ADT values -----------------------------------------
+assert_equals("eq just same", Just(8) == Just(8), true)
+assert_equals("eq just diff", Just(8) == Just(9), false)
+assert_equals("eq nothing", Nothing() == Nothing(), true)
+assert_equals("eq just vs nothing", Just(1) == Nothing(), false)
+assert_equals("eq nested list", Just([1, 2, 3]) == Just([1, 2, 3]), true)
+assert_equals("eq nested adt", Just(Just(5)) == Just(Just(5)), true)
+assert_equals("eq left", Left("e") == Left("e"), true)
+assert_equals("eq left vs right", Left("e") == Right("e"), false)
+assert_equals("neq just", Just(1) != Just(2), true)
+assert_equals("eq adts in list", [Just(1), Nothing()] == [Just(1), Nothing()], true)
+assert_equals("eq from sequence", sequence_maybe([Just(1), Just(2)]) == Just([1, 2]), true)

@@ -190,6 +190,9 @@ data Expression = Number Int
                 | ListLiteral [Expression]     -- [elem1, elem2, ...]
                 | ObjectLiteral [(String, Expression)] -- #{ key: value, ... }#
                 | Range Expression Expression          -- [start .. end]
+                | RangeFrom Expression                 -- [start ..]            infinite, step +1
+                | RangeFromThen Expression Expression  -- [start, next ..]      infinite, step (next-start)
+                | RangeFromThenTo Expression Expression Expression -- [start, next .. end]  finite, custom step
                 | ListCons [Expression] Expression     -- [h, ... | tail]  prepend element(s) onto a list
                 | SetCons [Expression] Expression      -- {h, ... | tail}  prepend element(s) onto a set
                 | ListComp Expression [CompQual]       -- [expr | gen/guard, ...]  list comprehension
@@ -202,6 +205,7 @@ data Expression = Number Int
                 | LambdaExpr [Pattern] (Maybe Expression) Expression  -- \params [when guard] -> body
                 | WithPos SourcePos Expression        -- carries source position for better errors
                 | ReadFile Expression                 -- readfile filename
+                | InputExpr Expression                -- input(prompt) used as an expression
                 | GetHostMachine                      -- get_host_machine()
                 | GetCurrentDir                       -- get_current_dir()
                 | Keys Expression                     -- keys(object) -> list of key strings
@@ -314,6 +318,10 @@ Português:
       este é o modelo de "erros como valores": uma falha vira dado que se propaga e
       pode ser testado com is_error, em vez de quebrar.
 -}
+-- A cached element count. A negative value is the sentinel for an UNBOUNDED
+-- length: an infinite lazy range like [1..] stores it, and its spine is a
+-- genuine infinite Haskell list. See `infiniteLength`/`lenPred`/`lenPlus` in
+-- Language.Eval for the saturating arithmetic that keeps it infinite.
 type Length = Int
 data Value = Integer Int
             | Double Double
